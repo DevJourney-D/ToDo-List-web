@@ -711,7 +711,7 @@
         // Global state
         let currentUser = null;
         let token = localStorage.getItem('token');
-        const API_BASE = 'https://to-do-list-api-nrry.vercel.app/api/v1';
+        const API_BASE = 'https://to-do-list-api-app.vercel.app/api/v1';
 
         // Utility functions
         function showToast(message, type = 'info') {
@@ -950,7 +950,7 @@
         // Test backend connection
         async function testBackendConnection() {
             try {
-                const response = await fetch('https://to-do-list-api-nrry.vercel.app/health');
+                const response = await fetch('https://to-do-list-api-app.vercel.app/health');
                 return response.ok;
             } catch (error) {
                 console.warn('Backend connection failed:', error);

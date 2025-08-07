@@ -29,7 +29,7 @@ live-server
 
 แก้ไข API endpoint ในไฟล์ HTML:
 ```javascript
-const API_BASE = 'https://to-do-list-api-nrry.vercel.app/api/v1';
+const API_BASE = 'https://to-do-list-api-app.vercel.app/api/v1';
 ```
 
 ## Structure
