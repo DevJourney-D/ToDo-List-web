@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - ToDo List App</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍅</text></svg>">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="common-notifications.js"></script>
+    <style>
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .excel-bg {
+            background: #f3f4f6;
+            min-height: 100vh;
+        }
+        
+        .nav-professional {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-link {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        
+        .nav-link:hover {
+            background: #f3f4f6;
+        }
+        
+        .nav-link.active {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .coming-soon-card {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .settings-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            opacity: 0.6;
+        }
+        
+        .settings-group {
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .settings-group:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #3b82f6;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        /* Loading Styles */
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            margin-top: 16px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        
+        /* Dark Theme Styles */
+        .dark-theme {
+            background: #1f2937;
+            color: #f9fafb;
+        }
+        
+        .dark-theme .excel-bg {
+            background: #1f2937;
+        }
+        
+        .dark-theme .nav-professional {
+            background: #374151;
+            border-color: #4b5563;
+        }
+        
+        .dark-theme .nav-link:hover {
+            background: #4b5563;
+        }
+        
+        .dark-theme .bg-white {
+            background: #374151 !important;
+        }
+        
+        .dark-theme .text-gray-800 {
+            color: #f9fafb !important;
+        }
+        
+        .dark-theme .text-gray-700 {
+            color: #e5e7eb !important;
+        }
+        
+        .dark-theme .text-gray-600 {
+            color: #d1d5db !important;
+        }
+        
+        .dark-theme .border-gray-300 {
+            border-color: #4b5563 !important;
+        }
+        
+        .dark-theme .border-gray-200 {
+            border-color: #4b5563 !important;
+        }
+        
+        .dark-theme input,
+        .dark-theme select {
+            background: #4b5563 !important;
+            color: #f9fafb !important;
+        }
+        
+        .dark-theme .bg-gray-50 {
+            background: #374151 !important;
+        }
+        
+        /* Custom CSS Variables for Dynamic Colors */
+        :root {
+            --accent-primary: #3b82f6;
+            --accent-secondary: #1d4ed8;
+        }
+        
+        .btn-accent {
+            background-color: var(--accent-primary);
+        }
+        
+        .btn-accent:hover {
+            background-color: var(--accent-secondary);
+        }
+        
+        .text-accent {
+            color: var(--accent-primary);
+        }
+        
+        /* Responsive Design for Settings */
+        @media (max-width: 1024px) {
+            .container {
+                padding: 0 16px;
+            }
+            
+            .nav-professional {
+                padding: 12px 16px;
+            }
+            
+            .nav-professional .container {
+                flex-direction: column;
+                gap: 16px;
+            }
+            
+            .nav-professional h1 {
+                font-size: 1.5rem;
+            }
+            
+            .nav-professional .flex.items-center.space-x-2 {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 8px;
+            }
+            
+            .nav-link {
+                padding: 6px 12px;
+                font-size: 0.875rem;
+            }
+            
+            .settings-section {
+                padding: 20px;
+            }
+            
+            .coming-soon-card {
+                padding: 30px 16px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 12px;
+            }
+            
+            .grid.grid-cols-1.lg\\:grid-cols-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            .grid.grid-cols-1.md\\:grid-cols-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            .settings-section {
+                padding: 16px;
+            }
+            
+            .coming-soon-card {
+                padding: 24px 12px;
+            }
+            
+            .text-3xl {
+                font-size: 1.875rem;
+            }
+            
+            .text-2xl {
+                font-size: 1.5rem;
+            }
+            
+            .text-xl {
+                font-size: 1.125rem;
+            }
+            
+            .settings-group {
+                padding-bottom: 16px;
+                margin-bottom: 16px;
+            }
+            
+            .toggle-switch {
+                width: 50px;
+                height: 28px;
+            }
+            
+            .toggle-switch .slider:before {
+                height: 20px;
+                width: 20px;
+                left: 4px;
+                bottom: 4px;
+            }
+            
+            .toggle-switch input:checked + .slider:before {
+                transform: translateX(22px);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .nav-professional .flex.items-center.space-x-2 {
+                grid-template-columns: repeat(2, 1fr);
+                display: grid;
+                gap: 8px;
+            }
+            
+            .nav-link {
+                text-align: center;
+                padding: 8px 4px;
+                font-size: 0.75rem;
+            }
+            
+            .settings-section {
+                padding: 12px;
+            }
+            
+            .coming-soon-card {
+                padding: 20px 8px;
+            }
+            
+            .text-lg {
+                font-size: 1rem;
+            }
+            
+            .settings-group {
+                padding-bottom: 12px;
+                margin-bottom: 12px;
+            }
+            
+            .toggle-switch {
+                width: 45px;
+                height: 25px;
+            }
+            
+            .toggle-switch .slider:before {
+                height: 17px;
+                width: 17px;
+                left: 4px;
+                bottom: 4px;
+            }
+            
+            .toggle-switch input:checked + .slider:before {
+                transform: translateX(20px);
+            }
+            
+            .flex.justify-between.items-center {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .toggle-switch {
+                align-self: flex-end;
+            }
+        }
+        
+        /* iPad Air specific adjustments */
+        @media (min-width: 820px) and (max-width: 1024px) {
+            .grid.grid-cols-1.lg\\:grid-cols-2 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .nav-professional .flex.items-center.space-x-2 {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            .settings-section {
+                padding: 22px;
+            }
+        }
+        
+        /* Additional responsive improvements for buttons and forms */
+        @media (max-width: 768px) {
+            .btn, button {
+                width: 100%;
+                margin-bottom: 8px;
+            }
+            
+            .flex.justify-between.items-center button {
+                width: auto;
+                margin-bottom: 0;
+                min-width: 100px;
+            }
+            
+            .grid.grid-cols-2.md\\:grid-cols-4 {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            
+            .space-y-3 > div {
+                margin-bottom: 16px;
+            }
+            
+            .stat-card {
+                padding: 12px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .grid.grid-cols-2.md\\:grid-cols-4 {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            
+            .btn, button {
+                font-size: 0.875rem;
+                padding: 8px 12px;
+            }
+            
+            input[type="file"] {
+                font-size: 0.875rem;
+                padding: 6px;
+            }
+            
+            .border {
+                border-width: 1px;
+            }
+            
+            .rounded-lg {
+                border-radius: 6px;
+            }
+        }
+        
+        /* Notification Styles */
+        .notification {
+            animation: slideInRight 0.3s ease-out;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Enhanced Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--accent-primary);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        /* Hover Effects */
+        .settings-card {
+            transition: all 0.3s ease;
+        }
+        
+        .settings-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Stats Cards */
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="excel-bg">
+    <div id="app" class="min-h-screen">
+        <!-- Navigation -->
+        <nav class="nav-professional p-4">
+            <div class="container mx-auto flex justify-between items-center">
+                <div class="flex items-center space-x-8">
+                    <h1 class="text-2xl font-bold text-gray-800">🍅 ToDo List</h1>
+                    <div class="flex items-center space-x-2 flex-wrap">
+                        <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+                        <a href="tasks.html" class="nav-link">📋 Tasks</a>
+                        <a href="calendar.html" class="nav-link">📅 Calendar</a>
+                        <a href="analytics.html" class="nav-link">📊 Analytics</a>
+                        <a href="profile.html" class="nav-link">👤 Profile</a>
+                        <a href="settings.html" class="nav-link active">⚙️ Settings</a>
+                    </div>
+                </div>
+                <div id="nav-menu" class="flex items-center space-x-4">
+                    <span id="user-greeting" class="text-gray-700 font-medium">Welcome, User</span>
+                    <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        📤 Logout
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="container mx-auto p-6">
+            <div class="fade-in">
+                <!-- Page Header -->
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">⚙️ Settings & Preferences</h1>
+                    <p class="text-gray-600">Customize your ToDo List experience</p>
+                </div>
+
+                <!-- User Profile Section -->
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-2xl font-bold text-gray-800">👤 User Profile</h2>
+                        <button onclick="loadUserProfile()" 
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            🔄 Refresh Profile
+                        </button>
+                    </div>
+                    <div id="user-profile-section">
+                        <div class="loading-container">
+                            <div class="loading-spinner"></div>
+                            <div class="loading-text">Loading profile...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notification Settings -->
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">🔔 Notification Settings</h2>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between py-3 border-b border-gray-200">
+                            <div>
+                                <h3 class="font-medium text-gray-700">Task Due Reminders</h3>
+                                <p class="text-sm text-gray-500">Get notified when tasks are due</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="task-reminders" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between py-3 border-b border-gray-200">
+                            <div>
+                                <h3 class="font-medium text-gray-700">Daily Summary</h3>
+                                <p class="text-sm text-gray-500">Daily overview of tasks and progress</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="daily-summary" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between py-3 border-b border-gray-200">
+                            <div>
+                                <h3 class="font-medium text-gray-700">Achievement Notifications</h3>
+                                <p class="text-sm text-gray-500">Celebrate when you complete goals</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="achievement-notifications" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between py-3">
+                            <div>
+                                <h3 class="font-medium text-gray-700">Habit Reminders</h3>
+                                <p class="text-sm text-gray-500">Reminders to track your habits</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="habit-reminders" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Management Section -->
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">💾 Data Management</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Export Section -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <h3 class="text-lg font-medium text-gray-700 mb-3">📤 Export Data</h3>
+                            <p class="text-sm text-gray-600 mb-4">Download your tasks and habits data</p>
+                            <div class="space-y-3">
+                                <button onclick="exportData('tasks', 'json')" 
+                                        class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors">
+                                    Export Tasks (JSON)
+                                </button>
+                                <button onclick="exportData('tasks', 'csv')" 
+                                        class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors">
+                                    Export Tasks (CSV)
+                                </button>
+                                <button onclick="exportData('habits', 'json')" 
+                                        class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg transition-colors">
+                                    Export Habits (JSON)
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Import Section -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <h3 class="text-lg font-medium text-gray-700 mb-3">📥 Import Data</h3>
+                            <p class="text-sm text-gray-600 mb-4">Import tasks and habits from files</p>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600 mb-2">Import Tasks</label>
+                                    <input type="file" id="import-tasks-file" accept=".json,.csv" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                    <button onclick="importData('tasks')" 
+                                            class="w-full mt-2 bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-lg transition-colors">
+                                        Import Tasks
+                                    </button>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600 mb-2">Import Habits</label>
+                                    <input type="file" id="import-habits-file" accept=".json,.csv" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                    <button onclick="importData('habits')" 
+                                            class="w-full mt-2 bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-lg transition-colors">
+                                        Import Habits
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appearance Settings -->
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">🎨 Appearance</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">Theme</label>
+                            <select id="theme-select" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="light">Light Theme</option>
+                                <option value="dark">Dark Theme</option>
+                                <option value="auto">Auto (System)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">Accent Color</label>
+                            <select id="accent-color-select" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="blue">Blue (Default)</option>
+                                <option value="green">Green</option>
+                                <option value="purple">Purple</option>
+                                <option value="orange">Orange</option>
+                                <option value="red">Red</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">Language</label>
+                            <select id="language-select" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="en">English</option>
+                                <option value="th">ไทย (Thai)</option>
+                                <option value="zh">中文 (Chinese)</option>
+                                <option value="ja">日本語 (Japanese)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">Date Format</label>
+                            <select id="date-format-select" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics & Privacy -->
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">� Analytics & Privacy</h2>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between py-3 border-b border-gray-200">
+                            <div>
+                                <h3 class="font-medium text-gray-700">Usage Analytics</h3>
+                                <p class="text-sm text-gray-500">Help improve the app by sharing usage data</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="usage-analytics" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between py-3 border-b border-gray-200">
+                            <div>
+                                <h3 class="font-medium text-gray-700">Performance Tracking</h3>
+                                <p class="text-sm text-gray-500">Track productivity metrics and trends</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="performance-tracking" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between py-3">
+                            <div>
+                                <h3 class="font-medium text-gray-700">Data Retention</h3>
+                                <p class="text-sm text-gray-500">How long to keep completed tasks and logs</p>
+                            </div>
+                            <select id="data-retention-select" class="px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="30">30 days</option>
+                                <option value="90">90 days</option>
+                                <option value="365">1 year</option>
+                                <option value="forever">Forever</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics Overview -->
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-2xl font-bold text-gray-800">📈 Account Statistics</h2>
+                        <button onclick="loadUserProfile()" 
+                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            🔄 Refresh Stats
+                        </button>
+                    </div>
+                    <div id="account-stats" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="loading-container">
+                            <div class="loading-spinner"></div>
+                            <div class="loading-text">Loading stats...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-wrap gap-4 justify-center mt-8">
+                    <button onclick="saveSettings()" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors">
+                        💾 Save Settings
+                    </button>
+                    <button onclick="resetSettings()" 
+                            class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                        🔄 Reset to Default
+                    </button>
+                    <button onclick="downloadSettings()" 
+                            class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                        � Backup Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_BASE_URL = 'https://to-do-list-api-nrry.vercel.app/api/v1';
+        
+        // Global state
+        let token = localStorage.getItem('token');
+        let userInfo = null;
+        let settings = {
+            notifications: {
+                taskReminders: true,
+                dailySummary: true,
+                achievementNotifications: true,
+                habitReminders: true
+            },
+            appearance: {
+                theme: 'light',
+                accentColor: 'blue',
+                language: 'en',
+                dateFormat: 'MM/DD/YYYY'
+            },
+            privacy: {
+                usageAnalytics: true,
+                performanceTracking: true,
+                dataRetention: '365'
+            }
+        };
+        
+        // Load settings from localStorage
+        function loadStoredSettings() {
+            const storedSettings = localStorage.getItem('app-settings');
+            if (storedSettings) {
+                settings = { ...settings, ...JSON.parse(storedSettings) };
+            }
+        }
+        
+        // Save settings to localStorage
+        function saveStoredSettings() {
+            localStorage.setItem('app-settings', JSON.stringify(settings));
+        }
+        
+        // API Helper Functions
+        async function apiRequest(endpoint, method = 'GET', data = null) {
+            const config = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+            
+            // Add Authorization header if token exists
+            if (token) {
+                config.headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            if (data) {
+                config.body = JSON.stringify(data);
+            }
+            
+            console.log('Making API request:', {
+                url: `${API_BASE_URL}${endpoint}`,
+                method,
+                headers: config.headers,
+                hasToken: !!token,
+                tokenLength: token ? token.length : 0
+            });
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+                
+                console.log('API response received:', {
+                    status: response.status,
+                    ok: response.ok,
+                    statusText: response.statusText,
+                    url: response.url
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        console.warn('Unauthorized access - token may be invalid');
+                        throw new Error('Authentication failed - please login again');
+                    }
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                }
+                
+                const responseData = await response.json();
+                console.log('API response data:', responseData);
+                return responseData;
+            } catch (error) {
+                console.error('API Request failed:', error);
+                throw error;
+            }
+        }
+        
+        // Test Backend Connection
+        async function testBackendConnection() {
+            try {
+                console.log('Testing backend connection...');
+                const response = await fetch(`${API_BASE_URL.replace('/api/v1', '')}/health`, {
+                    method: 'GET'
+                });
+                console.log('Backend health check response:', { 
+                    status: response.status, 
+                    ok: response.ok,
+                    url: response.url 
+                });
+                return response.ok;
+            } catch (error) {
+                console.error('Backend connection failed:', error.message);
+                return false;
+            }
+        }
+        
+        // Load User Profile
+        async function loadUserProfile() {
+            console.log('Loading user profile...', { token: !!token });
+            
+            // Always try to fetch from API first, regardless of token status
+            if (!token) {
+                console.log('No token found - cannot fetch user info');
+                showNotification('Please login to view your profile', 'warning');
+                updateUserGreeting('Guest');
+                displayDemoProfile({ username: 'Guest' });
+                return;
+            }
+            
+            // Always test backend connection and fetch fresh data
+            console.log('Testing backend connection...');
+            const backendConnected = await testBackendConnection();
+            
+            if (!backendConnected) {
+                console.log('Backend not connected - cannot fetch user info');
+                showNotification('Backend server is not available', 'error');
+                updateUserGreeting('User');
+                displayDemoProfile({ username: 'User' });
+                return;
+            }
+            
+            // Always fetch fresh user info from API - no caching
+            try {
+                console.log('Fetching fresh user info from API...');
+                showNotification('Loading user profile...', 'info');
+                
+                const data = await apiRequest('/user/info');
+                console.log('Fresh user info received:', data);
+                
+                if (data && data.user) {
+                    userInfo = data;
+                    updateUserGreeting(data.user.username);
+                    displayUserProfile(data);
+                    displayAccountStats(data.stats);
+                    
+                    // Update cache only after successful fetch
+                    localStorage.setItem('userProfile', JSON.stringify({
+                        username: data.user.username,
+                        id: data.user.id,
+                        memberSince: data.user.created_at
+                    }));
+                    
+                    showNotification('Profile loaded successfully!', 'success');
+                } else {
+                    throw new Error('Invalid user data received from server');
+                }
+            } catch (error) {
+                console.error('Failed to load user profile from API:', error);
+                showNotification('Failed to load profile: ' + error.message, 'error');
+                
+                // Show error state instead of fallback
+                updateUserGreeting('Error');
+                displayErrorProfile(error.message);
+            }
+        }
+        
+        // Display User Profile
+        function displayUserProfile(data) {
+            console.log('Displaying user profile:', data);
+            const profileSection = document.getElementById('user-profile-section');
+            profileSection.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-2">Username</label>
+                        <input type="text" value="${data.user.username}" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50" 
+                               readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-2">Member Since</label>
+                        <input type="text" value="${new Date(data.user.created_at).toLocaleDateString()}" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50" 
+                               readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-2">User ID</label>
+                        <input type="text" value="#${data.user.id}" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50" 
+                               readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-2">Account Status</label>
+                        <span class="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-green-100 text-green-800">
+                            ✅ Active
+                        </span>
+                    </div>
+                </div>
+                <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+                    <small class="text-blue-700">✅ Successfully connected to backend API</small>
+                </div>
+            `;
+            
+            // Update user greeting with username
+            updateUserGreeting(data.user.username);
+        }
+        
+        // Display Demo Profile (for offline mode)
+        function displayDemoProfile(profile) {
+            console.log('Displaying demo profile:', profile);
+            const profileSection = document.getElementById('user-profile-section');
+            profileSection.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-2">Username</label>
+                        <input type="text" value="${profile.username || 'User'}" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50" 
+                               readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-2">Member Since</label>
+                        <input type="text" value="${profile.memberSince || new Date().toLocaleDateString()}" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50" 
+                               readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-2">User ID</label>
+                        <input type="text" value="#${profile.id || 'DEMO'}" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50" 
+                               readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-2">Account Status</label>
+                        <span class="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-orange-100 text-orange-800">
+                            📱 Demo Mode
+                        </span>
+                    </div>
+                </div>
+                <div class="mt-4 p-3 bg-orange-50 rounded-lg">
+                    <small class="text-orange-700">⚠️ Backend not connected - using cached/demo data</small>
+                </div>
+            `;
+            
+            // Display demo stats
+            displayDemoStats();
+        }
+        
+        // Display Error Profile (when API fails)
+        function displayErrorProfile(errorMessage) {
+            console.log('Displaying error profile:', errorMessage);
+            const profileSection = document.getElementById('user-profile-section');
+            profileSection.innerHTML = `
+                <div class="p-6 bg-red-50 rounded-lg border border-red-200">
+                    <div class="flex items-center mb-4">
+                        <div class="text-red-500 text-2xl mr-3">❌</div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-red-800">Failed to Load Profile</h3>
+                            <p class="text-sm text-red-600">${errorMessage}</p>
+                        </div>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button onclick="loadUserProfile()" 
+                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            🔄 Retry
+                        </button>
+                        <button onclick="window.location.href='index.html'" 
+                                class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            🏠 Go to Login
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Display error stats
+            displayErrorStats();
+        }
+        
+        // Display Demo Statistics
+        function displayDemoStats() {
+            const statsSection = document.getElementById('account-stats');
+            statsSection.innerHTML = `
+                <div class="text-center p-4 bg-blue-50 rounded-lg stat-card">
+                    <div class="text-2xl font-bold text-blue-600">12</div>
+                    <div class="text-sm text-gray-600">Total Tasks</div>
+                </div>
+                <div class="text-center p-4 bg-green-50 rounded-lg stat-card">
+                    <div class="text-2xl font-bold text-green-600">8</div>
+                    <div class="text-sm text-gray-600">Completed</div>
+                </div>
+                <div class="text-center p-4 bg-orange-50 rounded-lg stat-card">
+                    <div class="text-2xl font-bold text-orange-600">4</div>
+                    <div class="text-sm text-gray-600">Pending</div>
+                </div>
+                <div class="text-center p-4 bg-purple-50 rounded-lg stat-card">
+                    <div class="text-2xl font-bold text-purple-600">3</div>
+                    <div class="text-sm text-gray-600">Demo Habits</div>
+                </div>
+            `;
+        }
+        
+        // Display Error Statistics
+        function displayErrorStats() {
+            const statsSection = document.getElementById('account-stats');
+            statsSection.innerHTML = `
+                <div class="col-span-full p-6 bg-red-50 rounded-lg border border-red-200">
+                    <div class="text-center">
+                        <div class="text-red-500 text-3xl mb-2">⚠️</div>
+                        <h3 class="text-lg font-semibold text-red-800 mb-1">Unable to Load Statistics</h3>
+                        <p class="text-sm text-red-600">Please check your connection and try again</p>
+                        <button onclick="loadUserProfile()" 
+                                class="mt-3 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            🔄 Retry Loading
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Display Account Statistics
+        function displayAccountStats(stats) {
+            const statsSection = document.getElementById('account-stats');
+            statsSection.innerHTML = `
+                <div class="text-center p-4 bg-blue-50 rounded-lg stat-card">
+                    <div class="text-2xl font-bold text-blue-600">${stats.total_tasks}</div>
+                    <div class="text-sm text-gray-600">Total Tasks</div>
+                </div>
+                <div class="text-center p-4 bg-green-50 rounded-lg stat-card">
+                    <div class="text-2xl font-bold text-green-600">${stats.completed_tasks}</div>
+                    <div class="text-sm text-gray-600">Completed</div>
+                </div>
+                <div class="text-center p-4 bg-orange-50 rounded-lg stat-card">
+                    <div class="text-2xl font-bold text-orange-600">${stats.pending_tasks}</div>
+                    <div class="text-sm text-gray-600">Pending</div>
+                </div>
+                <div class="text-center p-4 bg-purple-50 rounded-lg stat-card">
+                    <div class="text-2xl font-bold text-purple-600">${stats.total_habits}</div>
+                    <div class="text-sm text-gray-600">Total Habits</div>
+                </div>
+            `;
+        }
+        
+        // Export Data Functions
+        async function exportData(type, format) {
+            if (!token) {
+                showNotification('Authentication required for export', 'warning');
+                return;
+            }
+            
+            showNotification(`Exporting ${type} as ${format.toUpperCase()}...`, 'info');
+            
+            try {
+                const endpoint = type === 'tasks' ? '/tasks/export' : '/habits/export';
+                const response = await fetch(`${API_BASE_URL}${endpoint}?format=${format}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Authentication failed - please login again');
+                    }
+                    throw new Error(`Export failed: ${response.status}`);
+                }
+                
+                // Create download link
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `${type}_export_${new Date().toISOString().split('T')[0]}.${format}`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                showNotification(`${type} exported successfully!`, 'success');
+            } catch (error) {
+                console.error('Export error:', error);
+                showNotification(`Export failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Import Data Functions
+        async function importData(type) {
+            if (!token) {
+                showNotification('Authentication required for import', 'warning');
+                return;
+            }
+            
+            const fileInput = document.getElementById(`import-${type}-file`);
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showNotification('Please select a file to import', 'warning');
+                return;
+            }
+            
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            if (!['json', 'csv'].includes(fileExtension)) {
+                showNotification('Only JSON and CSV files are supported', 'error');
+                return;
+            }
+            
+            try {
+                showNotification(`Importing ${type}...`, 'info');
+                const fileContent = await file.text();
+                const endpoint = type === 'tasks' ? '/tasks/import' : '/habits/import';
+                
+                const response = await apiRequest(endpoint, 'POST', {
+                    format: fileExtension,
+                    data: fileContent
+                });
+                
+                if (response) {
+                    showNotification(`${type} imported successfully!`, 'success');
+                    fileInput.value = ''; // Clear file input
+                } else {
+                    throw new Error('Import request failed');
+                }
+            } catch (error) {
+                console.error('Import error:', error);
+                showNotification(`Import failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Apply Settings to UI
+        function applySettings() {
+            // Apply notification settings
+            document.getElementById('task-reminders').checked = settings.notifications.taskReminders;
+            document.getElementById('daily-summary').checked = settings.notifications.dailySummary;
+            document.getElementById('achievement-notifications').checked = settings.notifications.achievementNotifications;
+            document.getElementById('habit-reminders').checked = settings.notifications.habitReminders;
+            
+            // Apply appearance settings
+            document.getElementById('theme-select').value = settings.appearance.theme;
+            document.getElementById('accent-color-select').value = settings.appearance.accentColor;
+            document.getElementById('language-select').value = settings.appearance.language;
+            document.getElementById('date-format-select').value = settings.appearance.dateFormat;
+            
+            // Apply privacy settings
+            document.getElementById('usage-analytics').checked = settings.privacy.usageAnalytics;
+            document.getElementById('performance-tracking').checked = settings.privacy.performanceTracking;
+            document.getElementById('data-retention-select').value = settings.privacy.dataRetention;
+            
+            // Apply theme
+            applyTheme(settings.appearance.theme);
+            applyAccentColor(settings.appearance.accentColor);
+        }
+        
+        // Theme Application
+        function applyTheme(theme) {
+            const body = document.body;
+            body.classList.remove('light-theme', 'dark-theme');
+            
+            if (theme === 'dark') {
+                body.classList.add('dark-theme');
+            } else if (theme === 'light') {
+                body.classList.add('light-theme');
+            } else if (theme === 'auto') {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                body.classList.add(prefersDark ? 'dark-theme' : 'light-theme');
+            }
+        }
+        
+        // Accent Color Application
+        function applyAccentColor(color) {
+            const root = document.documentElement;
+            const colors = {
+                blue: { primary: '#3b82f6', secondary: '#1d4ed8' },
+                green: { primary: '#10b981', secondary: '#047857' },
+                purple: { primary: '#8b5cf6', secondary: '#6d28d9' },
+                orange: { primary: '#f59e0b', secondary: '#d97706' },
+                red: { primary: '#ef4444', secondary: '#dc2626' }
+            };
+            
+            if (colors[color]) {
+                root.style.setProperty('--accent-primary', colors[color].primary);
+                root.style.setProperty('--accent-secondary', colors[color].secondary);
+            }
+        }
+        
+        // Settings Event Listeners
+        function setupEventListeners() {
+            // Notification toggles
+            document.getElementById('task-reminders').addEventListener('change', (e) => {
+                settings.notifications.taskReminders = e.target.checked;
+            });
+            document.getElementById('daily-summary').addEventListener('change', (e) => {
+                settings.notifications.dailySummary = e.target.checked;
+            });
+            document.getElementById('achievement-notifications').addEventListener('change', (e) => {
+                settings.notifications.achievementNotifications = e.target.checked;
+            });
+            document.getElementById('habit-reminders').addEventListener('change', (e) => {
+                settings.notifications.habitReminders = e.target.checked;
+            });
+            
+            // Appearance selects
+            document.getElementById('theme-select').addEventListener('change', (e) => {
+                settings.appearance.theme = e.target.value;
+                applyTheme(e.target.value);
+            });
+            document.getElementById('accent-color-select').addEventListener('change', (e) => {
+                settings.appearance.accentColor = e.target.value;
+                applyAccentColor(e.target.value);
+            });
+            document.getElementById('language-select').addEventListener('change', (e) => {
+                settings.appearance.language = e.target.value;
+            });
+            document.getElementById('date-format-select').addEventListener('change', (e) => {
+                settings.appearance.dateFormat = e.target.value;
+            });
+            
+            // Privacy toggles and selects
+            document.getElementById('usage-analytics').addEventListener('change', (e) => {
+                settings.privacy.usageAnalytics = e.target.checked;
+            });
+            document.getElementById('performance-tracking').addEventListener('change', (e) => {
+                settings.privacy.performanceTracking = e.target.checked;
+            });
+            document.getElementById('data-retention-select').addEventListener('change', (e) => {
+                settings.privacy.dataRetention = e.target.value;
+            });
+        }
+        
+        // Save Settings
+        function saveSettings() {
+            saveStoredSettings();
+            showNotification('Settings saved successfully!', 'success');
+        }
+        
+        // Reset Settings
+        function resetSettings() {
+            if (confirm('Are you sure you want to reset all settings to default? This action cannot be undone.')) {
+                localStorage.removeItem('app-settings');
+                settings = {
+                    notifications: {
+                        taskReminders: true,
+                        dailySummary: true,
+                        achievementNotifications: true,
+                        habitReminders: true
+                    },
+                    appearance: {
+                        theme: 'light',
+                        accentColor: 'blue',
+                        language: 'en',
+                        dateFormat: 'MM/DD/YYYY'
+                    },
+                    privacy: {
+                        usageAnalytics: true,
+                        performanceTracking: true,
+                        dataRetention: '365'
+                    }
+                };
+                applySettings();
+                showNotification('Settings reset to default!', 'info');
+            }
+        }
+        
+        // Download Settings Backup
+        function downloadSettings() {
+            const settingsBlob = new Blob([JSON.stringify(settings, null, 2)], {
+                type: 'application/json'
+            });
+            
+            const url = window.URL.createObjectURL(settingsBlob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `todo_settings_backup_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            showNotification('Settings backup downloaded!', 'success');
+        }
+        
+        // Notification System
+        function showNotification(message, type = 'info') {
+            // Remove existing notifications
+            const existingNotifications = document.querySelectorAll('.notification');
+            existingNotifications.forEach(notification => notification.remove());
+            
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${getNotificationClasses(type)}`;
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <span class="mr-2">${getNotificationIcon(type)}</span>
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                        ✕
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+        
+        function getNotificationClasses(type) {
+            switch (type) {
+                case 'success': return 'bg-green-500 text-white';
+                case 'error': return 'bg-red-500 text-white';
+                case 'warning': return 'bg-orange-500 text-white';
+                case 'info': return 'bg-blue-500 text-white';
+                default: return 'bg-gray-500 text-white';
+            }
+        }
+        
+        function getNotificationIcon(type) {
+            switch (type) {
+                case 'success': return '✅';
+                case 'error': return '❌';
+                case 'warning': return '⚠️';
+                case 'info': return 'ℹ️';
+                default: return '📝';
+            }
+        }
+        
+        function logout() {
+            confirmLogout();
+        }
+        
+        // Update user greeting
+        function updateUserGreeting(username) {
+            const userGreeting = document.getElementById('user-greeting');
+            if (userGreeting) {
+                userGreeting.textContent = `Welcome, ${username}`;
+            }
+        }
+        
+        // Initialize settings page
+        function initSettings() {
+            console.log('Initializing settings page...', { 
+                token: !!token, 
+                tokenLength: token ? token.length : 0 
+            });
+            
+            // Show loading state immediately - don't use cached data
+            updateUserGreeting('Loading...');
+            
+            // Load and apply settings first
+            loadStoredSettings();
+            applySettings();
+            setupEventListeners();
+            
+            // Always fetch fresh user profile - this is the primary action
+            loadUserProfile();
+        }
+        
+        // Start the settings page
+        document.addEventListener('DOMContentLoaded', initSettings);
+    </script>
+</body>
+</html>

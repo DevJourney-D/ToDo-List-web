@@ -1,0 +1,2292 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - ToDo List App</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍅</text></svg>">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="common-notifications.js"></script>
+    <style>
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .excel-bg {
+            background: #f3f4f6;
+            min-height: 100vh;
+        }
+        
+        .header-gradient {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+        }
+        
+        .excel-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        
+        .stats-widget {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .stats-widget:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+        }
+        
+        .calendar-header {
+            background: #f8fafc;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: #e5e7eb;
+        }
+        
+        .calendar-day {
+            background: white;
+            min-height: 80px;
+            padding: 8px;
+            border: none;
+            position: relative;
+        }
+        
+        .calendar-day.today {
+            background: #eff6ff;
+            border: 2px solid #3b82f6;
+        }
+        
+        .calendar-day.other-month {
+            background: #f9fafb;
+            color: #9ca3af;
+        }
+        
+        .task-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 1px;
+        }
+        
+        .task-dot.high { background: #ef4444; }
+        .task-dot.medium { background: #f59e0b; }
+        .task-dot.low { background: #10b981; }
+        
+        .task-item {
+            border-left: 4px solid #e5e7eb;
+            background: white;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 8px;
+            padding: 12px 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        
+        .task-item.high-priority {
+            border-left-color: #ef4444;
+        }
+        
+        .task-item.medium-priority {
+            border-left-color: #f59e0b;
+        }
+        
+        .task-item.low-priority {
+            border-left-color: #10b981;
+        }
+        
+        .priority-badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .priority-high {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .priority-medium {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        .priority-low {
+            background: #d1fae5;
+            color: #059669;
+        }
+        
+        .nav-professional {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-link {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            color: #374151;
+        }
+        
+        .nav-link:hover {
+            background: #f3f4f6;
+        }
+        
+        .nav-link.active {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-professional {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-professional:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        /* Progress bars */
+        .progress-bar {
+            background: #f3f4f6;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 8px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+        
+        /* KPI Cards */
+        .kpi-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease;
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 8px 0;
+        }
+        
+        .kpi-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+        
+        /* Activity timeline */
+        .activity-item {
+            position: relative;
+            padding-left: 40px;
+            padding-bottom: 20px;
+        }
+        
+        .activity-item::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 8px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #3b82f6;
+        }
+        
+        .activity-item::after {
+            content: '';
+            position: absolute;
+            left: 18px;
+            top: 16px;
+            width: 2px;
+            height: calc(100% - 8px);
+            background: #e5e7eb;
+        }
+        
+        .activity-item:last-child::after {
+            display: none;
+        }
+        
+        /* Chart containers */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .chart-small {
+            height: 200px;
+        }
+        
+        /* Trend indicators */
+        .trend-up {
+            color: #10b981;
+        }
+        
+        .trend-down {
+            color: #ef4444;
+        }
+        
+        .trend-neutral {
+            color: #6b7280;
+        }
+        
+        /* Enhanced cards */
+        .insight-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid #f3f4f6;
+            transition: all 0.2s ease;
+        }
+        
+        .insight-card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+            border-color: #e5e7eb;
+        }
+
+        /* Modal Animations */
+        .animate-fade-in {
+            animation: fadeIn 0.2s ease-out;
+        }
+        
+        .animate-fade-out {
+            animation: fadeOut 0.2s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { 
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to { 
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        @keyframes fadeOut {
+            from { 
+                opacity: 1;
+                transform: scale(1);
+            }
+            to { 
+                opacity: 0;
+                transform: scale(0.95);
+            }
+        }
+
+        /* Modal Styles */
+        #delete-modal .bg-white {
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Enhanced Toast Styles */
+        .toast-enter {
+            animation: toastSlideIn 0.3s ease-out;
+        }
+        
+        .toast-exit {
+            animation: toastSlideOut 0.3s ease-in;
+        }
+        
+        @keyframes toastSlideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes toastSlideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        /* Priority indicators */
+        .priority-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .priority-indicator.high {
+            background: linear-gradient(45deg, #ef4444, #dc2626);
+        }
+        
+        .priority-indicator.medium {
+            background: linear-gradient(45deg, #f59e0b, #d97706);
+        }
+        
+        .priority-indicator.low {
+            background: linear-gradient(45deg, #10b981, #059669);
+        }
+        
+        /* Responsive Design for Mobile & Tablet */
+        @media (max-width: 1024px) {
+            .container {
+                padding: 0 16px;
+            }
+            
+            .header-gradient {
+                padding: 16px;
+            }
+            
+            .header-gradient h1 {
+                font-size: 1.5rem;
+            }
+            
+            .grid.grid-cols-4 {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
+            }
+            
+            .grid.grid-cols-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .grid.grid-cols-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-widget {
+                padding: 16px;
+            }
+            
+            .excel-card {
+                padding: 16px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 12px;
+            }
+            
+            .grid.grid-cols-4,
+            .grid.grid-cols-3,
+            .grid.grid-cols-2 {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .header-gradient {
+                padding: 12px;
+                text-align: center;
+            }
+            
+            .header-gradient h1 {
+                font-size: 1.25rem;
+            }
+            
+            .stats-widget {
+                padding: 12px;
+            }
+            
+            .excel-card {
+                padding: 12px;
+            }
+            
+            .text-3xl {
+                font-size: 1.875rem;
+            }
+            
+            .text-2xl {
+                font-size: 1.5rem;
+            }
+            
+            .text-xl {
+                font-size: 1.125rem;
+            }
+            
+            .calendar-grid {
+                grid-template-columns: repeat(7, 1fr);
+                gap: 4px;
+            }
+            
+            .nav-links {
+                flex-wrap: wrap;
+                gap: 8px;
+                justify-content: center;
+            }
+            
+            .nav-link {
+                padding: 6px 12px;
+                font-size: 0.875rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 8px;
+            }
+            
+            .header-gradient {
+                padding: 8px;
+            }
+            
+            .header-gradient h1 {
+                font-size: 1rem;
+            }
+            
+            .stats-widget {
+                padding: 8px;
+            }
+            
+            .excel-card {
+                padding: 8px;
+            }
+            
+            .nav-link {
+                padding: 4px 8px;
+                font-size: 0.75rem;
+            }
+            
+            .btn-professional,
+            .btn-secondary {
+                padding: 6px 12px;
+                font-size: 0.875rem;
+            }
+            
+            .calendar-grid {
+                gap: 2px;
+            }
+            
+            .kpi-card {
+                padding: 12px;
+            }
+        }
+        
+        /* iPad Air specific adjustments */
+        @media (min-width: 820px) and (max-width: 1024px) {
+            .grid.grid-cols-4 {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .grid.grid-cols-3 {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .grid.grid-cols-2 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .grid.grid-cols-1.md\\:grid-cols-4 {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .grid.grid-cols-1.lg\\:grid-cols-2 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .grid.grid-cols-1.lg\\:grid-cols-4 {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .stats-widget {
+                padding: 18px;
+            }
+            
+            .excel-card {
+                padding: 18px;
+            }
+            
+            .nav-professional .flex.items-center.space-x-2 {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+        }
+        
+        /* Enhanced responsive breakpoints */
+        @media (max-width: 640px) {
+            .grid.grid-cols-1.sm\\:grid-cols-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            .grid.grid-cols-1.sm\\:grid-cols-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .grid.grid-cols-1.sm\\:grid-cols-4 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .text-3xl {
+                font-size: 1.5rem;
+            }
+            
+            .text-2xl {
+                font-size: 1.25rem;
+            }
+            
+            .text-xl {
+                font-size: 1.125rem;
+            }
+        }
+        
+        /* Goal cards responsive */
+        @media (max-width: 768px) {
+            .grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-4 {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .goal-item {
+                padding: 12px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-4 {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            
+            .goal-item {
+                padding: 8px;
+            }
+            
+            .goal-item .text-xl {
+                font-size: 1rem;
+            }
+            
+            .goal-item .text-sm {
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body class="excel-bg">
+    <div id="app" class="min-h-screen">
+        <!-- Navigation -->
+        <nav class="nav-professional p-4">
+            <div class="container mx-auto flex justify-between items-center">
+                <div class="flex items-center space-x-8">
+                    <h1 class="text-2xl font-bold text-gray-800">🍅 ToDo List</h1>
+                    <div class="flex items-center space-x-2">
+                        <a href="dashboard.html" class="nav-link active">📊 Dashboard</a>
+                        <a href="tasks.html" class="nav-link">📋 Tasks</a>
+                        <a href="calendar.html" class="nav-link">📅 Calendar</a>
+                        <a href="analytics.html" class="nav-link">📊 Analytics</a>
+                        <a href="profile.html" class="nav-link">👤 Profile</a>
+                        <a href="settings.html" class="nav-link">⚙️ Settings</a>
+                    </div>
+                </div>
+                <div id="nav-menu" class="flex items-center space-x-4">
+                    <span id="user-greeting" class="text-gray-700 font-medium"></span>
+                    <button onclick="logout()" class="btn-professional">
+                        📤 Logout
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="container mx-auto p-6">
+            <div id="content" class="fade-in">
+                <!-- Dashboard content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="api-loading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+        <div class="bg-white p-8 rounded-lg shadow-lg text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div class="loading-text text-lg font-medium text-gray-800">กำลังโหลด...</div>
+            <div class="loading-subtext text-sm text-gray-600 mt-2">กรุณารอสักครู่</div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
+            <div class="p-6">
+                <!-- Icon -->
+                <div class="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                    <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                </div>
+                
+                <!-- Title -->
+                <h3 class="text-xl font-bold text-gray-900 text-center mb-2">ยืนยันการลบงาน</h3>
+                
+                <!-- Message -->
+                <div class="text-center mb-6">
+                    <p class="text-gray-600 mb-3">คุณแน่ใจหรือไม่ที่จะลบงานนี้?</p>
+                    <div class="bg-gray-50 rounded-lg p-3 mb-3">
+                        <p class="font-medium text-gray-900" id="delete-task-name">งานที่จะลบ</p>
+                    </div>
+                    <p class="text-sm text-red-600">⚠️ การดำเนินการนี้ไม่สามารถย้อนกลับได้</p>
+                </div>
+                
+                <!-- Buttons -->
+                <div class="flex space-x-3">
+                    <button id="cancel-delete" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors">
+                        ยกเลิก
+                    </button>
+                    <button id="confirm-delete" class="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors">
+                        ลบงาน
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let currentUser = null;
+        let token = localStorage.getItem('token');
+        const API_BASE = 'https://to-do-list-api-nrry.vercel.app/api/v1';
+
+        // Utility functions
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            const iconMap = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            toast.className = `
+                p-4 rounded-xl shadow-lg text-white mb-3 
+                transform transition-all duration-300 translate-x-full opacity-0
+                ${type === 'error' ? 'bg-gradient-to-r from-red-500 to-red-600' : 
+                  type === 'success' ? 'bg-gradient-to-r from-green-500 to-green-600' : 
+                  type === 'warning' ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
+                  'bg-gradient-to-r from-blue-500 to-blue-600'}
+            `;
+            
+            toast.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <span class="text-lg">${iconMap[type]}</span>
+                    <span class="font-medium">${message}</span>
+                </div>
+            `;
+            
+            const container = document.getElementById('toast-container');
+            container.appendChild(toast);
+            
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+            }, 100);
+            
+            // Animate out
+            setTimeout(() => {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => {
+                    if (container.contains(toast)) {
+                        container.removeChild(toast);
+                    }
+                }, 300);
+            }, 4000);
+        }
+
+        // Simple API call function
+        async function apiCall(endpoint, options = {}) {
+            const config = {
+                method: options.method || 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token && { 'Authorization': `Bearer ${token}` })
+                },
+                ...(options.body && { body: options.body }),
+                ...options
+            };
+
+            const response = await fetch(`${API_BASE}${endpoint}`, config);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            return await response.json();
+        }
+
+        function logout() {
+            confirmLogout();
+        }
+
+        // Helper functions
+        function getThisWeekTasks(tasks) {
+            const today = new Date();
+            const weekStart = new Date(today.setDate(today.getDate() - today.getDay()));
+            const weekEnd = new Date(today.setDate(today.getDate() - today.getDay() + 6));
+            
+            return tasks.filter(task => {
+                if (!task.due_date) return false;
+                const dueDate = new Date(task.due_date);
+                return dueDate >= weekStart && dueDate <= weekEnd;
+            });
+        }
+
+        function getCompletedThisWeek(tasks) {
+            const thisWeekTasks = getThisWeekTasks(tasks);
+            return thisWeekTasks.filter(task => task.is_completed).length;
+        }
+
+        function getTasksByPriority(tasks, priority) {
+            const priorityNum = priority === 'high' ? 3 : priority === 'medium' ? 2 : 1;
+            return tasks.filter(task => task.priority === priorityNum);
+        }
+
+        function getTodayTasks(tasks) {
+            const today = new Date().toISOString().split('T')[0];
+            return tasks.filter(task => {
+                if (!task.due_date) return false;
+                const taskDate = new Date(task.due_date).toISOString().split('T')[0];
+                return taskDate === today;
+            });
+        }
+
+        function getOverdueTasks(tasks) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return tasks.filter(task => {
+                if (!task.due_date || task.is_completed) return false;
+                const dueDate = new Date(task.due_date);
+                return dueDate < today;
+            });
+        }
+
+        function getUpcomingTasks(tasks) {
+            const today = new Date();
+            const nextWeek = new Date();
+            nextWeek.setDate(today.getDate() + 7);
+            
+            return tasks.filter(task => {
+                if (!task.due_date || task.is_completed) return false;
+                const dueDate = new Date(task.due_date);
+                return dueDate > today && dueDate <= nextWeek;
+            });
+        }
+
+        function getTasksForDate(tasks, date) {
+            const dateStr = date.toISOString().split('T')[0];
+            return tasks.filter(task => {
+                if (!task.due_date) return false;
+                const taskDate = new Date(task.due_date).toISOString().split('T')[0];
+                return taskDate === dateStr;
+            });
+        }
+
+        function generateCalendar(date, tasks) {
+            const year = date.getFullYear();
+            const month = date.getMonth();
+            const today = new Date();
+            
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - firstDay.getDay());
+            
+            const endDate = new Date(lastDay);
+            endDate.setDate(endDate.getDate() + (6 - lastDay.getDay()));
+            
+            let html = `
+                <div class="calendar-header p-3">
+                    <div class="calendar-grid text-center font-medium text-gray-600">
+                        <div class="p-2">Sun</div>
+                        <div class="p-2">Mon</div>
+                        <div class="p-2">Tue</div>
+                        <div class="p-2">Wed</div>
+                        <div class="p-2">Thu</div>
+                        <div class="p-2">Fri</div>
+                        <div class="p-2">Sat</div>
+                    </div>
+                </div>
+                <div class="calendar-grid">
+            `;
+            
+            const current = new Date(startDate);
+            while (current <= endDate) {
+                const isToday = current.toDateString() === today.toDateString();
+                const isCurrentMonth = current.getMonth() === month;
+                const dayTasks = getTasksForDate(tasks, current);
+                
+                html += `
+                    <div class="calendar-day ${isToday ? 'today' : ''} ${!isCurrentMonth ? 'other-month' : ''}">
+                        <div class="font-medium mb-1">${current.getDate()}</div>
+                        <div class="flex flex-wrap">
+                            ${dayTasks.map(task => {
+                                const priorityText = task.priority === 3 ? 'high' : task.priority === 2 ? 'medium' : 'low';
+                                return `<span class="task-dot ${priorityText}" title="${task.task_name || ''}"></span>`;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+                
+                current.setDate(current.getDate() + 1);
+            }
+            
+            html += '</div>';
+            return html;
+        }
+
+        function generateTaskList(tasks) {
+            if (!tasks || tasks.length === 0) {
+                return `
+                    <div class="text-center text-gray-500 py-8">
+                        <div class="text-3xl mb-2">📝</div>
+                        <p class="text-sm">-</p>
+                        <button onclick="addNewTask()" class="text-blue-600 hover:text-blue-800 text-sm mt-2 underline">
+                            + เพิ่มงานใหม่
+                        </button>
+                    </div>
+                `;
+            }
+            
+            function getPriorityText(priority) {
+                switch(priority) {
+                    case 3: return 'high';
+                    case 2: return 'medium';
+                    case 1: return 'low';
+                    default: return 'low';
+                }
+            }
+            
+            return tasks.map(task => {
+                const priorityText = getPriorityText(task.priority);
+                return `
+                <div class="task-item ${priorityText}-priority">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3">
+                                <input type="checkbox" ${task.is_completed ? 'checked' : ''} 
+                                       onchange="toggleTask(${task.id}, this.checked)"
+                                       class="w-4 h-4 text-blue-600 rounded">
+                                <h4 class="font-medium text-gray-900 ${task.is_completed ? 'line-through' : ''}">${task.task_name || 'Untitled Task'}</h4>
+                                <span class="priority-badge priority-${priorityText}">${priorityText}</span>
+                            </div>
+                            ${task.description ? `<p class="text-sm text-gray-600 mt-1 ml-7">${task.description}</p>` : ''}
+                            ${task.due_date ? `<p class="text-xs text-gray-500 mt-1 ml-7">ครบกำหนด: ${new Date(task.due_date).toLocaleDateString()}</p>` : ''}
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="editTask(${task.id})" class="text-blue-600 hover:text-blue-800">✏️</button>
+                            <button onclick="deleteTask(${task.id})" class="text-red-600 hover:text-red-800">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+            `;}).join('');
+        }
+
+        // Sequential data loading - Load user info first, then other data
+        // Test backend connection
+        async function testBackendConnection() {
+            try {
+                const response = await fetch('https://to-do-list-api-nrry.vercel.app/health');
+                return response.ok;
+            } catch (error) {
+                console.warn('Backend connection failed:', error);
+                return false;
+            }
+        }
+        
+        // Render demo dashboard when backend is not available
+        function renderDemoDashboard() {
+            const demoUserInfo = {
+                user: { username: 'Demo User', id: 1 },
+                stats: { total_tasks: 25, completed_tasks: 18, pending_tasks: 7 }
+            };
+            
+            const demoTasks = [
+                {
+                    id: 1,
+                    title: 'Demo Task 1',
+                    description: 'This is a demo task',
+                    status: 'pending',
+                    priority: 'high',
+                    due_date: new Date().toISOString().split('T')[0]
+                },
+                {
+                    id: 2,
+                    title: 'Demo Task 2', 
+                    description: 'Another demo task',
+                    status: 'completed',
+                    priority: 'medium',
+                    due_date: new Date().toISOString().split('T')[0]
+                }
+            ];
+            
+            const demoSummary = calculateSummaryFromTasks(demoTasks);
+            
+            renderCompleteDashboard(demoUserInfo, demoTasks, demoSummary, null);
+        }
+        
+        async function loadDashboardData() {
+            try {
+                showGlobalLoading('กำลังโหลดข้อมูล Dashboard...');
+                
+                // Check backend connection first
+                const backendConnected = await testBackendConnection();
+                
+                if (!backendConnected) {
+                    console.log('Backend not available, using demo data');
+                    showNotification('Backend offline, showing demo dashboard', 'warning');
+                    hideGlobalLoading();
+                    renderDemoDashboard();
+                    return;
+                }
+                
+                // Step 1: Load user info first (critical)
+                let userInfo = null;
+                try {
+                    updateGlobalLoading('กำลังโหลดข้อมูลผู้ใช้...');
+                    userInfo = await apiCall('/user/info');
+                    currentUser = userInfo.user;
+                    updateUserGreeting(userInfo.user.username);
+                    showToast(`สวัสดี ${userInfo.user.username}!`, 'success');
+                } catch (error) {
+                    console.warn('Failed to load user info:', error.message);
+                    handleApiError(error, 'การโหลดข้อมูลผู้ใช้');
+                    userInfo = { user: { username: 'User', id: 1 }, stats: { total_tasks: 0, completed_tasks: 0, pending_tasks: 0 } };
+                }
+
+                // Step 2: Load tasks (important)
+                updateGlobalLoading('กำลังโหลดรายการงาน...');
+                let tasks = [];
+                try {
+                    const tasksResponse = await apiCall('/tasks');
+                    tasks = tasksResponse.tasks || tasksResponse || [];
+                    console.log('Tasks loaded from API:', tasks.length);
+                    // Render basic task view immediately
+                    renderBasicDashboard(userInfo, tasks);
+                } catch (error) {
+                    console.warn('Failed to load tasks:', error.message);
+                    handleApiError(error, 'การโหลดรายการงาน');
+                    tasks = [];
+                    renderBasicDashboard(userInfo, tasks);
+                }
+
+                // Step 3: Load dashboard summary (optional)
+                updateGlobalLoading('กำลังโหลดสรุปข้อมูล...');
+                let summary = null;
+                try {
+                    summary = await apiCall('/dashboard/summary');
+                    console.log('Dashboard summary loaded:', summary);
+                } catch (error) {
+                    console.warn('Failed to load summary:', error.message);
+                    summary = calculateSummaryFromTasks(tasks);
+                }
+
+                // Step 4: Load additional analytics data
+                updateGlobalLoading('กำลังโหลดข้อมูลการวิเคราะห์...');
+                let analytics = null;
+                try {
+                    analytics = await apiCall('/analytics/overview');
+                    console.log('Analytics overview loaded:', analytics);
+                } catch (error) {
+                    console.warn('Failed to load analytics:', error.message);
+                    analytics = null;
+                }
+
+                // Step 5: Render complete dashboard
+                hideGlobalLoading();
+                renderCompleteDashboard(userInfo, tasks, summary, analytics);
+                
+                // Step 6: Load goals after dashboard is rendered
+                loadQuickGoals();
+                
+                if (tasks.length === 0) {
+                    showNotification('ยังไม่มีงานใดๆ เริ่มสร้างงานแรกของคุณ!', 'info');
+                } else {
+                    showToast(`โหลดข้อมูล Dashboard เรียบร้อย (${tasks.length} งาน)`, 'success');
+                }
+
+            } catch (error) {
+                console.error('Critical error:', error);
+                hideGlobalLoading();
+                handleApiError(error, 'Dashboard', true);
+                renderErrorState();
+            }
+        }
+
+        // Goals Management for Dashboard
+        function loadQuickGoals() {
+            try {
+                const userGoals = JSON.parse(localStorage.getItem('userGoals') || '[]');
+                const quickGoalsSection = document.getElementById('quick-goals-section');
+                
+                if (!quickGoalsSection) return;
+                
+                if (userGoals.length === 0) {
+                    quickGoalsSection.innerHTML = `
+                        <div class="text-center text-gray-500 py-6">
+                            <div class="text-3xl mb-2">🎯</div>
+                            <p class="mb-2">ยังไม่มีเป้าหมาย</p>
+                            <a href="profile.html" class="text-blue-500 hover:text-blue-700 underline">
+                                สร้างเป้าหมายแรก
+                            </a>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Show top 3 goals based on priority (incomplete goals first, then by progress)
+                const sortedGoals = userGoals
+                    .map((goal, index) => ({ ...goal, index }))
+                    .sort((a, b) => {
+                        const aProgress = (a.progress / a.target) * 100;
+                        const bProgress = (b.progress / b.target) * 100;
+                        
+                        // Incomplete goals first
+                        if (aProgress < 100 && bProgress >= 100) return -1;
+                        if (aProgress >= 100 && bProgress < 100) return 1;
+                        
+                        // Then by progress (lower progress first for incomplete goals)
+                        if (aProgress < 100 && bProgress < 100) return aProgress - bProgress;
+                        
+                        // Completed goals by progress (higher first)
+                        return bProgress - aProgress;
+                    })
+                    .slice(0, 3);
+                
+                const goalsHtml = sortedGoals.map(goal => {
+                    const progressPercent = Math.round((goal.progress / goal.target) * 100);
+                    const isCompleted = progressPercent >= 100;
+                    const statusColor = isCompleted ? 'green' : progressPercent >= 70 ? 'yellow' : 'blue';
+                    
+                    return `
+                        <div class="bg-${statusColor}-50 border border-${statusColor}-200 rounded-lg p-4 transition-all hover:shadow-md">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center">
+                                    <span class="text-xl mr-2">${goal.icon}</span>
+                                    <div>
+                                        <div class="font-medium text-gray-800">${goal.title}</div>
+                                        <div class="text-xs text-gray-600">${goal.description.substring(0, 50)}${goal.description.length > 50 ? '...' : ''}</div>
+                                    </div>
+                                </div>
+                                ${isCompleted ? '<span class="text-green-600 text-lg">✅</span>' : ''}
+                            </div>
+                            
+                            <div class="mb-2">
+                                <div class="flex justify-between text-xs text-gray-600 mb-1">
+                                    <span>${goal.progress}/${goal.target}</span>
+                                    <span>${progressPercent}%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-${statusColor}-500 h-2 rounded-full transition-all duration-300" 
+                                         style="width: ${Math.min(progressPercent, 100)}%"></div>
+                                </div>
+                            </div>
+                            
+                            ${goal.deadline ? `
+                                <div class="text-xs text-gray-500">
+                                    ⏰ ${goal.deadline}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+                
+                quickGoalsSection.innerHTML = goalsHtml;
+                
+            } catch (error) {
+                console.error('Error loading quick goals:', error);
+                const quickGoalsSection = document.getElementById('quick-goals-section');
+                if (quickGoalsSection) {
+                    quickGoalsSection.innerHTML = `
+                        <div class="text-center text-gray-500 py-4">
+                            <p>เกิดข้อผิดพลาดในการโหลดเป้าหมาย</p>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function showLoadingOverlay(message) {
+            const overlay = document.getElementById('api-loading');
+            if (overlay) {
+                overlay.style.display = 'flex';
+                const messageEl = overlay.querySelector('.loading-text');
+                if (messageEl) messageEl.textContent = message;
+            }
+        }
+
+        function hideLoadingOverlay() {
+            const overlay = document.getElementById('api-loading');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+        }
+
+        function updateUserGreeting(username) {
+            const greetingEl = document.getElementById('user-greeting');
+            if (greetingEl) {
+                greetingEl.textContent = `Welcome, ${username}`;
+            }
+        }
+
+        // Render functions
+        function renderBasicDashboard(userInfo, tasks) {
+            const content = document.getElementById('content');
+            if (!content) return;
+
+            const stats = calculateBasicStats(userInfo, tasks);
+            const todayTasks = getTodayTasks(tasks);
+            const upcomingTasks = getUpcomingTasks(tasks);
+
+            content.innerHTML = `
+                <!-- Page Header -->
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">📊 Dashboard Overview</h1>
+                    <p class="text-gray-600">${new Date().toLocaleDateString()}</p>
+                </div>
+                
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="stats-widget p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">งานทั้งหมด</p>
+                                <p class="text-2xl font-bold text-gray-900">${stats.totalTasks}</p>
+                            </div>
+                            <div class="p-3 bg-blue-100 rounded-lg">
+                                <span class="text-2xl">📋</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-widget p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">งานที่เสร็จแล้ว</p>
+                                <p class="text-2xl font-bold text-green-600">${stats.completedTasks}</p>
+                            </div>
+                            <div class="p-3 bg-green-100 rounded-lg">
+                                <span class="text-2xl">✅</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-widget p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">งานวันนี้</p>
+                                <p class="text-2xl font-bold text-orange-600">${todayTasks.length}</p>
+                            </div>
+                            <div class="p-3 bg-orange-100 rounded-lg">
+                                <span class="text-2xl">📅</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-widget p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">อัตราความสำเร็จ</p>
+                                <p class="text-2xl font-bold text-blue-600">${stats.completionRate}%</p>
+                            </div>
+                            <div class="p-3 bg-blue-100 rounded-lg">
+                                <span class="text-2xl">📊</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Task Lists -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Today's Tasks -->
+                    <div class="excel-card p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">📅 งานวันนี้</h3>
+                        <div class="space-y-3">
+                            ${generateTaskList(todayTasks.slice(0, 5))}
+                        </div>
+                    </div>
+                    
+                    <!-- Upcoming Tasks -->
+                    <div class="excel-card p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">🔜 งานที่กำลังจะมาถึง</h3>
+                        <div class="space-y-3">
+                            ${generateTaskList(upcomingTasks.slice(0, 5))}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Goals Section -->
+                <div class="excel-card p-6 mt-8">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">🎯 เป้าหมายด่วน</h3>
+                        <a href="profile.html" class="text-blue-600 hover:text-blue-800 text-sm">ดูทั้งหมด →</a>
+                    </div>
+                    <div id="quick-goals-section">
+                        <!-- Goals will be loaded here -->
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderCompleteDashboard(userInfo, tasks, summary) {
+            const content = document.getElementById('content');
+            if (!content) return;
+
+            const stats = calculateBasicStats(userInfo, tasks);
+            const todayTasks = getTodayTasks(tasks);
+            const upcomingTasks = getUpcomingTasks(tasks);
+            const overdueTasks = getOverdueTasks(tasks);
+            const thisWeekTasks = getThisWeekTasks(tasks);
+            const completedThisWeek = getCompletedThisWeek(tasks);
+            const highPriorityTasks = getTasksByPriority(tasks, 'high');
+            const mediumPriorityTasks = getTasksByPriority(tasks, 'medium');
+            const lowPriorityTasks = getTasksByPriority(tasks, 'low');
+            
+            const calendarHtml = generateCalendar(new Date(), tasks);
+            const insights = generateInsights(tasks, stats);
+            const recentActivity = generateRecentActivity(tasks);
+            const productivityMetrics = calculateProductivityMetrics(tasks);
+
+            content.innerHTML = `
+                <!-- Page Header with Welcome Message -->
+                <div class="mb-8">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-800 mb-2">📊 Dashboard Overview</h1>
+                            <p class="text-gray-600">${new Date().toLocaleDateString('th-TH', { 
+                                weekday: 'long', 
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric' 
+                            })}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-500">สถานะล่าสุด</p>
+                            <p class="text-lg font-semibold text-gray-800">${getGreetingTime()}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Stats with Enhanced Design -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="stats-widget p-6 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-16 h-16 bg-blue-100 rounded-full -mr-8 -mt-8 opacity-20"></div>
+                        <div class="flex items-center justify-between relative z-10">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">งานทั้งหมด</p>
+                                <p class="text-2xl font-bold text-gray-900">${stats.totalTasks}</p>
+                                <p class="text-xs text-gray-500 mt-1">+${getTodayCreatedTasks(tasks)} วันนี้</p>
+                            </div>
+                            <div class="p-3 bg-blue-100 rounded-lg">
+                                <span class="text-2xl">📋</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-widget p-6 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-16 h-16 bg-green-100 rounded-full -mr-8 -mt-8 opacity-20"></div>
+                        <div class="flex items-center justify-between relative z-10">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">งานที่เสร็จแล้ว</p>
+                                <p class="text-2xl font-bold text-green-600">${stats.completedTasks}</p>
+                                <p class="text-xs text-gray-500 mt-1">${stats.completionRate}% ความสำเร็จ</p>
+                            </div>
+                            <div class="p-3 bg-green-100 rounded-lg">
+                                <span class="text-2xl">✅</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-widget p-6 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-16 h-16 bg-orange-100 rounded-full -mr-8 -mt-8 opacity-20"></div>
+                        <div class="flex items-center justify-between relative z-10">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">งานที่ค้างอยู่</p>
+                                <p class="text-2xl font-bold text-orange-600">${stats.pendingTasks}</p>
+                                <p class="text-xs text-gray-500 mt-1">${overdueTasks.length} เลยกำหนด</p>
+                            </div>
+                            <div class="p-3 bg-orange-100 rounded-lg">
+                                <span class="text-2xl">⏳</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-widget p-6 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-16 h-16 bg-purple-100 rounded-full -mr-8 -mt-8 opacity-20"></div>
+                        <div class="flex items-center justify-between relative z-10">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">สัปดาห์นี้</p>
+                                <p class="text-2xl font-bold text-purple-600">${completedThisWeek}</p>
+                                <p class="text-xs text-gray-500 mt-1">จาก ${thisWeekTasks.length} งาน</p>
+                            </div>
+                            <div class="p-3 bg-purple-100 rounded-lg">
+                                <span class="text-2xl">📅</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI Dashboard Section -->
+                <div class="mb-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">📈 ข้อมูลเชิงลึก</h2>
+                        <button onclick="toggleKPIDetails()" class="btn-secondary px-4 py-2 text-sm">
+                            <span id="kpi-toggle">แสดงรายละเอียด</span>
+                        </button>
+                    </div>
+                    
+                    <!-- KPI Cards Row 1 -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+                        <div class="kpi-card">
+                            <div class="kpi-label">ประสิทธิภาพ</div>
+                            <div class="kpi-value">${productivityMetrics.productivity}%</div>
+                            <div class="text-sm opacity-75">วัดจากความเร็ว</div>
+                        </div>
+                        
+                        <div class="kpi-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            <div class="kpi-label">เฉลี่ยต่อวัน</div>
+                            <div class="kpi-value">${productivityMetrics.averagePerDay}</div>
+                            <div class="text-sm opacity-75">งาน/วัน</div>
+                        </div>
+                        
+                        <div class="kpi-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                            <div class="kpi-label">ตรงเวลา</div>
+                            <div class="kpi-value">${productivityMetrics.onTimeRate}%</div>
+                            <div class="text-sm opacity-75">ส่งตรงกำหนด</div>
+                        </div>
+                        
+                        <div class="kpi-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                            <div class="kpi-label">คะแนนคุณภาพ</div>
+                            <div class="kpi-value">${productivityMetrics.qualityScore}%</div>
+                            <div class="text-sm opacity-75">ตาม Priority</div>
+                        </div>
+                        
+                        <div class="kpi-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                            <div class="kpi-label">เทรนด์</div>
+                            <div class="kpi-value ${productivityMetrics.trend > 0 ? 'trend-up' : 'trend-down'}">${productivityMetrics.trend > 0 ? '+' : ''}${productivityMetrics.trend}%</div>
+                            <div class="text-sm opacity-75">เทียบสัปดาห์ก่อน</div>
+                        </div>
+                        
+                        <div class="kpi-card" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); color: #374151;">
+                            <div class="kpi-label">Focus Score</div>
+                            <div class="kpi-value">${productivityMetrics.focusScore}%</div>
+                            <div class="text-sm opacity-75">ระดับโฟกัส</div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Analytics (Hidden by default) -->
+                    <div id="kpi-details" class="hidden">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            <!-- Priority Analysis -->
+                            <div class="insight-card p-6">
+                                <h3 class="text-lg font-bold text-gray-800 mb-4">🎯 การกระจายตาม Priority</h3>
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <div class="priority-indicator high"></div>
+                                            <span class="text-sm font-medium">High Priority</span>
+                                        </div>
+                                        <div class="flex items-center space-x-4">
+                                            <span class="text-sm text-gray-600">${highPriorityTasks.length} งาน</span>
+                                            <div class="w-24 bg-gray-200 rounded-full h-2">
+                                                <div class="bg-red-500 h-2 rounded-full" style="width: ${(highPriorityTasks.length / stats.totalTasks * 100)}%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <div class="priority-indicator medium"></div>
+                                            <span class="text-sm font-medium">Medium Priority</span>
+                                        </div>
+                                        <div class="flex items-center space-x-4">
+                                            <span class="text-sm text-gray-600">${mediumPriorityTasks.length} งาน</span>
+                                            <div class="w-24 bg-gray-200 rounded-full h-2">
+                                                <div class="bg-yellow-500 h-2 rounded-full" style="width: ${(mediumPriorityTasks.length / stats.totalTasks * 100)}%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <div class="priority-indicator low"></div>
+                                            <span class="text-sm font-medium">Low Priority</span>
+                                        </div>
+                                        <div class="flex items-center space-x-4">
+                                            <span class="text-sm text-gray-600">${lowPriorityTasks.length} งาน</span>
+                                            <div class="w-24 bg-gray-200 rounded-full h-2">
+                                                <div class="bg-green-500 h-2 rounded-full" style="width: ${(lowPriorityTasks.length / stats.totalTasks * 100)}%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Weekly Progress -->
+                            <div class="insight-card p-6">
+                                <h3 class="text-lg font-bold text-gray-800 mb-4">📊 ความคืบหน้าสัปดาห์</h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <div class="flex justify-between text-sm text-gray-600 mb-2">
+                                            <span>งานที่เสร็จแล้ว</span>
+                                            <span>${completedThisWeek}/${thisWeekTasks.length}</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill bg-green-500" style="width: ${thisWeekTasks.length > 0 ? (completedThisWeek / thisWeekTasks.length * 100) : 0}%"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <div class="flex justify-between text-sm text-gray-600 mb-2">
+                                            <span>ความคืบหน้าโดยรวม</span>
+                                            <span>${stats.completionRate}%</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill bg-blue-500" style="width: ${stats.completionRate}%"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-3 gap-4 mt-4">
+                                        <div class="text-center">
+                                            <div class="text-lg font-bold text-green-600">${getTodayCompletedTasks(tasks)}</div>
+                                            <div class="text-xs text-gray-500">เสร็จวันนี้</div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="text-lg font-bold text-orange-600">${todayTasks.length}</div>
+                                            <div class="text-xs text-gray-500">งานวันนี้</div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="text-lg font-bold text-purple-600">${upcomingTasks.length}</div>
+                                            <div class="text-xs text-gray-500">กำลังมาถึง</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Insights Section -->
+                        <div class="insight-card p-6 mb-6">
+                            <h3 class="text-lg font-bold text-gray-800 mb-4">� ข้อเสนอแนะ</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                ${insights}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Dashboard Layout -->
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                    <!-- Today's Tasks (2 columns) -->
+                    <div class="lg:col-span-2">
+                        <div class="excel-card p-6 mb-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-medium text-gray-900">📅 งานวันนี้</h3>
+                                <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">${todayTasks.length} งาน</span>
+                            </div>
+                            <div class="space-y-3 max-h-96 overflow-y-auto">
+                                ${generateTaskList(todayTasks)}
+                            </div>
+                            ${todayTasks.length === 0 ? `
+                                <div class="text-center py-8">
+                                    <div class="text-4xl mb-2">🎉</div>
+                                    <p class="text-gray-500">-</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <!-- Weekly Calendar -->
+                        <div class="excel-card p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-medium text-gray-900">📅 ปฏิทินสัปดาห์นี้</h3>
+                                <button onclick="showFullCalendar()" class="text-blue-600 text-sm hover:underline">ดูเต็ม</button>
+                            </div>
+                            ${generateWeeklyCalendar(tasks)}
+                        </div>
+                    </div>
+                    
+                    <!-- Sidebar (2 columns) -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Quick Actions -->
+                        <div class="excel-card p-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">⚡ การดำเนินการด่วน</h3>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="addNewTask()" class="btn-professional text-sm p-3">➕ เพิ่มงานใหม่</button>
+                                <button onclick="viewAllTasks()" class="btn-secondary text-sm p-3">📋 ดูงานทั้งหมด</button>
+                                <button onclick="showAnalytics()" class="btn-secondary text-sm p-3">📊 รายงาน</button>
+                                <button onclick="exportData()" class="btn-secondary text-sm p-3">📤 Export</button>
+                            </div>
+                        </div>
+
+                        <!-- Upcoming Tasks -->
+                        <div class="excel-card p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-medium text-gray-900">🔜 งานที่กำลังมาถึง</h3>
+                                <span class="text-sm text-gray-500">${upcomingTasks.length} งาน</span>
+                            </div>
+                            <div class="space-y-3 max-h-64 overflow-y-auto">
+                                ${generateTaskList(upcomingTasks.slice(0, 5))}
+                            </div>
+                        </div>
+                        
+                        ${overdueTasks.length > 0 ? `
+                        <!-- Overdue Tasks -->
+                        <div class="excel-card p-6 border-l-4 border-red-500">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-medium text-red-600">🚨 งานที่เลยกำหนด</h3>
+                                <span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">${overdueTasks.length}</span>
+                            </div>
+                            <div class="space-y-3 max-h-48 overflow-y-auto">
+                                ${generateTaskList(overdueTasks.slice(0, 3))}
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <!-- Recent Activity -->
+                        <div class="excel-card p-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">🕒 กิจกรรมล่าสุด</h3>
+                            <div class="space-y-3">
+                                ${recentActivity}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderErrorState() {
+            const content = document.getElementById('content');
+            if (!content) return;
+
+            content.innerHTML = createErrorState({
+                title: 'ไม่สามารถโหลด Dashboard ได้',
+                description: 'เกิดข้อผิดพลาดในการโหลดข้อมูล กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตและลองใหม่อีกครั้ง',
+                retryCallback: 'loadDashboardData()'
+            });
+        }
+
+        // Helper functions
+        function calculateBasicStats(userInfo, tasks) {
+            const totalTasks = tasks.length;
+            const completedTasks = tasks.filter(t => t.is_completed).length;
+            const pendingTasks = totalTasks - completedTasks;
+            const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+            return {
+                totalTasks,
+                completedTasks,
+                pendingTasks,
+                completionRate
+            };
+        }
+
+        function calculateSummaryFromTasks(tasks) {
+            const completed = tasks.filter(t => t.is_completed).length;
+            return {
+                total_tasks: tasks.length,
+                completed_tasks: completed,
+                pending_tasks: tasks.length - completed,
+                weekly_completed: getCompletedThisWeek(tasks)
+            };
+        }
+
+        // Task interaction functions
+        async function toggleTask(taskId, isCompleted) {
+            try {
+                await apiCall(`/tasks/${taskId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ is_completed: isCompleted })
+                });
+                showToast('อัปเดตงานเรียบร้อย', 'success');
+                // Reload dashboard data
+                setTimeout(() => loadDashboardData(), 500);
+            } catch (error) {
+                showToast('ไม่สามารถอัปเดตงานได้', 'error');
+                console.error('Toggle task error:', error);
+            }
+        }
+
+        async function editTask(taskId) {
+            // Redirect to tasks page with edit mode
+            window.location.href = `tasks.html?edit=${taskId}`;
+        }
+
+        async function deleteTask(taskId) {
+            try {
+                // หาข้อมูลงานจาก API หรือจากหน้าเว็บ
+                let taskToDelete = null;
+                let taskName = 'งานนี้';
+                
+                // พยายามหาข้อมูลงานจากที่แสดงอยู่ในหน้า
+                const taskElements = document.querySelectorAll('[onclick*="deleteTask"]');
+                for (let element of taskElements) {
+                    if (element.onclick.toString().includes(taskId)) {
+                        const taskItem = element.closest('.task-item');
+                        if (taskItem) {
+                            const nameElement = taskItem.querySelector('h4');
+                            if (nameElement) {
+                                taskName = nameElement.textContent.trim();
+                            }
+                        }
+                        break;
+                    }
+                }
+                
+                // แสดง Modal ยืนยันการลบ
+                showDeleteModal(taskId, taskName);
+                
+            } catch (error) {
+                showToast('เกิดข้อผิดพลาดในการเตรียมลบงาน', 'error');
+                console.error('Delete task preparation error:', error);
+            }
+        }
+
+        function showDeleteModal(taskId, taskName) {
+            const modal = document.getElementById('delete-modal');
+            const taskNameElement = document.getElementById('delete-task-name');
+            const confirmBtn = document.getElementById('confirm-delete');
+            const cancelBtn = document.getElementById('cancel-delete');
+            
+            // ตั้งค่าชื่องาน
+            taskNameElement.textContent = taskName;
+            
+            // แสดง Modal
+            modal.style.display = 'flex';
+            modal.classList.add('animate-fade-in');
+            
+            // ฟังก์ชันปิด Modal
+            const closeModal = () => {
+                modal.classList.add('animate-fade-out');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                    modal.classList.remove('animate-fade-in', 'animate-fade-out');
+                }, 200);
+            };
+            
+            // Event Listeners (ลบ listeners เก่าก่อน)
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+            
+            // ปุ่มยกเลิก
+            newCancelBtn.addEventListener('click', () => {
+                closeModal();
+                showToast('ยกเลิกการลบงาน', 'info');
+            });
+            
+            // ปุ่มยืนยันการลบ
+            newConfirmBtn.addEventListener('click', async () => {
+                closeModal();
+                await performDeleteTask(taskId, taskName);
+            });
+            
+            // ปิดเมื่อคลิกพื้นหลัง
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                    showToast('ยกเลิกการลบงาน', 'info');
+                }
+            });
+        }
+
+        async function performDeleteTask(taskId, taskName) {
+            try {
+                showToast('กำลังลบงาน...', 'info');
+                
+                await apiCall(`/tasks/${taskId}`, {
+                    method: 'DELETE'
+                });
+                
+                showToast(`ลบงาน "${taskName}" เรียบร้อยแล้ว`, 'success');
+                
+                // Reload dashboard data
+                setTimeout(() => loadDashboardData(), 500);
+                
+            } catch (error) {
+                showToast('ไม่สามารถลบงานได้ กรุณาลองใหม่อีกครั้ง', 'error');
+                console.error('Delete task error:', error);
+            }
+        }
+
+        // Enhanced helper functions for new features
+        function getGreetingTime() {
+            const hour = new Date().getHours();
+            if (hour < 12) return '☀️ สวัสดีตอนเช้า';
+            if (hour < 17) return '🌤️ สวัสดีตอนบ่าย';
+            return '🌙 สวัสดีตอนเย็น';
+        }
+
+        function getTodayCreatedTasks(tasks) {
+            const today = new Date().toISOString().split('T')[0];
+            return tasks.filter(task => {
+                if (!task.created_at) return false;
+                const createdDate = new Date(task.created_at).toISOString().split('T')[0];
+                return createdDate === today;
+            }).length;
+        }
+
+        function getTodayCompletedTasks(tasks) {
+            const today = new Date().toISOString().split('T')[0];
+            return tasks.filter(task => {
+                if (!task.is_completed || !task.updated_at) return false;
+                const completedDate = new Date(task.updated_at).toISOString().split('T')[0];
+                return completedDate === today;
+            }).length;
+        }
+
+        async function calculateProductivityMetrics(tasks) {
+            const completedTasks = tasks.filter(t => t.is_completed);
+            const totalTasks = tasks.length;
+            
+            // Return empty metrics if no tasks
+            if (totalTasks === 0) {
+                return {
+                    productivity: 0,
+                    averagePerDay: 0,
+                    onTimeRate: 0,
+                    qualityScore: 0,
+                    trend: 0,
+                    focusScore: 0
+                };
+            }
+            
+            // Productivity score based on completion rate and priority weights
+            let weightedCompleted = 0;
+            let totalWeight = 0;
+            
+            tasks.forEach(task => {
+                const weight = task.priority || 1;
+                totalWeight += weight;
+                if (task.is_completed) {
+                    weightedCompleted += weight;
+                }
+            });
+            
+            const productivity = totalWeight > 0 ? Math.round((weightedCompleted / totalWeight) * 100) : 0;
+            
+            // Average tasks per day (last 7 days)
+            const averagePerDay = Math.round((completedTasks.length / 7) * 10) / 10;
+            
+            // On-time completion rate - คำนวณจากข้อมูลจริง
+            const onTimeRate = calculateOnTimeRateFromTasks(tasks);
+            
+            // Quality score based on priority distribution
+            const highPriorityCompleted = tasks.filter(t => t.is_completed && t.priority === 3).length;
+            const highPriorityTotal = tasks.filter(t => t.priority === 3).length;
+            const qualityScore = highPriorityTotal > 0 ? Math.round((highPriorityCompleted / highPriorityTotal) * 100) : 100;
+            
+            // Trend - คำนวณจากข้อมูลจริงแทน mock
+            const trend = calculateProductivityTrend(tasks);
+            
+            // Focus score (based on task completion pattern)
+            const focusScore = Math.min(100, Math.round(productivity * 0.8 + qualityScore * 0.2));
+            
+            return {
+                productivity,
+                averagePerDay,
+                onTimeRate,
+                qualityScore,
+                trend,
+                focusScore
+            };
+        }
+
+        // เพิ่มฟังก์ชั่นคำนวณ on-time rate จากข้อมูลจริง
+        function calculateOnTimeRateFromTasks(tasks) {
+            const completedTasksWithDueDate = tasks.filter(t => 
+                t.is_completed && t.due_date && t.updated_at
+            );
+            
+            if (completedTasksWithDueDate.length === 0) return 0;
+            
+            const onTimeTasks = completedTasksWithDueDate.filter(task => {
+                const dueDate = new Date(task.due_date);
+                const completedDate = new Date(task.updated_at);
+                return completedDate <= dueDate;
+            });
+            
+            return Math.round((onTimeTasks.length / completedTasksWithDueDate.length) * 100);
+        }
+
+        // เพิ่มฟังก์ชั่นคำนวณ trend จากข้อมูลจริง
+        function calculateProductivityTrend(tasks) {
+            const now = new Date();
+            const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+            
+            const thisWeekCompleted = tasks.filter(t => 
+                t.is_completed && new Date(t.updated_at) >= sevenDaysAgo
+            ).length;
+            
+            const lastWeekCompleted = tasks.filter(t => 
+                t.is_completed && 
+                new Date(t.updated_at) >= fourteenDaysAgo && 
+                new Date(t.updated_at) < sevenDaysAgo
+            ).length;
+            
+            if (lastWeekCompleted === 0) return thisWeekCompleted > 0 ? 100 : 0;
+            
+            const changePercent = ((thisWeekCompleted - lastWeekCompleted) / lastWeekCompleted) * 100;
+            return Math.round(Math.max(-100, Math.min(100, changePercent)));
+        }
+
+        function generateInsights(tasks, stats) {
+            const insights = [];
+            
+            // Productivity insight
+            if (stats.completionRate > 80) {
+                insights.push(`
+                    <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <span class="text-green-600">🎉</span>
+                            <span class="font-medium text-green-800">ผลงานดีเยี่ยม!</span>
+                        </div>
+                        <p class="text-sm text-green-700">คุณมีประสิทธิภาพในการทำงานสูงมาก</p>
+                    </div>
+                `);
+            } else if (stats.completionRate < 50) {
+                insights.push(`
+                    <div class="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <span class="text-orange-600">⚡</span>
+                            <span class="font-medium text-orange-800">เพิ่มประสิทธิภาพ</span>
+                        </div>
+                        <p class="text-sm text-orange-700">ลองแบ่งงานใหญ่ให้เป็นงานเล็กๆ</p>
+                    </div>
+                `);
+            }
+            
+            // Overdue tasks insight
+            const overdueTasks = getOverdueTasks(tasks);
+            if (overdueTasks.length > 0) {
+                insights.push(`
+                    <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <span class="text-red-600">🚨</span>
+                            <span class="font-medium text-red-800">งานเลยกำหนด</span>
+                        </div>
+                        <p class="text-sm text-red-700">มี ${overdueTasks.length} งานที่เลยกำหนดแล้ว</p>
+                    </div>
+                `);
+            }
+            
+            // Weekly progress insight
+            const thisWeekTasks = getThisWeekTasks(tasks);
+            const completedThisWeek = getCompletedThisWeek(tasks);
+            if (thisWeekTasks.length > 0) {
+                const weekProgress = Math.round((completedThisWeek / thisWeekTasks.length) * 100);
+                if (weekProgress > 70) {
+                    insights.push(`
+                        <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <span class="text-blue-600">📈</span>
+                                <span class="font-medium text-blue-800">สัปดาห์ที่ดี</span>
+                            </div>
+                            <p class="text-sm text-blue-700">คืบหน้า ${weekProgress}% ในสัปดาห์นี้</p>
+                        </div>
+                    `);
+                }
+            }
+            
+            return insights.join('');
+        }
+
+        function generateRecentActivity(tasks) {
+            // สร้าง recent activity จากข้อมูลจริงแทน mock
+            const recentActivities = [];
+            
+            // งานที่เพิ่งเสร็จสิ้น (เรียงตามเวลาที่อัปเดตล่าสุด)
+            const recentCompleted = tasks
+                .filter(t => t.is_completed && t.updated_at)
+                .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+                .slice(0, 3)
+                .map(task => ({
+                    type: 'completed',
+                    task: task,
+                    time: getRelativeTime(task.updated_at)
+                }));
+                
+            // งานที่เพิ่งสร้างใหม่ (เรียงตามเวลาที่สร้าง)
+            const recentCreated = tasks
+                .filter(t => !t.is_completed && t.created_at)
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .slice(0, 3)
+                .map(task => ({
+                    type: 'created',
+                    task: task,
+                    time: getRelativeTime(task.created_at)
+                }));
+                
+            // รวมกิจกรรมทั้งหมดและเรียงตามเวลา
+            const allActivities = [...recentCompleted, ...recentCreated]
+                .sort((a, b) => new Date(b.task.updated_at || b.task.created_at) - new Date(a.task.updated_at || a.task.created_at))
+                .slice(0, 6);
+                
+            if (allActivities.length === 0) {
+                return `
+                    <div class="text-center text-gray-500 py-8">
+                        <div class="text-4xl mb-2">📝</div>
+                        <p>-</p>
+                        <p class="text-sm">เริ่มสร้างงานใหม่หรือเสร็จสิ้นงานที่มีอยู่</p>
+                    </div>
+                `;
+            }
+            
+            return allActivities.map(activity => {
+                const icon = activity.type === 'completed' ? '✅' : '➕';
+                const action = activity.type === 'completed' ? 'เสร็จสิ้น' : 'สร้างใหม่';
+                const colorClass = activity.type === 'completed' ? 'text-green-600' : 'text-blue-600';
+                
+                return `
+                    <div class="activity-item">
+                        <div class="flex items-start space-x-3">
+                            <span class="text-lg ${colorClass}">${icon}</span>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-900">${action}: ${activity.task.task_name}</p>
+                                <p class="text-xs text-gray-500">${activity.time}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ฟังก์ชั่นคำนวณเวลาเปรียบเทียบ
+        function getRelativeTime(dateString) {
+            if (!dateString) return '-';
+            
+            const now = new Date();
+            const date = new Date(dateString);
+            const diffInSeconds = Math.floor((now - date) / 1000);
+            
+            if (diffInSeconds < 60) {
+                return 'เมื่อสักครู่';
+            } else if (diffInSeconds < 3600) {
+                const minutes = Math.floor(diffInSeconds / 60);
+                return `${minutes} นาทีที่แล้ว`;
+            } else if (diffInSeconds < 86400) {
+                const hours = Math.floor(diffInSeconds / 3600);
+                return `${hours} ชั่วโมงที่แล้ว`;
+            } else if (diffInSeconds < 604800) {
+                const days = Math.floor(diffInSeconds / 86400);
+                return `${days} วันที่แล้ว`;
+            } else {
+                return date.toLocaleDateString('th-TH');
+            }
+        }
+
+        function generateWeeklyCalendar(tasks) {
+            const today = new Date();
+            const weekStart = new Date(today);
+            weekStart.setDate(today.getDate() - today.getDay());
+            
+            const days = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
+            let calendarHtml = '<div class="grid grid-cols-7 gap-2">';
+            
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(weekStart);
+                date.setDate(weekStart.getDate() + i);
+                
+                const isToday = date.toDateString() === today.toDateString();
+                const dayTasks = getTasksForDate(tasks, date);
+                const completedTasks = dayTasks.filter(t => t.is_completed).length;
+                
+                calendarHtml += `
+                    <div class="text-center p-3 rounded-lg ${isToday ? 'bg-blue-100 border-2 border-blue-300' : 'bg-gray-50'}">
+                        <div class="text-xs font-medium text-gray-600">${days[i]}</div>
+                        <div class="text-lg font-bold ${isToday ? 'text-blue-600' : 'text-gray-900'}">${date.getDate()}</div>
+                        <div class="text-xs text-gray-500">${dayTasks.length > 0 ? `${completedTasks}/${dayTasks.length}` : '0'}</div>
+                        <div class="flex justify-center mt-1">
+                            ${dayTasks.slice(0, 3).map(task => {
+                                const priorityColor = task.priority === 3 ? 'bg-red-400' : task.priority === 2 ? 'bg-yellow-400' : 'bg-green-400';
+                                return `<div class="w-1.5 h-1.5 ${priorityColor} rounded-full mx-0.5 ${task.is_completed ? 'opacity-50' : ''}"></div>`;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            calendarHtml += '</div>';
+            return calendarHtml;
+        }
+
+        // UI Control Functions
+        function toggleKPIDetails() {
+            const detailsSection = document.getElementById('kpi-details');
+            const toggleBtn = document.getElementById('kpi-toggle');
+            
+            if (detailsSection && toggleBtn) {
+                if (detailsSection.classList.contains('hidden')) {
+                    detailsSection.classList.remove('hidden');
+                    toggleBtn.textContent = 'ซ่อนรายละเอียด';
+                } else {
+                    detailsSection.classList.add('hidden');
+                    toggleBtn.textContent = 'แสดงรายละเอียด';
+                }
+            }
+        }
+
+        function showFullCalendar() {
+            window.location.href = 'calendar.html';
+        }
+
+        function addNewTask() {
+            window.location.href = 'tasks.html#add';
+        }
+
+        function viewAllTasks() {
+            window.location.href = 'tasks.html';
+        }
+
+        function showAnalytics() {
+            window.location.href = 'analytics.html';
+        }
+
+        async function exportData() {
+            try {
+                showToast('กำลังเตรียมข้อมูลสำหรับ Export...', 'info');
+                
+                // เรียก API export จากหลังบ้าน
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_BASE}/tasks/export`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('ไม่สามารถ export ข้อมูลได้');
+                }
+                
+                // สร้างไฟล์ download
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `tasks_export_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                showToast('Export ข้อมูลเสร็จสิ้น!', 'success');
+            } catch (error) {
+                console.error('Export error:', error);
+                showToast('เกิดข้อผิดพลาดในการ Export ข้อมูล', 'error');
+            }
+        }
+
+        // Utility functions for data processing
+        function getOverdueTasks(tasks) {
+            const today = new Date();
+            return tasks.filter(task => {
+                if (task.is_completed || !task.due_date) return false;
+                const dueDate = new Date(task.due_date);
+                return dueDate < today;
+            });
+        }
+
+        function getThisWeekTasks(tasks) {
+            const today = new Date();
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - today.getDay());
+            startOfWeek.setHours(0, 0, 0, 0);
+            
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 7);
+            
+            return tasks.filter(task => {
+                if (!task.created_at) return false;
+                const createdDate = new Date(task.created_at);
+                return createdDate >= startOfWeek && createdDate < endOfWeek;
+            });
+        }
+
+        function getCompletedThisWeek(tasks) {
+            const thisWeekTasks = getThisWeekTasks(tasks);
+            return thisWeekTasks.filter(task => task.is_completed).length;
+        }
+
+        function getTasksForDate(tasks, date) {
+            const targetDate = date.toISOString().split('T')[0];
+            return tasks.filter(task => {
+                if (!task.due_date) return false;
+                const taskDate = new Date(task.due_date).toISOString().split('T')[0];
+                return taskDate === targetDate;
+            });
+        }
+
+        function getPriorityColor(priority) {
+            switch (priority) {
+                case 3: return 'red';
+                case 2: return 'yellow';
+                case 1: return 'green';
+                default: return 'gray';
+            }
+        }
+
+        function getPriorityLabel(priority) {
+            switch (priority) {
+                case 3: return 'สูง';
+                case 2: return 'ปานกลาง';
+                case 1: return 'ต่ำ';
+                default: return 'ไม่ระบุ';
+            }
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'ไม่ระบุ';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        function getStatusBadge(isCompleted) {
+            return isCompleted 
+                ? '<span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">เสร็จสิ้น</span>'
+                : '<span class="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">กำลังดำเนิน</span>';
+        }
+
+        // Toast notification system
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            const iconMap = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            const bgColorMap = {
+                success: 'from-green-500 to-green-600',
+                error: 'from-red-500 to-red-600',
+                warning: 'from-yellow-500 to-yellow-600',
+                info: 'from-blue-500 to-blue-600'
+            };
+
+            toast.className = `
+                fixed top-4 right-4 bg-gradient-to-r ${bgColorMap[type]} 
+                text-white px-6 py-4 rounded-xl shadow-2xl z-50 
+                transform transition-all duration-300 translate-x-full opacity-0
+                min-w-80 max-w-md
+            `;
+            
+            toast.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                            <span class="text-lg">${iconMap[type]}</span>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-medium text-sm leading-relaxed">${message}</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="flex-shrink-0 text-white hover:text-gray-200 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+
+            // Show toast with animation
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+                toast.classList.add('toast-enter');
+            }, 100);
+
+            // Hide toast with animation
+            setTimeout(() => {
+                toast.classList.add('toast-exit');
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 5000);
+        }
+
+        // Initialize dashboard on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication
+            if (!token) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Load dashboard data sequentially
+            loadDashboardData();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar - ToDo List App</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍅</text></svg>">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="common-notifications.js"></script>
+    <style>
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .excel-bg {
+            background: #f3f4f6;
+            min-height: 100vh;
+        }
+        
+        .nav-professional {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-link {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            color: #374151;
+        }
+        
+        .nav-link:hover {
+            background: #f3f4f6;
+        }
+        
+        .nav-link.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        /* Calendar Styles */
+        .calendar-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .calendar-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 24px;
+        }
+
+        .calendar-controls {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .calendar-nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .calendar-nav-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .calendar-nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .view-selector {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .view-btn {
+            background: transparent;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .view-btn.active {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background: #f8fafc;
+        }
+
+        .calendar-header-day {
+            background: #f1f5f9;
+            padding: 16px 12px;
+            text-align: center;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .calendar-day {
+            background: white;
+            min-height: 120px;
+            padding: 12px;
+            border-right: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .calendar-day:hover {
+            background: #f8fafc;
+        }
+        
+        .calendar-day.today {
+            background: #eff6ff;
+            border: 2px solid #3b82f6;
+        }
+
+        .calendar-day.other-month {
+            background: #f9fafb;
+            color: #9ca3af;
+        }
+
+        .calendar-day.selected {
+            background: #dbeafe;
+            border: 2px solid #2563eb;
+        }
+
+        .day-number {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .today .day-number {
+            color: #2563eb;
+        }
+
+        .task-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 1px;
+        }
+
+        .task-dot.high { background: #ef4444; }
+        .task-dot.medium { background: #f59e0b; }
+        .task-dot.low { background: #10b981; }
+        
+        .task-dot.opacity-50 {
+            opacity: 0.5;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .task-count {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #6366f1;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        /* Task Details Sidebar */
+        .task-sidebar {
+            position: fixed;
+            right: -400px;
+            top: 0;
+            width: 400px;
+            height: 100vh;
+            background: white;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+            transition: right 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .task-sidebar.open {
+            right: 0;
+        }
+
+        .sidebar-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 24px;
+            position: sticky;
+            top: 0;
+        }
+
+        .task-item {
+            border-left: 4px solid #e5e7eb;
+            background: white;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .task-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .task-item.high-priority { border-left-color: #ef4444; }
+        .task-item.medium-priority { border-left-color: #f59e0b; }
+        .task-item.low-priority { border-left-color: #10b981; }
+
+        .priority-badge {
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .priority-high { background: #fee2e2; color: #dc2626; }
+        .priority-medium { background: #fef3c7; color: #d97706; }
+        .priority-low { background: #d1fae5; color: #059669; }
+
+        /* Loading Styles */
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            padding: 40px 20px;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Quick Add Task */
+        .quick-add-task {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+
+        .quick-add-task:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid;
+        }
+
+        .stat-card.today { border-left-color: #3b82f6; }
+        .stat-card.upcoming { border-left-color: #10b981; }
+        .stat-card.overdue { border-left-color: #ef4444; }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .container {
+                padding: 0 16px;
+            }
+            
+            .nav-professional {
+                padding: 12px 16px;
+            }
+            
+            .nav-professional .container {
+                flex-direction: column;
+                gap: 16px;
+            }
+            
+            .nav-professional h1 {
+                font-size: 1.5rem;
+            }
+            
+            .nav-professional .flex.items-center.space-x-2 {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 8px;
+            }
+            
+            .nav-link {
+                padding: 6px 12px;
+                font-size: 0.875rem;
+            }
+            
+            .calendar-header {
+                padding: 20px;
+            }
+            
+            .calendar-controls {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .view-selector {
+                order: -1;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 12px;
+            }
+            
+            .task-sidebar {
+                width: 100%;
+                right: -100%;
+            }
+
+            .calendar-day {
+                min-height: 80px;
+                padding: 8px;
+            }
+
+            .quick-add-task {
+                bottom: 16px;
+                right: 16px;
+                width: 48px;
+                height: 48px;
+                font-size: 20px;
+            }
+            
+            .grid.grid-cols-7 {
+                gap: 1px;
+            }
+            
+            .calendar-day {
+                min-height: 60px;
+                padding: 4px;
+                font-size: 0.75rem;
+            }
+            
+            .calendar-header {
+                padding: 16px;
+            }
+            
+            .calendar-nav-btn {
+                padding: 6px 10px;
+                font-size: 0.875rem;
+            }
+            
+            .view-btn {
+                padding: 6px 12px;
+                font-size: 0.875rem;
+            }
+            
+            .stat-card {
+                padding: 12px;
+            }
+            
+            .text-3xl {
+                font-size: 1.875rem;
+            }
+            
+            .text-2xl {
+                font-size: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .nav-professional .flex.items-center.space-x-2 {
+                grid-template-columns: repeat(2, 1fr);
+                display: grid;
+                gap: 8px;
+            }
+            
+            .nav-link {
+                text-align: center;
+                padding: 8px 4px;
+                font-size: 0.75rem;
+            }
+            
+            .calendar-header {
+                padding: 12px;
+            }
+            
+            .calendar-controls {
+                gap: 8px;
+            }
+            
+            .calendar-nav-btn {
+                padding: 4px 8px;
+                font-size: 0.75rem;
+            }
+            
+            .view-btn {
+                padding: 4px 8px;
+                font-size: 0.75rem;
+            }
+            
+            .calendar-day {
+                min-height: 40px;
+                padding: 2px;
+                font-size: 0.625rem;
+            }
+            
+            .task-item {
+                font-size: 0.625rem;
+                padding: 2px 4px;
+            }
+            
+            .stat-card {
+                padding: 8px;
+            }
+            
+            .stat-card .text-2xl {
+                font-size: 1.25rem;
+            }
+            
+            .text-lg {
+                font-size: 1rem;
+            }
+            
+            .text-xl {
+                font-size: 1.125rem;
+            }
+        }
+        
+        /* iPad Air specific adjustments */
+        @media (min-width: 820px) and (max-width: 1024px) {
+            .grid.grid-cols-1.lg\\:grid-cols-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .lg\\:col-span-2 {
+                grid-column: span 2;
+            }
+            
+            .grid.grid-cols-1.md\\:grid-cols-4 {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .calendar-header {
+                padding: 18px;
+            }
+            
+            .calendar-day {
+                min-height: 70px;
+                padding: 6px;
+            }
+            
+            .nav-professional .flex.items-center.space-x-2 {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body class="excel-bg">
+    <div id="app" class="min-h-screen">
+        <!-- Navigation -->
+        <nav class="nav-professional p-4">
+            <div class="container mx-auto flex justify-between items-center">
+                <div class="flex items-center space-x-8">
+                    <h1 class="text-2xl font-bold text-gray-800">🍅 ToDo List</h1>
+                    <div class="flex items-center space-x-2">
+                        <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+                        <a href="tasks.html" class="nav-link">📋 Tasks</a>
+                        <a href="calendar.html" class="nav-link active">📅 Calendar</a>
+                        <a href="analytics.html" class="nav-link">📊 Analytics</a>
+                        <a href="profile.html" class="nav-link">👤 Profile</a>
+                        <a href="settings.html" class="nav-link">⚙️ Settings</a>
+                    </div>
+                </div>
+                <div id="nav-menu" class="flex items-center space-x-4">
+                    <span id="user-greeting" class="text-gray-700 font-medium">Welcome, User</span>
+                    <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        📤 Logout
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="container mx-auto p-6">
+            <div class="fade-in">
+                <!-- Page Header -->
+                <div class="mb-6">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">📅 Calendar View</h1>
+                    <p class="text-gray-600">View and manage your tasks in calendar format</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card today">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">งานวันนี้</p>
+                                <p class="text-2xl font-bold text-blue-600" id="today-count">-</p>
+                            </div>
+                            <div class="text-blue-500 text-2xl">📅</div>
+                        </div>
+                    </div>
+                    <div class="stat-card upcoming">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">งานสัปดาห์นี้</p>
+                                <p class="text-2xl font-bold text-green-600" id="week-count">-</p>
+                            </div>
+                            <div class="text-green-500 text-2xl">📈</div>
+                        </div>
+                    </div>
+                    <div class="stat-card overdue">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">งานเลยกำหนด</p>
+                                <p class="text-2xl font-bold text-red-600" id="overdue-count">-</p>
+                            </div>
+                            <div class="text-red-500 text-2xl">⚠️</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendar Container -->
+                <div class="calendar-container">
+                    <!-- Calendar Header -->
+                    <div class="calendar-header">
+                        <div class="calendar-controls">
+                            <div class="flex items-center space-x-4">
+                                <h2 class="text-2xl font-bold" id="calendar-month-year">August 2025</h2>
+                                <div class="flex space-x-2">
+                                    <button class="calendar-nav-btn" id="prev-month">‹</button>
+                                    <button class="calendar-nav-btn" id="today-btn">Today</button>
+                                    <button class="calendar-nav-btn" id="next-month">›</button>
+                                </div>
+                            </div>
+                            <div class="view-selector">
+                                <button class="view-btn active" data-view="month">Month</button>
+                                <button class="view-btn" data-view="week">Week</button>
+                            </div>
+                        </div>
+                        <div class="text-sm opacity-90">
+                            คลิกที่วันต่างๆ เพื่อดูงานทั้งหมดในวันนั้น (รวมงานที่เสร็จแล้ว)
+                        </div>
+                    </div>
+
+                    <!-- Calendar Grid -->
+                    <div id="calendar-content">
+                        <!-- Calendar days header -->
+                        <div class="calendar-grid">
+                            <div class="calendar-header-day">อาทิตย์</div>
+                            <div class="calendar-header-day">จันทร์</div>
+                            <div class="calendar-header-day">อังคาร</div>
+                            <div class="calendar-header-day">พุธ</div>
+                            <div class="calendar-header-day">พฤหัสบดี</div>
+                            <div class="calendar-header-day">ศุกร์</div>
+                            <div class="calendar-header-day">เสาร์</div>
+                        </div>
+                        
+                        <!-- Calendar days will be generated here -->
+                        <div class="calendar-grid" id="calendar-days">
+                            <!-- Loading state -->
+                            <div class="col-span-7 loading-container">
+                                <div class="loading-spinner"></div>
+                                <div class="loading-text">Loading calendar...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task Details Sidebar -->
+        <div class="task-sidebar" id="task-sidebar">
+            <div class="sidebar-header">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold" id="sidebar-date">Select a Date</h3>
+                    <button class="calendar-nav-btn" id="close-sidebar">✕</button>
+                </div>
+                <p class="text-sm opacity-90" id="sidebar-subtitle">Tasks for selected date</p>
+            </div>
+            <div class="p-6" id="sidebar-content">
+                <div class="text-center text-gray-500 py-8">
+                    <div class="text-4xl mb-4">📅</div>
+                    <p>Select a date to view tasks</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Add Task Button -->
+        <button class="quick-add-task" id="quick-add-task" title="Add new task">
+            +
+        </button>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+            <div class="bg-white p-8 rounded-lg shadow-lg text-center">
+                <div class="loading-spinner mx-auto mb-4"></div>
+                <div class="loading-text text-lg font-medium text-gray-800">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let token = localStorage.getItem('token');
+        // กำหนดวันที่ปัจจุบันเป็น 7 สิงหาคม 2568 (2025 ค.ศ.)
+        let currentDate = new Date(2025, 7, 7); // เดือน 7 = สิงหาคม (เริ่มนับจาก 0)
+        let currentView = 'month';
+        let tasks = [];
+        let selectedDate = null;
+        const API_BASE = 'https://to-do-list-api-nrry.vercel.app/api/v1';
+
+        // Utility functions
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            const iconMap = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            const bgColorMap = {
+                success: 'from-green-500 to-green-600',
+                error: 'from-red-500 to-red-600',
+                warning: 'from-yellow-500 to-yellow-600',
+                info: 'from-blue-500 to-blue-600'
+            };
+
+            toast.className = `
+                fixed top-4 right-4 bg-gradient-to-r ${bgColorMap[type]} 
+                text-white px-6 py-4 rounded-xl shadow-2xl z-50 
+                transform transition-all duration-300 translate-x-full opacity-0
+                min-w-80 max-w-md
+            `;
+            
+            toast.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                            <span class="text-lg">${iconMap[type]}</span>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-medium text-sm leading-relaxed">${message}</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="flex-shrink-0 text-white hover:text-gray-200 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+            }, 100);
+
+            setTimeout(() => {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 5000);
+        }
+
+        async function apiCall(endpoint, options = {}) {
+            const config = {
+                method: options.method || 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token && { 'Authorization': `Bearer ${token}` })
+                },
+                ...(options.body && { body: options.body }),
+                ...options
+            };
+
+            const response = await fetch(`${API_BASE}${endpoint}`, config);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            return await response.json();
+        }
+
+        function showLoading() {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) overlay.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) overlay.style.display = 'none';
+        }
+
+        // Calendar utility functions
+        function formatDate(date) {
+            // แก้ไขการแปลงวันที่เพื่อป้องกันปัญหา timezone
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function isSameDate(date1, date2) {
+            return formatDate(date1) === formatDate(date2);
+        }
+
+        function getTasksForDate(date) {
+            const dateStr = formatDate(date);
+            return tasks.filter(task => {
+                if (!task.due_date) return false;
+                const taskDate = new Date(task.due_date);
+                return formatDate(taskDate) === dateStr;
+            });
+        }
+
+        function getPriorityClass(priority) {
+            switch(priority) {
+                case 3: return 'high';
+                case 2: return 'medium';
+                case 1: return 'low';
+                default: return 'low';
+            }
+        }
+
+        function getPriorityText(priority) {
+            switch(priority) {
+                case 3: return 'High';
+                case 2: return 'Medium';
+                case 1: return 'Low';
+                default: return 'Low';
+            }
+        }
+
+        // Calendar rendering
+        function generateCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            // กำหนดวันนี้เป็น 7 สิงหาคม 2568
+            const today = new Date(2025, 7, 7); // เดือน 7 = สิงหาคม (เริ่มนับจาก 0)
+            
+            // Update month/year display
+            const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+            document.getElementById('calendar-month-year').textContent = 
+                `${monthNames[month]} ${year + 543}`; // เพิ่ม 543 เพื่อแสดงปี พ.ศ.
+            
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - firstDay.getDay());
+            
+            const endDate = new Date(lastDay);
+            endDate.setDate(endDate.getDate() + (6 - lastDay.getDay()));
+            
+            let calendarHtml = '';
+            const current = new Date(startDate);
+            
+            while (current <= endDate) {
+                const isToday = isSameDate(current, today);
+                const isCurrentMonth = current.getMonth() === month;
+                const isSelected = selectedDate && isSameDate(current, selectedDate);
+                const dayTasks = getTasksForDate(current);
+                
+                const classes = [
+                    'calendar-day',
+                    isToday ? 'today' : '',
+                    !isCurrentMonth ? 'other-month' : '',
+                    isSelected ? 'selected' : ''
+                ].filter(Boolean).join(' ');
+                
+                calendarHtml += `
+                    <div class="${classes}" data-date="${formatDate(current)}" onclick="selectDate('${formatDate(current)}')">
+                        <div class="day-number">${current.getDate()}</div>
+                        ${dayTasks.length > 0 ? `<div class="task-count">${dayTasks.length}</div>` : ''}
+                        <div class="flex flex-wrap mt-1">
+                            ${dayTasks.slice(0, 4).map(task => {
+                                const priorityClass = getPriorityClass(task.priority);
+                                const opacity = task.is_completed ? 'opacity-50' : '';
+                                return `<span class="task-dot ${priorityClass} ${opacity}" title="${task.task_name} ${task.is_completed ? '(เสร็จแล้ว)' : ''}"></span>`;
+                            }).join('')}
+                            ${dayTasks.length > 4 ? '<span class="text-xs text-gray-500">...</span>' : ''}
+                        </div>
+                    </div>
+                `;
+                
+                current.setDate(current.getDate() + 1);
+            }
+            
+            document.getElementById('calendar-days').innerHTML = calendarHtml;
+        }
+
+        function selectDate(dateStr) {
+            // แก้ไขการสร้างวันที่เพื่อป้องกันปัญหา timezone
+            const parts = dateStr.split('-');
+            const year = parseInt(parts[0]);
+            const month = parseInt(parts[1]) - 1; // เดือนใน JS เริ่มจาก 0
+            const day = parseInt(parts[2]);
+            selectedDate = new Date(year, month, day);
+            
+            const dayTasks = getTasksForDate(selectedDate);
+            
+            // Update calendar display
+            document.querySelectorAll('.calendar-day').forEach(day => {
+                day.classList.remove('selected');
+            });
+            document.querySelector(`[data-date="${dateStr}"]`).classList.add('selected');
+            
+            // Show sidebar
+            showTaskSidebar(selectedDate, dayTasks);
+        }
+
+        function showTaskSidebar(date, dayTasks) {
+            const sidebar = document.getElementById('task-sidebar');
+            const dateEl = document.getElementById('sidebar-date');
+            const subtitleEl = document.getElementById('sidebar-subtitle');
+            const contentEl = document.getElementById('sidebar-content');
+            
+            // แก้ไขการแสดงวันที่ให้ถูกต้อง
+            const dateStr = date.toLocaleDateString('th-TH', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                timeZone: 'Asia/Bangkok' // กำหนดเขตเวลาให้ชัดเจน
+            });
+            
+            dateEl.textContent = dateStr;
+            subtitleEl.textContent = `${dayTasks.length} งาน`;
+            
+            if (dayTasks.length === 0) {
+                contentEl.innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        <div class="text-4xl mb-4">📝</div>
+                        <p class="mb-4">ไม่มีงานในวันนี้</p>
+                        <button onclick="addTaskForDate('${formatDate(date)}')" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                            เพิ่มงาน
+                        </button>
+                    </div>
+                `;
+            } else {
+                // แยกงานตามสถานะ
+                const incompleteTasks = dayTasks.filter(task => !task.is_completed);
+                const completedTasks = dayTasks.filter(task => task.is_completed);
+                
+                let tasksHtml = '';
+                
+                // แสดงงานที่ยังไม่เสร็จก่อน
+                if (incompleteTasks.length > 0) {
+                    tasksHtml += `
+                        <div class="mb-4">
+                            <h5 class="text-sm font-semibold text-gray-700 mb-2">📋 งานที่ต้องทำ (${incompleteTasks.length})</h5>
+                            ${incompleteTasks.map(task => generateTaskHtml(task)).join('')}
+                        </div>
+                    `;
+                }
+                
+                // แสดงงานที่เสร็จแล้ว
+                if (completedTasks.length > 0) {
+                    tasksHtml += `
+                        <div class="mb-4">
+                            <h5 class="text-sm font-semibold text-green-700 mb-2">✅ งานที่เสร็จแล้ว (${completedTasks.length})</h5>
+                            ${completedTasks.map(task => generateTaskHtml(task)).join('')}
+                        </div>
+                    `;
+                }
+                
+                contentEl.innerHTML = `
+                    <div class="space-y-3">
+                        ${tasksHtml}
+                        <button onclick="addTaskForDate('${formatDate(date)}')" class="w-full bg-blue-500 text-white px-4 py-3 rounded-lg hover:bg-blue-600 mt-4">
+                            + เพิ่มงานสำหรับวันนี้
+                        </button>
+                    </div>
+                `;
+            }
+            
+            sidebar.classList.add('open');
+        }
+
+        function hideSidebar() {
+            document.getElementById('task-sidebar').classList.remove('open');
+            selectedDate = null;
+            document.querySelectorAll('.calendar-day').forEach(day => {
+                day.classList.remove('selected');
+            });
+        }
+
+        // Task operations
+        async function toggleTask(taskId, isCompleted) {
+            try {
+                showToast('กำลังอัปเดตงาน...', 'info');
+                await apiCall(`/tasks/${taskId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ is_completed: isCompleted })
+                });
+                showToast('อัปเดตงานเรียบร้อย', 'success');
+                await loadTasks();
+                generateCalendar();
+                updateStats();
+                if (selectedDate) {
+                    selectDate(formatDate(selectedDate));
+                }
+            } catch (error) {
+                showToast('ไม่สามารถอัปเดตงานได้', 'error');
+                console.error('Toggle task error:', error);
+                // Revert checkbox state
+                const checkbox = document.querySelector(`input[onchange*="${taskId}"]`);
+                if (checkbox) {
+                    checkbox.checked = !isCompleted;
+                }
+            }
+        }
+
+        async function deleteTask(taskId) {
+            // Find task name for confirmation
+            const task = tasks.find(t => t.id === taskId);
+            const taskName = task ? task.task_name : 'งานนี้';
+            
+            const confirmed = confirm(
+                `⚠️ คุณแน่ใจหรือไม่ที่จะลบงาน?\n\n` +
+                `งาน: "${taskName}"\n` +
+                `การดำเนินการนี้ไม่สามารถย้อนกลับได้`
+            );
+            
+            if (!confirmed) {
+                showToast('ยกเลิกการลบงาน', 'info');
+                return;
+            }
+            
+            try {
+                showToast('กำลังลบงาน...', 'info');
+                await apiCall(`/tasks/${taskId}`, {
+                    method: 'DELETE'
+                });
+                showToast(`ลบงาน "${taskName}" เรียบร้อย`, 'success');
+                await loadTasks();
+                generateCalendar();
+                updateStats();
+                if (selectedDate) {
+                    selectDate(formatDate(selectedDate));
+                }
+            } catch (error) {
+                showToast('ไม่สามารถลบงานได้', 'error');
+                console.error('Delete task error:', error);
+            }
+        }
+
+        function editTask(taskId) {
+            window.location.href = `tasks.html?edit=${taskId}`;
+        }
+
+        function addTaskForDate(date) {
+            window.location.href = `tasks.html?date=${date}`;
+        }
+
+        // Helper function to generate task HTML
+        function generateTaskHtml(task) {
+            const priorityClass = getPriorityClass(task.priority);
+            const priorityText = getPriorityText(task.priority);
+            const taskOpacity = task.is_completed ? 'opacity-75' : '';
+            
+            return `
+                <div class="task-item ${priorityClass}-priority ${taskOpacity}">
+                    <div class="flex items-start justify-between mb-2">
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" ${task.is_completed ? 'checked' : ''} 
+                                   onchange="toggleTask(${task.id}, this.checked)"
+                                   class="w-4 h-4 text-blue-600 rounded">
+                            <span class="priority-badge priority-${priorityClass}">${priorityText}</span>
+                            ${task.is_completed ? '<span class="text-xs text-green-600 font-medium">✓ เสร็จแล้ว</span>' : ''}
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="editTask(${task.id})" class="text-blue-600 hover:text-blue-800" title="แก้ไขงาน">✏️</button>
+                            <button onclick="deleteTask(${task.id})" class="text-red-600 hover:text-red-800" title="ลบงาน">🗑️</button>
+                        </div>
+                    </div>
+                    <h4 class="font-medium text-gray-900 mb-1 ${task.is_completed ? 'line-through text-gray-600' : ''}">${task.task_name}</h4>
+                    ${task.description ? `<p class="text-sm text-gray-600 mb-2 ${task.is_completed ? 'opacity-75' : ''}">${task.description}</p>` : ''}
+                    <div class="text-xs text-gray-500">
+                        ${task.due_date ? `ครบกำหนด: ${new Date(task.due_date).toLocaleDateString('th-TH')}` : 'ไม่ระบุวันครบกำหนด'}
+                        ${task.is_completed && task.updated_at ? ` • เสร็จเมื่อ: ${new Date(task.updated_at).toLocaleDateString('th-TH')}` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Data loading
+        async function loadUserInfo() {
+            try {
+                const userInfo = await apiCall('/user/info');
+                const greetingEl = document.getElementById('user-greeting');
+                if (greetingEl && userInfo.user) {
+                    greetingEl.textContent = `Welcome, ${userInfo.user.username}`;
+                }
+                showToast(`สวัสดี ${userInfo.user.username}!`, 'success');
+                return userInfo;
+            } catch (error) {
+                console.warn('Failed to load user info:', error);
+                showToast('ไม่สามารถโหลดข้อมูลผู้ใช้ได้', 'warning');
+                // Set default user info
+                const greetingEl = document.getElementById('user-greeting');
+                if (greetingEl) {
+                    greetingEl.textContent = 'Welcome, User';
+                }
+                return { user: { username: 'User', id: 1 } };
+            }
+        }
+
+        async function loadTasks() {
+            try {
+                const response = await apiCall('/tasks');
+                tasks = response.tasks || response || [];
+                showToast(`โหลดงานเรียบร้อย (${tasks.length} งาน)`, 'success');
+                return tasks;
+            } catch (error) {
+                console.warn('Failed to load tasks:', error);
+                showToast('ไม่สามารถโหลดรายการงานได้', 'error');
+                // Return empty array if API fails
+                tasks = [];
+                return tasks;
+            }
+        }
+
+        function updateStats() {
+            // กำหนดวันนี้เป็น 7 สิงหาคม 2568
+            const today = new Date(2025, 7, 7); // เดือน 7 = สิงหาคม (เริ่มนับจาก 0)
+            today.setHours(0, 0, 0, 0); // Reset time for accurate comparison
+            
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - today.getDay());
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            endOfWeek.setHours(23, 59, 59, 999);
+            
+            // Today's tasks (all tasks due today, completed or not)
+            const todayTasks = getTasksForDate(today);
+            
+            // This week's tasks (all tasks due this week, completed or not)
+            const weekTasks = tasks.filter(task => {
+                if (!task.due_date) return false;
+                const taskDate = new Date(task.due_date);
+                return taskDate >= startOfWeek && taskDate <= endOfWeek;
+            });
+            
+            // Overdue tasks (only incomplete tasks that are past due)
+            const overdueTasks = tasks.filter(task => {
+                if (!task.due_date || task.is_completed) return false;
+                const taskDate = new Date(task.due_date);
+                taskDate.setHours(23, 59, 59, 999);
+                return taskDate < today;
+            });
+            
+            document.getElementById('today-count').textContent = todayTasks.length;
+            document.getElementById('week-count').textContent = weekTasks.length;
+            document.getElementById('overdue-count').textContent = overdueTasks.length;
+        }
+
+        // Navigation functions
+        function previousMonth() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            generateCalendar();
+        }
+
+        function nextMonth() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            generateCalendar();
+        }
+
+        function goToToday() {
+            // กำหนดวันนี้เป็น 7 สิงหาคม 2568
+            currentDate = new Date(2025, 7, 7); // เดือน 7 = สิงหาคม (เริ่มนับจาก 0)
+            generateCalendar();
+            selectDate(formatDate(currentDate));
+        }
+
+        function logout() {
+            if (confirmLogout) {
+                confirmLogout();
+            } else {
+                localStorage.removeItem('token');
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication first
+            if (!token) {
+                showToast('กรุณาเข้าสู่ระบบก่อน', 'warning');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+                return;
+            }
+            
+            // Set up event listeners
+            document.getElementById('prev-month').addEventListener('click', previousMonth);
+            document.getElementById('next-month').addEventListener('click', nextMonth);
+            document.getElementById('today-btn').addEventListener('click', goToToday);
+            document.getElementById('close-sidebar').addEventListener('click', hideSidebar);
+            document.getElementById('quick-add-task').addEventListener('click', () => {
+                window.location.href = 'tasks.html';
+            });
+            
+            // View selector
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentView = this.dataset.view;
+                    // TODO: Implement week view
+                    if (currentView === 'week') {
+                        showToast('การแสดงผลแบบสัปดาห์กำลังพัฒนา!', 'info');
+                    }
+                });
+            });
+            
+            // Close sidebar when clicking outside
+            document.addEventListener('click', function(e) {
+                const sidebar = document.getElementById('task-sidebar');
+                if (sidebar.classList.contains('open') && 
+                    !sidebar.contains(e.target) && 
+                    !e.target.closest('.calendar-day')) {
+                    hideSidebar();
+                }
+            });
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // ESC to close sidebar
+                if (e.key === 'Escape') {
+                    hideSidebar();
+                }
+                // Arrow keys for month navigation
+                if (e.key === 'ArrowLeft' && e.ctrlKey) {
+                    previousMonth();
+                }
+                if (e.key === 'ArrowRight' && e.ctrlKey) {
+                    nextMonth();
+                }
+                // T for today
+                if (e.key === 't' || e.key === 'T') {
+                    goToToday();
+                }
+            });
+            
+            // Initialize calendar with sequential loading
+            initCalendar();
+        });
+        
+        async function initCalendar() {
+            showLoading();
+            
+            try {
+                // Step 1: Load user info first (priority)
+                showToast('กำลังโหลดข้อมูลผู้ใช้...', 'info');
+                const userInfo = await loadUserInfo();
+                
+                // Step 2: Load tasks
+                showToast('กำลังโหลดรายการงาน...', 'info');
+                await loadTasks();
+                
+                // Step 3: Initialize calendar interface
+                generateCalendar();
+                updateStats();
+                
+                // Step 4: Auto-select today
+                // กำหนดวันนี้เป็น 7 สิงหาคม 2568
+                const today = new Date(2025, 7, 7); // เดือน 7 = สิงหาคม (เริ่มนับจาก 0)
+                selectDate(formatDate(today));
+                
+                showToast('โหลดปฏิทินเสร็จสิ้น', 'success');
+                
+            } catch (error) {
+                console.error('Critical error initializing calendar:', error);
+                showToast('เกิดข้อผิดพลาดในการโหลดปฏิทิน', 'error');
+                
+                // Show fallback interface
+                renderErrorState();
+                
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function renderErrorState() {
+            const calendarDays = document.getElementById('calendar-days');
+            if (calendarDays) {
+                calendarDays.innerHTML = `
+                    <div class="col-span-7 text-center py-12">
+                        <div class="text-6xl mb-4">⚠️</div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">เกิดข้อผิดพลาด</h3>
+                        <p class="text-gray-600 mb-6">ไม่สามารถโหลดข้อมูลปฏิทินได้</p>
+                        <button onclick="initCalendar()" class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600">
+                            🔄 ลองใหม่อีกครั้ง
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize on page load
+        window.onload = function() {
+            // Initialize page
+            checkAuth();
+            generateCalendar();
+            loadTasks();
+        };
+    </script>
+</body>
+</html>

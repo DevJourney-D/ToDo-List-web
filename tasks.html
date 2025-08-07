@@ -1,0 +1,3564 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks - ToDo List App</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍅</text></svg>">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="common-notifications.js"></script>
+    <style>
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .excel-bg {
+            background: #f3f4f6;
+            min-height: 100vh;
+        }
+        
+        .nav-professional {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-link {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            color: #374151;
+        }
+        
+        .nav-link:hover {
+            background: #f3f4f6;
+        }
+        
+        .nav-link.active {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .coming-soon-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Task Management Styles */
+        .task-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #f3f4f6;
+            transition: all 0.2s ease;
+        }
+        
+        .task-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            border-color: #e5e7eb;
+        }
+        
+        .task-item {
+            border-left: 4px solid #e5e7eb;
+            background: white;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+        
+        .task-item:hover {
+            transform: translateX(2px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .task-item.high-priority {
+            border-left-color: #ef4444;
+        }
+        
+        .task-item.medium-priority {
+            border-left-color: #f59e0b;
+        }
+        
+        .task-item.low-priority {
+            border-left-color: #10b981;
+        }
+        
+        .task-item.completed {
+            opacity: 0.7;
+            background: #f9fafb;
+        }
+        
+        .priority-badge {
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .priority-high {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .priority-medium {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        .priority-low {
+            background: #d1fae5;
+            color: #059669;
+        }
+        
+        .status-badge {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        
+        .status-pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        .status-in_progress {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        
+        .status-completed {
+            background: #d1fae5;
+            color: #059669;
+        }
+        
+        .status-cancelled {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .status-dropdown {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid #d1d5db;
+            background-color: white;
+            cursor: pointer;
+            min-width: 100px;
+        }
+        
+        .status-dropdown:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        
+        .filter-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid #f3f4f6;
+        }
+        
+        .add-task-form {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .excel-bg {
+            background: #f3f4f6;
+            min-height: 100vh;
+        }
+        
+        .nav-professional {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-link {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        
+        .nav-link:hover {
+            background: #f3f4f6;
+        }
+        
+        .nav-link.active {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .coming-soon-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Task Management Styles */
+        .task-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #f3f4f6;
+            transition: all 0.2s ease;
+        }
+        
+        .task-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            border-color: #e5e7eb;
+        }
+        
+        .task-item {
+            border-left: 4px solid #e5e7eb;
+            background: white;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+        
+        .task-item:hover {
+            transform: translateX(2px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .task-item.high-priority {
+            border-left-color: #ef4444;
+        }
+        
+        .task-item.medium-priority {
+            border-left-color: #f59e0b;
+        }
+        
+        .task-item.low-priority {
+            border-left-color: #10b981;
+        }
+        
+        .task-item.completed {
+            opacity: 0.7;
+            background: #f9fafb;
+        }
+        
+        .priority-badge {
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .priority-high {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .priority-medium {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        .priority-low {
+            background: #d1fae5;
+            color: #059669;
+        }
+        
+        .status-badge {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        
+        .status-pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        .status-in_progress {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        
+        .status-completed {
+            background: #d1fae5;
+            color: #059669;
+        }
+        
+        .status-cancelled {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .status-dropdown {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid #d1d5db;
+            background-color: white;
+            cursor: pointer;
+            min-width: 100px;
+        }
+        
+        .status-dropdown:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        
+        .filter-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid #f3f4f6;
+        }
+        
+        .add-task-form {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+        
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+        
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            z-index: 1100;
+            animation: slideInRight 0.3s ease-out;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-width: 300px;
+            max-width: 400px;
+        }
+        
+        .notification.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        .notification.error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        
+        .notification.warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        
+        .notification.info {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+        
+        .notification-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .notification-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        
+        .notification-text {
+            flex: 1;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .notification-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.2s ease;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .notification-close:hover {
+            opacity: 1;
+        }
+        
+        .search-input {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 25px;
+            padding: 12px 20px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+            width: 100%;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        
+        .stats-mini {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+        
+        .checkbox-custom {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        /* Loading Styles */
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            padding: 40px 20px;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        .loading-text {
+            color: #6b7280;
+            font-size: 14px;
+        }
+        
+        /* Confirmation Modal Styles */
+        .confirm-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1200;
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .confirm-modal.show {
+            opacity: 1;
+        }
+        
+        .confirm-content {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            max-width: 400px;
+            width: 90%;
+            animation: modalSlideIn 0.3s ease-out;
+            overflow: hidden;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        
+        .confirm-modal.show .confirm-content {
+            transform: scale(1);
+        }
+        
+        .confirm-header {
+            padding: 24px 24px 16px;
+            text-align: center;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .confirm-body {
+            padding: 24px;
+            text-align: center;
+        }
+        
+        .confirm-footer {
+            padding: 16px 24px 24px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        
+        .confirm-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+        
+        .confirm-icon.warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fbbf24 100%);
+            color: #92400e;
+        }
+        
+        .confirm-icon.danger {
+            background: linear-gradient(135deg, #fee2e2 0%, #ef4444 100%);
+            color: #dc2626;
+        }
+        
+        .confirm-icon.info {
+            background: linear-gradient(135deg, #dbeafe 0%, #3b82f6 100%);
+            color: #1d4ed8;
+        }
+        
+        .confirm-icon.logout {
+            background: linear-gradient(135deg, #fef3c7 0%, #f59e0b 100%);
+            color: #92400e;
+        }
+        
+        .confirm-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+        
+        .confirm-message {
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .btn-confirm {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+        
+        .btn-confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+        }
+        
+        .btn-confirm.warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+        }
+        
+        .btn-confirm.warning:hover {
+            box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+        }
+        
+        .btn-confirm.info {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-confirm.info:hover {
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+        }
+        
+        .btn-cancel {
+            background: #f9fafb;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-cancel:hover {
+            background: #e5e7eb;
+            transform: translateY(-1px);
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* Pomodoro Timer Styles */
+        .pomodoro-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 32px;
+            color: white;
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+            margin-top: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pomodoro-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            border-radius: 20px;
+        }
+
+        .pomodoro-container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .pomodoro-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .pomodoro-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            backdrop-filter: blur(10px);
+        }
+
+        .pomodoro-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .pomodoro-timer-display {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 24px 32px;
+            margin: 20px 0;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: inset 0 2px 10px rgba(255, 255, 255, 0.1);
+        }
+
+        .pomodoro-time {
+            font-size: 4rem;
+            font-weight: 900;
+            font-family: 'SF Pro Display', 'Segoe UI', monospace;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            letter-spacing: -2px;
+            margin: 0;
+            line-height: 1;
+        }
+
+        .pomodoro-mode {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 8px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .pomodoro-progress-container {
+            width: 100%;
+            margin: 24px 0;
+            position: relative;
+        }
+
+        .pomodoro-progress {
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .pomodoro-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #fff, #e6f3ff);
+            border-radius: 10px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+            position: relative;
+        }
+
+        .pomodoro-progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 20px;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8));
+            border-radius: 0 10px 10px 0;
+        }
+
+        .pomodoro-progress-text {
+            position: absolute;
+            top: -28px;
+            right: 0;
+            font-size: 0.8rem;
+            opacity: 0.8;
+            font-weight: 600;
+        }
+
+        .pomodoro-status {
+            font-size: 1.2rem;
+            margin: 16px 0;
+            opacity: 0.95;
+            font-weight: 600;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .pomodoro-settings {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 12px;
+            margin: 24px 0;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .pomodoro-settings-label {
+            grid-column: 1 / -1;
+            text-align: center;
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .time-preset {
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 12px 8px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .time-preset::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .time-preset:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.15);
+        }
+
+        .time-preset:hover::before {
+            left: 100%;
+        }
+
+        .time-preset.active {
+            background: rgba(255, 255, 255, 0.9);
+            color: #667eea;
+            border-color: rgba(255, 255, 255, 0.9);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .pomodoro-controls {
+            display: flex;
+            gap: 16px;
+            margin: 24px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .pomodoro-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 50px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(15px);
+            font-size: 16px;
+            position: relative;
+            overflow: hidden;
+            min-width: 120px;
+        }
+
+        .pomodoro-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .pomodoro-btn:hover::before {
+            left: 100%;
+        }
+
+        .pomodoro-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.2);
+        }
+
+        .pomodoro-btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .pomodoro-btn.primary {
+            background: linear-gradient(135deg, #ffffff 0%, #f0f8ff 100%);
+            color: #667eea;
+            border-color: transparent;
+            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3);
+        }
+
+        .pomodoro-btn.primary:hover {
+            background: linear-gradient(135deg, #ffffff 0%, #e6f3ff 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(255, 255, 255, 0.4);
+        }
+
+        .pomodoro-btn.danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            border-color: transparent;
+        }
+
+        .pomodoro-btn.danger:hover {
+            background: linear-gradient(135deg, #ff5252 0%, #e53e3e 100%);
+        }
+
+        .pomodoro-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+            margin-top: 32px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px 16px;
+            border-radius: 16px;
+            text-align: center;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 4px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Animation for running timer */
+        .pomodoro-running .pomodoro-time {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        /* Break mode styling */
+        .pomodoro-break .pomodoro-section {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .pomodoro-break .pomodoro-progress-bar {
+            background: linear-gradient(90deg, #ffffff, #e6fff2);
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .pomodoro-section {
+                padding: 24px;
+                margin-top: 24px;
+            }
+            
+            .pomodoro-time {
+                font-size: 3rem;
+            }
+            
+            .pomodoro-title {
+                font-size: 1.5rem;
+            }
+            
+            .pomodoro-controls {
+                flex-direction: column;
+                align-items: center;
+                gap: 12px;
+            }
+            
+            .pomodoro-btn {
+                width: 200px;
+                padding: 14px 28px;
+            }
+            
+            .pomodoro-settings {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .pomodoro-time {
+                font-size: 2.5rem;
+            }
+            
+            .pomodoro-timer-display {
+                padding: 20px 24px;
+            }
+            
+            .pomodoro-settings {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            background-color: white;
+            cursor: pointer;
+        }
+        
+        .form-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Progress Bar */
+        .progress-bar {
+            background: #f3f4f6;
+            border-radius: 20px;
+            height: 8px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+            height: 100%;
+            border-radius: 20px;
+            transition: width 0.3s ease;
+        }
+        
+        /* Animations */
+        @keyframes bounceIn {
+            0% { opacity: 0; transform: scale(0.3); }
+            50% { opacity: 1; transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        .task-added {
+            animation: bounceIn 0.6s ease;
+        }
+        
+        @keyframes slideOut {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(100%); }
+        }
+        
+        .task-removed {
+            animation: slideOut 0.3s ease;
+        }
+        
+        /* Enhanced Responsive Design for Mobile & Tablet */
+        @media (max-width: 1024px) {
+            .container { 
+                padding: 0 16px; 
+            }
+            
+            .nav-professional {
+                padding: 12px 16px;
+            }
+            
+            .nav-professional .container {
+                flex-direction: column;
+                gap: 16px;
+            }
+            
+            .nav-professional h1 {
+                font-size: 1.5rem;
+            }
+            
+            .nav-professional .flex.items-center.space-x-2 {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 8px;
+            }
+            
+            .task-item { 
+                padding: 16px; 
+                margin-bottom: 12px;
+            }
+            
+            .add-task-form { 
+                padding: 20px; 
+                margin: 16px;
+            }
+            
+            .nav-link { 
+                padding: 6px 12px; 
+                font-size: 14px; 
+            }
+            
+            .grid.grid-cols-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .grid.grid-cols-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container { 
+                padding: 0 12px; 
+            }
+            
+            .nav-professional {
+                padding: 8px 12px;
+            }
+            
+            .nav-professional h1 {
+                font-size: 1.25rem;
+            }
+            
+            .task-item { 
+                padding: 12px 16px; 
+                margin-bottom: 8px;
+            }
+            
+            .add-task-form { 
+                padding: 16px; 
+                margin: 12px;
+            }
+            
+            .nav-link { 
+                padding: 4px 8px; 
+                font-size: 12px; 
+            }
+            
+            .grid.grid-cols-3,
+            .grid.grid-cols-2 {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .text-3xl {
+                font-size: 1.875rem;
+            }
+            
+            .text-2xl {
+                font-size: 1.5rem;
+            }
+            
+            .text-xl {
+                font-size: 1.125rem;
+            }
+            
+            .filter-section {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .filter-buttons {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .search-bar {
+                width: 100%;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container { 
+                padding: 0 8px; 
+            }
+            
+            .nav-professional {
+                padding: 8px;
+            }
+            
+            .nav-professional h1 {
+                font-size: 1rem;
+            }
+            
+            .task-item { 
+                padding: 8px 12px; 
+                margin-bottom: 6px;
+            }
+            
+            .add-task-form { 
+                padding: 12px; 
+                margin: 8px;
+            }
+            
+            .nav-link { 
+                padding: 4px 6px; 
+                font-size: 10px; 
+            }
+            
+            .task-actions {
+                flex-direction: column;
+                gap: 4px;
+            }
+            
+            .btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            
+            .form-input {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+            
+            .modal-content {
+                margin: 16px;
+                padding: 16px;
+            }
+        }
+        
+        /* iPad Air specific adjustments */
+        @media (min-width: 820px) and (max-width: 1024px) {
+            .grid.grid-cols-3 {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .grid.grid-cols-2 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .grid.grid-cols-1.md\\:grid-cols-4 {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .grid.grid-cols-1.lg\\:grid-cols-4 {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .task-item {
+                padding: 20px;
+            }
+            
+            .add-task-form {
+                padding: 24px;
+                margin: 20px;
+            }
+            
+            .nav-professional .flex.items-center.space-x-2 {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .filter-section {
+                padding: 16px;
+            }
+        }
+        
+        /* Enhanced breakpoints for goals section */
+        @media (max-width: 640px) {
+            .grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-4 {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .goal-item {
+                padding: 12px;
+            }
+            
+            .goal-item .text-xl {
+                font-size: 1rem;
+            }
+            
+            .goal-item .text-sm {
+                font-size: 0.75rem;
+            }
+            
+            .goal-item .text-xs {
+                font-size: 0.625rem;
+            }
+        }
+        
+        /* Task cards responsive improvements */
+        @media (max-width: 768px) {
+            .grid.grid-cols-1.lg\\:grid-cols-4 {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            
+            .search-input {
+                padding: 10px 16px;
+            }
+            
+            .task-item {
+                padding: 12px 16px;
+            }
+            
+            .task-item .flex.justify-between {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .priority-badge, .status-badge {
+                font-size: 0.625rem;
+                padding: 2px 6px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .grid.grid-cols-1.lg\\:grid-cols-4 {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            
+            .goal-item {
+                padding: 8px;
+            }
+            
+            .btn-primary, .btn-secondary, .btn-danger {
+                padding: 6px 10px;
+                font-size: 0.75rem;
+            }
+            
+            .task-item .flex.items-center.gap-2 {
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+        }
+    </style>
+</head>
+<body class="excel-bg">
+    <div id="app" class="min-h-screen">
+        <!-- Navigation -->
+        <nav class="nav-professional p-4">
+            <div class="container mx-auto flex justify-between items-center">
+                <div class="flex items-center space-x-8">
+                    <h1 class="text-2xl font-bold text-gray-800">🍅 ToDo List</h1>
+                    <div class="flex items-center space-x-2">
+                        <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+                        <a href="tasks.html" class="nav-link active">📋 Tasks</a>
+                        <a href="calendar.html" class="nav-link">📅 Calendar</a>
+                        <a href="analytics.html" class="nav-link">📊 Analytics</a>
+                        <a href="profile.html" class="nav-link">👤 Profile</a>
+                        <a href="settings.html" class="nav-link">⚙️ Settings</a>
+                    </div>
+                </div>
+                <div id="nav-menu" class="flex items-center space-x-4">
+                    <span id="user-greeting" class="text-gray-700 font-medium">Welcome, User</span>
+                    <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        📤 Logout
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="container mx-auto p-6">
+            <div class="fade-in">
+                <!-- Page Header -->
+                <div class="mb-8">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-800 mb-2">📋 Task Management</h1>
+                            <p class="text-gray-600">Manage all your tasks, set priorities, and track progress</p>
+                        </div>
+                        <button onclick="addDemoTaskQuick()" class="btn-primary">
+                            ➕ Add New Task
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Overview -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="stats-mini">
+                        <div class="text-2xl font-bold" id="total-tasks">0</div>
+                        <div class="text-sm opacity-90">Total Tasks</div>
+                    </div>
+                    <div class="stats-mini" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <div class="text-2xl font-bold" id="pending-tasks">0</div>
+                        <div class="text-sm opacity-90">Pending</div>
+                    </div>
+                    <div class="stats-mini" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <div class="text-2xl font-bold" id="progress-tasks">0</div>
+                        <div class="text-sm opacity-90">In Progress</div>
+                    </div>
+                    <div class="stats-mini" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                        <div class="text-2xl font-bold" id="completed-tasks">0</div>
+                        <div class="text-sm opacity-90">Completed</div>
+                    </div>
+                </div>
+
+                <!-- Goals Progress Card -->
+                <div class="bg-white rounded-lg shadow p-6 mb-8">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-gray-800">🎯 เป้าหมายที่เกี่ยวข้องกับงาน</h3>
+                        <a href="profile.html" class="text-blue-600 hover:text-blue-800 text-sm">จัดการเป้าหมาย →</a>
+                    </div>
+                    <div id="task-related-goals">
+                        <!-- Goals will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Search and Filters -->
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Search -->
+                    <div class="lg:col-span-2">
+                        <input type="text" id="search-input" placeholder="🔍 Search tasks..." 
+                               class="search-input" onkeyup="filterDemoTasks()">
+                    </div>
+                    
+                    <!-- Filter Controls -->
+                    <div class="filter-section p-4">
+                        <select id="priority-filter" class="form-select" onchange="filterDemoByPriority()">
+                            <option value="all">All Priorities</option>
+                            <option value="high">High Priority</option>
+                            <option value="medium">Medium Priority</option>
+                            <option value="low">Low Priority</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-section p-4">
+                        <select id="status-filter" class="form-select" onchange="filterDemoByStatus()">
+                            <option value="all">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Task List -->
+                <div class="task-card p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-bold text-gray-800">📝 Your Tasks</h3>
+                        <div class="flex items-center space-x-4">
+                            <select id="sort-select" class="form-select text-sm" onchange="sortTasks()">
+                                <option value="created_desc">Newest First</option>
+                                <option value="created_asc">Oldest First</option>
+                                <option value="priority_desc">High Priority First</option>
+                                <option value="due_asc">Due Date</option>
+                                <option value="name_asc">A-Z</option>
+                            </select>
+                            <button onclick="refreshTasks()" class="btn-secondary text-sm">
+                                🔄 Refresh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Tasks Container -->
+                    <div id="tasks-container">
+                        <div class="loading-container">
+                            <div class="loading-spinner"></div>
+                            <div class="loading-text">Loading tasks...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Task Modal -->
+    <div id="task-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 id="modal-title" class="text-xl font-bold text-gray-800">Add New Task</h3>
+                <button onclick="closeTaskModal()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+            </div>
+            
+            <form id="task-form" onsubmit="saveTask(event)">
+                <input type="hidden" id="task-id" value="">
+                
+                <div class="form-group">
+                    <label class="form-label">Task Name *</label>
+                    <input type="text" id="task-name" class="form-input" required placeholder="Enter task name">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea id="task-description" class="form-textarea" rows="3" placeholder="Enter task description (optional)"></textarea>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="form-label">Priority</label>
+                        <select id="task-priority" class="form-select">
+                            <option value="1">Low</option>
+                            <option value="2" selected>Medium</option>
+                            <option value="3">High</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select id="task-status" class="form-select">
+                            <option value="pending">Pending</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="form-label">Due Date</label>
+                        <input type="date" id="task-due-date" class="form-input">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Category</label>
+                        <select id="task-category" class="form-select" onchange="handleCategoryChange(this)">
+                            <option value="">Select Category</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-end space-x-4 mt-6">
+                    <button type="button" onclick="closeTaskModal()" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary">
+                        <span id="save-btn-text">Save Task</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pomodoro Timer Section -->
+    <div class="container mx-auto p-6">
+        <div class="pomodoro-section" id="pomodoro-section">
+            <div class="pomodoro-container">
+                <!-- Header -->
+                <div class="pomodoro-header">
+                    <div class="pomodoro-icon">🍅</div>
+                    <div class="pomodoro-title">Pomodoro Focus Timer</div>
+                </div>
+                
+                <!-- Timer Display -->
+                <div class="pomodoro-timer-display">
+                    <div class="pomodoro-time" id="pomodoro-time">25:00</div>
+                    <div class="pomodoro-mode" id="pomodoro-mode">work session</div>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="pomodoro-progress-container">
+                    <div class="pomodoro-progress-text" id="pomodoro-progress-text">0%</div>
+                    <div class="pomodoro-progress">
+                        <div class="pomodoro-progress-bar" id="pomodoro-progress" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <!-- Status -->
+                <div class="pomodoro-status" id="pomodoro-status">🎯 Ready to start your focus session</div>
+                
+                <!-- Time Preset Selection -->
+                <div class="pomodoro-settings">
+                    <div class="pomodoro-settings-label">⏱️ Choose Duration</div>
+                    <div class="time-preset active" onclick="selectTimePreset(25, this)" data-minutes="25">
+                        <div>25min</div>
+                        <small>Classic</small>
+                    </div>
+                    <div class="time-preset" onclick="selectTimePreset(15, this)" data-minutes="15">
+                        <div>15min</div>
+                        <small>Quick</small>
+                    </div>
+                    <div class="time-preset" onclick="selectTimePreset(30, this)" data-minutes="30">
+                        <div>30min</div>
+                        <small>Extended</small>
+                    </div>
+                    <div class="time-preset" onclick="selectTimePreset(45, this)" data-minutes="45">
+                        <div>45min</div>
+                        <small>Deep</small>
+                    </div>
+                    <div class="time-preset" onclick="selectTimePreset(60, this)" data-minutes="60">
+                        <div>60min</div>
+                        <small>Marathon</small>
+                    </div>
+                </div>
+                
+                <!-- Control Buttons -->
+                <div class="pomodoro-controls">
+                    <button class="pomodoro-btn primary" id="pomodoro-start" onclick="startPomodoro()">
+                        ▶️ Start Focus
+                    </button>
+                    <button class="pomodoro-btn secondary" id="pomodoro-pause" onclick="pausePomodoro()" style="display: none;">
+                        ⏸️ Pause
+                    </button>
+                    <button class="pomodoro-btn secondary" id="pomodoro-reset" onclick="resetPomodoro()">
+                        🔄 Reset
+                    </button>
+                    <button class="pomodoro-btn danger" id="pomodoro-stop" onclick="stopPomodoro()" style="display: none;">
+                        ⏹️ Stop
+                    </button>
+                </div>
+                
+                <!-- Statistics -->
+                <div class="pomodoro-stats">
+                    <div class="stat-item">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-value" id="pomodoro-sessions-today">0</div>
+                        <div class="stat-label">Today's Sessions</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">⏰</div>
+                        <div class="stat-value" id="pomodoro-focus-time">0h</div>
+                        <div class="stat-label">Focus Time</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">🔥</div>
+                        <div class="stat-value" id="pomodoro-streak">0</div>
+                        <div class="stat-label">Current Streak</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-value" id="pomodoro-total-today">0</div>
+                        <div class="stat-label">Total Minutes</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Processing...</div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="confirm-modal" style="display: none;">
+        <div class="confirm-content">
+            <div class="confirm-header">
+                <div id="confirm-icon" class="confirm-icon warning">⚠️</div>
+                <h3 id="confirm-title" class="confirm-title">Confirm Action</h3>
+            </div>
+            <div class="confirm-body">
+                <p id="confirm-message" class="confirm-message">Are you sure you want to proceed?</p>
+            </div>
+            <div class="confirm-footer">
+                <button id="confirm-cancel" class="btn-cancel">Cancel</button>
+                <button id="confirm-ok" class="btn-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let token = localStorage.getItem('token');
+        let tasks = [];
+        let filteredTasks = [];
+        let categories = [];
+        let isEditMode = false;
+        
+        const API_BASE_URL = 'https://to-do-list-api-nrry.vercel.app/api/v1';
+        
+        // API Helper Functions
+        async function apiRequest(endpoint, method = 'GET', data = null) {
+            const config = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            };
+            
+            if (data) {
+                config.body = JSON.stringify(data);
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        showNotification('Session expired. Please login again.', 'error');
+                        logout();
+                        return null;
+                    }
+                    
+                    let errorMessage = `HTTP error! status: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.message || errorData.error || errorMessage;
+                    } catch (e) {
+                        // If can't parse error response, use status text
+                        errorMessage = response.statusText || errorMessage;
+                    }
+                    
+                    throw new Error(errorMessage);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('API Request failed:', error);
+                
+                // Handle network errors
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    throw new Error('Unable to connect to server. Please check if the backend is running.');
+                }
+                
+                throw error;
+            }
+        }
+        
+        // Notification System
+        function showNotification(message, type = 'info', duration = 5000) {
+            // Remove existing notifications
+            document.querySelectorAll('.notification').forEach(n => n.remove());
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <span class="notification-icon">${getNotificationIcon(type)}</span>
+                    <span class="notification-text">${message}</span>
+                    <button class="notification-close" onclick="removeNotification(this)">×</button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after duration
+            if (duration > 0) {
+                setTimeout(() => {
+                    removeNotification(notification);
+                }, duration);
+            }
+            
+            return notification;
+        }
+        
+        function removeNotification(element) {
+            const notification = element.closest ? element.closest('.notification') : element;
+            if (notification && notification.parentElement) {
+                notification.style.animation = 'slideOutRight 0.3s ease-in forwards';
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 300);
+            }
+        }
+        
+        function getNotificationIcon(type) {
+            switch (type) {
+                case 'success': return '✅';
+                case 'error': return '❌';
+                case 'warning': return '⚠️';
+                case 'info': return 'ℹ️';
+                default: return '📝';
+            }
+        }
+        
+        // Confirmation Modal System
+        function showConfirmation(options = {}) {
+            const {
+                title = 'Confirm Action',
+                message = 'Are you sure you want to proceed?',
+                type = 'warning',
+                confirmText = 'Confirm',
+                cancelText = 'Cancel',
+                onConfirm = () => {},
+                onCancel = () => {}
+            } = options;
+            
+            const modal = document.getElementById('confirm-modal');
+            const icon = document.getElementById('confirm-icon');
+            const titleEl = document.getElementById('confirm-title');
+            const messageEl = document.getElementById('confirm-message');
+            const confirmBtn = document.getElementById('confirm-ok');
+            const cancelBtn = document.getElementById('confirm-cancel');
+            
+            // Set content
+            titleEl.textContent = title;
+            messageEl.textContent = message;
+            confirmBtn.textContent = confirmText;
+            cancelBtn.textContent = cancelText;
+            
+            // Set icon and style based on type
+            icon.className = `confirm-icon ${type}`;
+            switch (type) {
+                case 'danger':
+                    icon.textContent = '🗑️';
+                    confirmBtn.className = 'btn-confirm danger';
+                    break;
+                case 'warning':
+                    icon.textContent = '⚠️';
+                    confirmBtn.className = 'btn-confirm warning';
+                    break;
+                case 'info':
+                    icon.textContent = 'ℹ️';
+                    confirmBtn.className = 'btn-confirm info';
+                    break;
+                case 'logout':
+                    icon.textContent = '👋';
+                    confirmBtn.className = 'btn-confirm warning';
+                    break;
+                default:
+                    icon.textContent = '❓';
+                    confirmBtn.className = 'btn-confirm';
+            }
+            
+            // Set up event handlers
+            const handleConfirm = () => {
+                hideConfirmation();
+                onConfirm();
+            };
+            
+            const handleCancel = () => {
+                hideConfirmation();
+                onCancel();
+            };
+            
+            const handleEscape = (e) => {
+                if (e.key === 'Escape') {
+                    handleCancel();
+                }
+            };
+            
+            const handleBackdropClick = (e) => {
+                if (e.target === modal) {
+                    handleCancel();
+                }
+            };
+            
+            // Remove existing listeners
+            confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+            cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+            
+            // Add new listeners
+            document.getElementById('confirm-ok').addEventListener('click', handleConfirm);
+            document.getElementById('confirm-cancel').addEventListener('click', handleCancel);
+            document.addEventListener('keydown', handleEscape);
+            modal.addEventListener('click', handleBackdropClick);
+            
+            // Store cleanup function
+            modal._cleanup = () => {
+                document.removeEventListener('keydown', handleEscape);
+                modal.removeEventListener('click', handleBackdropClick);
+            };
+            
+            // Show modal with animation
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                modal.classList.add('show');
+            }, 10);
+        }
+        
+        function hideConfirmation() {
+            const modal = document.getElementById('confirm-modal');
+            if (!modal) return;
+            
+            if (modal._cleanup) {
+                modal._cleanup();
+                modal._cleanup = null;
+            }
+            
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        }
+        
+        // Common logout function with beautiful confirmation
+        function confirmLogout() {
+            showConfirmation({
+                title: 'Logout Confirmation',
+                message: 'Are you sure you want to logout? You will need to login again to access your account.',
+                type: 'logout',
+                confirmText: 'Logout',
+                cancelText: 'Stay',
+                onConfirm: () => {
+                    showNotification('Logging out...', 'info', 2000);
+                    setTimeout(() => {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('userProfile');
+                        localStorage.removeItem('user');
+                        window.location.href = 'index.html';
+                    }, 1000);
+                }
+            });
+        }
+        
+        // Common delete confirmation
+        function confirmDelete(itemName, onConfirm) {
+            showConfirmation({
+                title: 'Delete Confirmation',
+                message: `Are you sure you want to delete "${itemName}"? This action cannot be undone.`,
+                type: 'danger',
+                confirmText: 'Delete',
+                cancelText: 'Keep',
+                onConfirm: onConfirm
+            });
+        }
+        
+        // Use common logout function
+        function logout() {
+            confirmLogout();
+        }
+        
+        // Loading Functions
+        function showLoading(message = 'Loading...') {
+            const overlay = document.getElementById('loading-overlay');
+            const text = overlay.querySelector('.loading-text');
+            text.textContent = message;
+            overlay.style.display = 'flex';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+        
+        // Task Management Functions
+        async function loadTasks() {
+            try {
+                showLoading('Loading tasks...');
+                const response = await apiRequest('/tasks');
+                // Backend returns response with tasks array and total count
+                tasks = response.tasks || [];
+                filteredTasks = [...tasks];
+                renderTasks();
+                updateStats();
+                hideLoading();
+            } catch (error) {
+                hideLoading();
+                console.error('Failed to load tasks:', error);
+                showNotification('Failed to load tasks: ' + error.message, 'error');
+                
+                // Load demo tasks for testing
+                loadDemoTasks();
+            }
+        }
+        
+        async function loadCategories() {
+            try {
+                const response = await apiRequest('/tasks/categories');
+                categories = response.categories || [];
+                populateCategoryDropdown();
+            } catch (error) {
+                console.error('Failed to load categories:', error);
+                // Use default categories
+                categories = ["Work", "Personal", "Shopping", "Health", "Education", "Finance", "Travel", "Family", "Hobbies", "Study"];
+                populateCategoryDropdown();
+            }
+        }
+        
+        function populateCategoryDropdown() {
+            const select = document.getElementById('task-category');
+            select.innerHTML = '<option value="">Select Category</option>';
+            
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                select.appendChild(option);
+            });
+            
+            // Add option to create new category
+            const newOption = document.createElement('option');
+            newOption.value = '__new__';
+            newOption.textContent = '+ Add New Category';
+            select.appendChild(newOption);
+        }
+        
+        function handleCategoryChange(selectElement) {
+            if (selectElement.value === '__new__') {
+                const newCategory = prompt('Enter new category name:');
+                if (newCategory && newCategory.trim()) {
+                    const trimmedCategory = newCategory.trim();
+                    if (!categories.includes(trimmedCategory)) {
+                        categories.push(trimmedCategory);
+                        populateCategoryDropdown();
+                    }
+                    selectElement.value = trimmedCategory;
+                } else {
+                    selectElement.value = '';
+                }
+            }
+        }
+        
+        function loadDemoTasks() {
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            tasks = [
+                {
+                    id: 1,
+                    task_name: 'Complete project documentation',
+                    description: 'Write comprehensive documentation for the new project',
+                    priority: 3,
+                    due_date: tomorrow.toISOString().split('T')[0],
+                    category: 'Work',
+                    is_completed: false,
+                    created_at: today.toISOString()
+                },
+                {
+                    id: 2,
+                    task_name: 'Review code changes',
+                    description: 'Review and approve pending pull requests',
+                    priority: 2,
+                    due_date: today.toISOString().split('T')[0],
+                    category: 'Work',
+                    is_completed: false,
+                    created_at: today.toISOString()
+                },
+                {
+                    id: 3,
+                    task_name: 'Buy groceries',
+                    description: 'Buy milk, bread, and vegetables',
+                    priority: 1,
+                    due_date: null,
+                    category: 'Personal',
+                    is_completed: true,
+                    created_at: today.toISOString()
+                }
+            ];
+            filteredTasks = [...tasks];
+            renderTasks();
+            updateStats();
+            showNotification('โหลดข้อมูลตัวอย่างเรียบร้อย', 'info');
+        }
+        
+        function renderTasks() {
+            const container = document.getElementById('tasks-container');
+            
+            if (filteredTasks.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="text-6xl mb-4">📝</div>
+                        <h3 class="text-xl font-bold text-gray-700 mb-2">No tasks found</h3>
+                        <p class="text-gray-500 mb-6">Create your first task to get started!</p>
+                        <button onclick="addDemoTaskQuick()" class="btn-primary">
+                            ➕ Add Your First Task
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = filteredTasks.map(task => generateTaskHTML(task)).join('');
+        }
+        
+        function generateTaskHTML(task) {
+            const priorityText = getPriorityText(task.priority);
+            // Determine status based on backend data structure
+            let statusText = 'pending'; // default
+            if (task.is_completed) {
+                statusText = 'completed';
+            } else if (task.status) {
+                statusText = task.status;
+            }
+            
+            const dueDateText = task.due_date ? 
+                `Due: ${formatDate(task.due_date)}` : 
+                'No due date';
+                
+            return `
+                <div class="task-item ${priorityText}-priority ${task.is_completed ? 'completed' : ''}">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-start space-x-3 flex-1">
+                            <input type="checkbox" ${task.is_completed ? 'checked' : ''} 
+                                   onchange="toggleTaskComplete(${task.id}, this.checked)"
+                                   class="checkbox-custom mt-1">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <h4 class="font-semibold text-gray-900 ${task.is_completed ? 'line-through' : ''}">${task.task_name}</h4>
+                                    <span class="priority-badge priority-${priorityText}">${priorityText}</span>
+                                    <select class="status-dropdown" onchange="updateTaskStatus(${task.id}, this.value)" 
+                                            style="font-size: 0.75rem; padding: 2px 4px; border-radius: 4px; border: 1px solid #ccc;">
+                                        <option value="pending" ${statusText === 'pending' ? 'selected' : ''}>Pending</option>
+                                        <option value="in_progress" ${statusText === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                                        <option value="completed" ${statusText === 'completed' ? 'selected' : ''}>Completed</option>
+                                        <option value="cancelled" ${statusText === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                                    </select>
+                                </div>
+                                ${task.description ? `<p class="text-sm text-gray-600 mb-2 ${task.is_completed ? 'line-through' : ''}">${task.description}</p>` : ''}
+                                <div class="flex items-center space-x-4 text-xs text-gray-500">
+                                    <span>📅 ${dueDateText}</span>
+                                    ${task.category ? `<span>🏷️ ${task.category}</span>` : ''}
+                                    <span>🕒 ${formatDate(task.created_at)}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2 ml-4">
+                            <button onclick="editTask(${task.id})" class="text-blue-600 hover:text-blue-800 p-2" title="Edit">
+                                ✏️
+                            </button>
+                            <button onclick="duplicateTask(${task.id})" class="text-green-600 hover:text-green-800 p-2" title="Duplicate">
+                                📋
+                            </button>
+                            <button onclick="deleteTask(${task.id})" class="text-red-600 hover:text-red-800 p-2" title="Delete">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function getPriorityText(priority) {
+            switch (parseInt(priority)) {
+                case 3: return 'high';
+                case 2: return 'medium';
+                case 1: return 'low';
+                default: return 'low';
+            }
+        }
+        
+        function getStatusDisplayText(status) {
+            switch (status) {
+                case 'pending': return 'Pending';
+                case 'in_progress': return 'In Progress';
+                case 'completed': return 'Completed';
+                case 'cancelled': return 'Cancelled';
+                default: return 'Pending';
+            }
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return 'No due date';
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('th-TH', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            } catch (e) {
+                return 'Invalid date';
+            }
+        }
+        
+        function safeDateCompare(dateA, dateB) {
+            const a = dateA ? new Date(dateA) : new Date('9999-12-31');
+            const b = dateB ? new Date(dateB) : new Date('9999-12-31');
+            return a - b;
+        }
+        
+        function formatDateForBackend(dateString) {
+            if (!dateString) return null;
+            const date = new Date(dateString);
+            return date.toISOString().split('T')[0];
+        }
+
+        // Task CRUD Operations
+        async function saveTask(event) {
+            event.preventDefault();
+            
+            const taskId = document.getElementById('task-id').value;
+            const taskData = {
+                name: document.getElementById('task-name').value.trim(),
+                description: document.getElementById('task-description').value.trim(),
+                priority: parseInt(document.getElementById('task-priority').value),
+                status: document.getElementById('task-status').value,
+                due_date: formatDateForBackend(document.getElementById('task-due-date').value),
+                category: document.getElementById('task-category').value
+            };
+            
+            if (!taskData.name) {
+                showNotification('Task name is required', 'error');
+                return;
+            }
+            
+            try {
+                showLoading(taskId ? 'Updating task...' : 'Creating task...');
+                
+                let response;
+                if (taskId) {
+                    response = await apiRequest(`/tasks/${taskId}`, 'PUT', taskData);
+                } else {
+                    response = await apiRequest('/tasks', 'POST', taskData);
+                }
+                
+                hideLoading();
+                closeTaskModal();
+                showNotification(taskId ? 'Task updated successfully!' : 'Task created successfully!', 'success');
+                await loadTasks();
+                
+            } catch (error) {
+                hideLoading();
+                console.error('Failed to save task:', error);
+                showNotification('Failed to save task: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteTask(taskId, taskName = 'this task') {
+            confirmDelete(taskName, async () => {
+                try {
+                    showLoading('Deleting task...');
+                    await apiRequest(`/tasks/${taskId}`, 'DELETE');
+                    hideLoading();
+                    showNotification('Task deleted successfully!', 'success');
+                    await loadTasks();
+                } catch (error) {
+                    hideLoading();
+                    console.error('Failed to delete task:', error);
+                    showNotification('Failed to delete task: ' + error.message, 'error');
+                }
+            });
+        }
+
+        async function toggleTaskComplete(taskId, isCompleted) {
+            const newStatus = isCompleted ? 'completed' : 'pending';
+            
+            try {
+                await apiRequest(`/tasks/${taskId}`, 'PUT', { status: newStatus });
+                showNotification('Task status updated!', 'success');
+                await loadTasks();
+            } catch (error) {
+                console.error('Failed to update task status:', error);
+                showNotification('Failed to update task status: ' + error.message, 'error');
+            }
+        }
+
+        async function updateTaskStatus(taskId, newStatus) {
+            try {
+                await apiRequest(`/tasks/${taskId}`, 'PUT', { status: newStatus });
+                showNotification('Task status updated!', 'success');
+                await loadTasks();
+            } catch (error) {
+                console.error('Failed to update task status:', error);
+                showNotification('Failed to update task status: ' + error.message, 'error');
+            }
+        }
+
+        async function editTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) {
+                showNotification('Task not found', 'error');
+                return;
+            }
+            openEditTaskModal(task);
+        }
+
+        async function duplicateTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) {
+                showNotification('Task not found', 'error');
+                return;
+            }
+            
+            const duplicatedTask = {
+                name: task.task_name + ' (Copy)',
+                description: task.description,
+                priority: task.priority,
+                status: 'pending',
+                due_date: task.due_date,
+                category: task.category
+            };
+            
+            try {
+                showLoading('Duplicating task...');
+                await apiRequest('/tasks', 'POST', duplicatedTask);
+                hideLoading();
+                showNotification('Task duplicated successfully!', 'success');
+                await loadTasks();
+            } catch (error) {
+                hideLoading();
+                console.error('Failed to duplicate task:', error);
+                showNotification('Failed to duplicate task: ' + error.message, 'error');
+            }
+        }
+
+        // Modal Functions
+        function openAddTaskModal() {
+            isEditMode = false;
+            document.getElementById('modal-title').textContent = 'Add New Task';
+            document.getElementById('save-btn-text').textContent = 'Create Task';
+            document.getElementById('task-form').reset();
+            document.getElementById('task-id').value = '';
+            document.getElementById('task-modal').style.display = 'flex';
+        }
+        
+        // Demo Add Task Function (simple prompt-based)
+        function addDemoTaskQuick() {
+            const title = prompt('Enter task title:');
+            if (title && title.trim()) {
+                const description = prompt('Enter task description (optional):') || '';
+                const priority = prompt('Enter priority (high/medium/low):') || 'medium';
+                
+                const newTask = {
+                    id: taskIdCounter++,
+                    title: title.trim(),
+                    description: description.trim(),
+                    priority: ['high', 'medium', 'low'].includes(priority.toLowerCase()) ? priority.toLowerCase() : 'medium',
+                    status: 'pending',
+                    due_date: new Date().toISOString().split('T')[0],
+                    created_at: new Date().toISOString().split('T')[0]
+                };
+                
+                demoTasks.unshift(newTask);
+                renderDemoTasks();
+                
+                // Add animation
+                setTimeout(() => {
+                    const newTaskElement = document.querySelector(`[data-task-id="${newTask.id}"]`);
+                    if (newTaskElement) {
+                        newTaskElement.classList.add('task-added');
+                    }
+                }, 100);
+            }
+        }
+
+        function openEditTaskModal(task) {
+            isEditMode = true;
+            document.getElementById('modal-title').textContent = 'Edit Task';
+            document.getElementById('save-btn-text').textContent = 'Update Task';
+            
+            // Fill form with task data
+            document.getElementById('task-id').value = task.id;
+            document.getElementById('task-name').value = task.task_name || task.name || '';
+            document.getElementById('task-description').value = task.description || '';
+            document.getElementById('task-priority').value = task.priority || 2;
+            document.getElementById('task-status').value = task.is_completed ? 'completed' : (task.status || 'pending');
+            document.getElementById('task-due-date').value = task.due_date ? task.due_date.split('T')[0] : '';
+            document.getElementById('task-category').value = task.category || '';
+            
+            document.getElementById('task-modal').style.display = 'flex';
+        }
+
+        function closeTaskModal() {
+            document.getElementById('task-modal').style.display = 'none';
+            document.getElementById('task-form').reset();
+        }
+
+        // Filter and Sort Functions
+        function filterTasks() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const priorityFilter = document.getElementById('priority-filter').value;
+            const statusFilter = document.getElementById('status-filter').value;
+            
+            filteredTasks = tasks.filter(task => {
+                const taskName = task.task_name || task.name || '';
+                const taskDescription = task.description || '';
+                const taskCategory = task.category || '';
+                
+                const matchesSearch = !searchTerm || 
+                    taskName.toLowerCase().includes(searchTerm) ||
+                    taskDescription.toLowerCase().includes(searchTerm) ||
+                    taskCategory.toLowerCase().includes(searchTerm);
+                
+                const matchesPriority = !priorityFilter || task.priority == priorityFilter;
+                
+                const taskStatus = task.is_completed ? 'completed' : (task.status || 'pending');
+                const matchesStatus = !statusFilter || taskStatus === statusFilter;
+                
+                return matchesSearch && matchesPriority && matchesStatus;
+            });
+            
+            renderTasks();
+            updateStats();
+        }
+
+        function sortTasks() {
+            const sortBy = document.getElementById('sort-select').value;
+            
+            filteredTasks.sort((a, b) => {
+                switch (sortBy) {
+                    case 'created_desc':
+                        return new Date(b.created_at) - new Date(a.created_at);
+                    case 'created_asc':
+                        return new Date(a.created_at) - new Date(b.created_at);
+                    case 'priority_desc':
+                        return (b.priority || 1) - (a.priority || 1);
+                    case 'due_asc':
+                        return safeDateCompare(a.due_date, b.due_date);
+                    case 'name_asc':
+                        const nameA = a.task_name || a.name || '';
+                        const nameB = b.task_name || b.name || '';
+                        return nameA.localeCompare(nameB);
+                    default:
+                        return new Date(b.created_at) - new Date(a.created_at);
+                }
+            });
+            
+            renderTasks();
+        }
+
+        // Pomodoro Timer Functions
+        let pomodoroTimer = null;
+        let pomodoroTimeLeft = 25 * 60; // 25 minutes in seconds
+        let pomodoroTotalTime = 25 * 60;
+        let pomodoroIsRunning = false;
+        let pomodoroIsBreak = false;
+        let pomodoroSessions = 0;
+        let pomodoroFocusTime = 0;
+        let pomodoroStreak = 0;
+        let pomodoroTotalMinutesToday = 0;
+        
+        function selectTimePreset(minutes, element) {
+            if (pomodoroIsRunning) {
+                showNotification('⚠️ Please stop the timer before changing duration', 'warning');
+                return;
+            }
+            
+            // Remove active class from all presets
+            document.querySelectorAll('.time-preset').forEach(preset => {
+                preset.classList.remove('active');
+            });
+            
+            // Add active class to selected preset
+            element.classList.add('active');
+            
+            // Set new time
+            pomodoroTimeLeft = minutes * 60;
+            pomodoroTotalTime = minutes * 60;
+            pomodoroIsBreak = false;
+            
+            updatePomodoroDisplay();
+            updatePomodoroStatus(`🎯 Ready for ${minutes} minute focus session`);
+            updatePomodoroMode('work session');
+        }
+        
+        function updatePomodoroDisplay() {
+            const minutes = Math.floor(pomodoroTimeLeft / 60);
+            const seconds = pomodoroTimeLeft % 60;
+            const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            const timeElement = document.getElementById('pomodoro-time');
+            if (timeElement) {
+                timeElement.textContent = timeString;
+            }
+            
+            // Update progress
+            const progress = ((pomodoroTotalTime - pomodoroTimeLeft) / pomodoroTotalTime) * 100;
+            const progressElement = document.getElementById('pomodoro-progress');
+            const progressTextElement = document.getElementById('pomodoro-progress-text');
+            
+            if (progressElement) {
+                progressElement.style.width = `${Math.round(progress)}%`;
+            }
+            if (progressTextElement) {
+                progressTextElement.textContent = `${Math.round(progress)}%`;
+            }
+            
+            // Update page title with timer when running
+            if (pomodoroIsRunning) {
+                const mode = pomodoroIsBreak ? '😌 Break' : '🍅 Focus';
+                document.title = `${timeString} - ${mode} | Tasks`;
+            } else {
+                document.title = 'Tasks - ToDo List App';
+            }
+        }
+        
+        function updatePomodoroStatus(message) {
+            const statusElement = document.getElementById('pomodoro-status');
+            if (statusElement) {
+                statusElement.textContent = message;
+            }
+        }
+        
+        function updatePomodoroMode(mode) {
+            const modeElement = document.getElementById('pomodoro-mode');
+            if (modeElement) {
+                modeElement.textContent = mode;
+            }
+        }
+        
+        function addPomodoroEffects(isRunning, isBreak = false) {
+            const section = document.getElementById('pomodoro-section');
+            if (!section) return;
+            
+            if (isRunning) {
+                section.classList.add('pomodoro-running');
+                if (isBreak) {
+                    section.classList.add('pomodoro-break');
+                } else {
+                    section.classList.remove('pomodoro-break');
+                }
+            } else {
+                section.classList.remove('pomodoro-running', 'pomodoro-break');
+            }
+        }
+        
+        async function startPomodoro() {
+            if (!pomodoroIsRunning) {
+                pomodoroIsRunning = true;
+                
+                try {
+                    // Start Pomodoro session in backend
+                    await apiRequest('/focus/pomodoro/start', 'POST', { 
+                        duration: pomodoroTotalTime / 60 // Convert to minutes
+                    });
+                } catch (error) {
+                    console.error('Error starting Pomodoro:', error);
+                }
+                
+                pomodoroTimer = setInterval(() => {
+                    pomodoroTimeLeft--;
+                    updatePomodoroDisplay();
+                    
+                    if (pomodoroTimeLeft <= 0) {
+                        completePomodoro();
+                    }
+                }, 1000);
+                
+                // Update UI
+                const startBtn = document.getElementById('pomodoro-start');
+                const pauseBtn = document.getElementById('pomodoro-pause');
+                const stopBtn = document.getElementById('pomodoro-stop');
+                
+                if (startBtn) startBtn.style.display = 'none';
+                if (pauseBtn) pauseBtn.style.display = 'inline-block';
+                if (stopBtn) stopBtn.style.display = 'inline-block';
+                
+                if (pomodoroIsBreak) {
+                    updatePomodoroStatus('😌 Enjoying your break...');
+                    updatePomodoroMode('break time');
+                } else {
+                    updatePomodoroStatus('🍅 Deep focus mode activated');
+                    updatePomodoroMode('focus session');
+                }
+                
+                addPomodoroEffects(true, pomodoroIsBreak);
+                    
+                const sessionType = pomodoroIsBreak ? 'break' : 'focus';
+                const duration = Math.floor(pomodoroTotalTime / 60);
+                showNotification(`🚀 Started ${duration}-minute ${sessionType} session`, 'success');
+            }
+        }
+        
+        function pausePomodoro() {
+            if (pomodoroIsRunning) {
+                pomodoroIsRunning = false;
+                clearInterval(pomodoroTimer);
+                
+                // Update UI
+                const startBtn = document.getElementById('pomodoro-start');
+                const pauseBtn = document.getElementById('pomodoro-pause');
+                const stopBtn = document.getElementById('pomodoro-stop');
+                
+                if (startBtn) startBtn.style.display = 'inline-block';
+                if (pauseBtn) pauseBtn.style.display = 'none';
+                if (stopBtn) stopBtn.style.display = 'inline-block';
+                
+                updatePomodoroStatus('⏸️ Session paused - Click start to continue');
+                addPomodoroEffects(false);
+                document.title = 'Tasks - ToDo List App';
+                
+                showNotification('⏸️ Pomodoro session paused', 'info');
+            }
+        }
+        
+        function stopPomodoro() {
+            showConfirmation({
+                title: 'Stop Session',
+                message: 'Are you sure you want to stop the current session? Your progress will be lost.',
+                type: 'warning',
+                confirmText: 'Stop Session',
+                cancelText: 'Continue',
+                onConfirm: () => {
+                    resetPomodoro();
+                    showNotification('🛑 Session stopped', 'info');
+                }
+            });
+        }
+        
+        function resetPomodoro() {
+            pomodoroIsRunning = false;
+            pomodoroIsBreak = false;
+            clearInterval(pomodoroTimer);
+            
+            // Get selected time preset
+            const activePreset = document.querySelector('.time-preset.active');
+            const selectedMinutes = activePreset ? parseInt(activePreset.dataset.minutes) : 25;
+            
+            pomodoroTimeLeft = selectedMinutes * 60;
+            pomodoroTotalTime = selectedMinutes * 60;
+            
+            updatePomodoroDisplay();
+            
+            // Update UI
+            const startBtn = document.getElementById('pomodoro-start');
+            const pauseBtn = document.getElementById('pomodoro-pause');
+            const stopBtn = document.getElementById('pomodoro-stop');
+            
+            if (startBtn) startBtn.style.display = 'inline-block';
+            if (pauseBtn) pauseBtn.style.display = 'none';
+            if (stopBtn) stopBtn.style.display = 'none';
+            
+            updatePomodoroStatus('🎯 Ready to start your focus session');
+            updatePomodoroMode('work session');
+            addPomodoroEffects(false);
+            document.title = 'Tasks - ToDo List App';
+        }
+        
+        async function completePomodoro() {
+            clearInterval(pomodoroTimer);
+            pomodoroIsRunning = false;
+            
+            try {
+                // Complete Pomodoro session in backend
+                await apiRequest('/focus/pomodoro/complete', 'POST');
+            } catch (error) {
+                console.error('Error completing Pomodoro:', error);
+            }
+            
+            if (!pomodoroIsBreak) {
+                // Completed work session
+                pomodoroSessions++;
+                pomodoroFocusTime += pomodoroTotalTime / 3600; // Convert to hours
+                pomodoroStreak++;
+                pomodoroTotalMinutesToday += pomodoroTotalTime / 60; // Convert to minutes
+                
+                // Switch to break mode
+                pomodoroIsBreak = true;
+                pomodoroTimeLeft = 5 * 60; // 5-minute break
+                pomodoroTotalTime = 5 * 60;
+                updatePomodoroStatus('🎉 Great work! Time for a 5-minute break');
+                updatePomodoroMode('break time');
+                
+                showNotification('🎉 Pomodoro completed! Take a 5-minute break', 'success');
+                
+                // Play completion sound (if supported)
+                try {
+                    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmMeUmXCa2X30b1kHQ4J');
+                    audio.volume = 0.3;
+                    audio.play();
+                } catch (e) {
+                    console.log('Audio not supported');
+                }
+                
+                // Show browser notification if permission granted
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('🍅 Pomodoro Complete!', {
+                        body: 'Great work! Time for a break.',
+                        icon: '🍅'
+                    });
+                }
+                
+            } else {
+                // Completed break session
+                pomodoroIsBreak = false;
+                
+                // Get selected time preset for next work session
+                const activePreset = document.querySelector('.time-preset.active');
+                const selectedMinutes = activePreset ? parseInt(activePreset.dataset.minutes) : 25;
+                
+                pomodoroTimeLeft = selectedMinutes * 60;
+                pomodoroTotalTime = selectedMinutes * 60;
+                updatePomodoroStatus('✅ Break over! Ready for the next focus session');
+                updatePomodoroMode('work session');
+                
+                showNotification('✅ Break completed! Ready for next focus session', 'success');
+            }
+            
+            updatePomodoroDisplay();
+            updatePomodoroStats();
+            savePomodoroStats();
+            
+            // Update UI
+            const startBtn = document.getElementById('pomodoro-start');
+            const pauseBtn = document.getElementById('pomodoro-pause');
+            const stopBtn = document.getElementById('pomodoro-stop');
+            
+            if (startBtn) startBtn.style.display = 'inline-block';
+            if (pauseBtn) pauseBtn.style.display = 'none';
+            if (stopBtn) stopBtn.style.display = 'none';
+            
+            addPomodoroEffects(false);
+        }
+        
+        function updatePomodoroStats() {
+            const sessionsElement = document.getElementById('pomodoro-sessions-today');
+            const focusTimeElement = document.getElementById('pomodoro-focus-time');
+            const streakElement = document.getElementById('pomodoro-streak');
+            const totalElement = document.getElementById('pomodoro-total-today');
+            
+            if (sessionsElement) sessionsElement.textContent = pomodoroSessions;
+            if (focusTimeElement) focusTimeElement.textContent = `${pomodoroFocusTime.toFixed(1)}h`;
+            if (streakElement) streakElement.textContent = pomodoroStreak;
+            if (totalElement) totalElement.textContent = Math.round(pomodoroTotalMinutesToday);
+        }
+        
+        async function initPomodoroStats() {
+            try {
+                // Try to load stats from backend first
+                const response = await apiRequest('/focus/pomodoro/stats');
+                if (response && response.stats) {
+                    pomodoroSessions = response.stats.sessions_today || 0;
+                    pomodoroFocusTime = response.stats.focus_time_today || 0;
+                    pomodoroStreak = response.stats.current_streak || 0;
+                    pomodoroTotalMinutesToday = response.stats.total_minutes_today || 0;
+                }
+            } catch (error) {
+                console.log('Loading stats from localStorage...');
+                // Fallback to localStorage
+                const savedStats = localStorage.getItem('pomodoroStats');
+                if (savedStats) {
+                    try {
+                        const stats = JSON.parse(savedStats);
+                        const today = new Date().toDateString();
+                        
+                        if (stats.date === today) {
+                            pomodoroSessions = stats.sessions || 0;
+                            pomodoroFocusTime = stats.focusTime || 0;
+                            pomodoroStreak = stats.streak || 0;
+                            pomodoroTotalMinutesToday = stats.totalMinutes || 0;
+                        }
+                    } catch (e) {
+                        console.error('Error loading Pomodoro stats:', e);
+                    }
+                }
+            }
+            
+            updatePomodoroStats();
+            
+            // Request notification permission
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+        
+        function savePomodoroStats() {
+            const stats = {
+                date: new Date().toDateString(),
+                sessions: pomodoroSessions,
+                focusTime: pomodoroFocusTime,
+                streak: pomodoroStreak,
+                totalMinutes: pomodoroTotalMinutesToday
+            };
+            localStorage.setItem('pomodoroStats', JSON.stringify(stats));
+        }
+        
+        // Keyboard shortcuts for Pomodoro
+        document.addEventListener('keydown', function(e) {
+            // Only when not typing in input fields
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                if (e.code === 'Space' && e.ctrlKey) {
+                    e.preventDefault();
+                    if (pomodoroIsRunning) {
+                        pausePomodoro();
+                    } else {
+                        startPomodoro();
+                    }
+                } else if (e.code === 'KeyR' && e.ctrlKey) {
+                    e.preventDefault();
+                    resetPomodoro();
+                }
+            }
+        });
+
+        function refreshTasks() {
+            loadTasks();
+        }
+
+        function updateStats() {
+            const totalTasks = tasks.length;
+            const pendingTasks = tasks.filter(task => !task.is_completed && (task.status || 'pending') === 'pending').length;
+            const progressTasks = tasks.filter(task => !task.is_completed && task.status === 'in_progress').length;
+            const completedTasks = tasks.filter(task => task.is_completed || task.status === 'completed').length;
+            
+            document.getElementById('total-tasks').textContent = totalTasks;
+            document.getElementById('pending-tasks').textContent = pendingTasks;
+            document.getElementById('progress-tasks').textContent = progressTasks;
+            document.getElementById('completed-tasks').textContent = completedTasks;
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Close modals on Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeTaskModal();
+                    hideConfirmation();
+                }
+            });
+            
+            // Close modal when clicking outside
+            document.getElementById('task-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeTaskModal();
+                }
+            });
+            
+            // Initialize real data loading from API - ลำดับที่ถูกต้อง
+            initializeApp();
+        });
+        
+        // Task-Related Goals Functions
+        function loadTaskRelatedGoals() {
+            try {
+                const userGoals = JSON.parse(localStorage.getItem('userGoals') || '[]');
+                const taskRelatedGoalsSection = document.getElementById('task-related-goals');
+                
+                if (!taskRelatedGoalsSection) return;
+                
+                if (userGoals.length === 0) {
+                    taskRelatedGoalsSection.innerHTML = `
+                        <div class="text-center text-gray-500 py-6">
+                            <div class="text-3xl mb-2">🎯</div>
+                            <p class="mb-2">ยังไม่มีเป้าหมายที่เกี่ยวข้องกับงาน</p>
+                            <p class="text-sm mb-3">ตั้งเป้าหมายเพื่อเพิ่มแรงจูงใจในการทำงาน</p>
+                            <a href="profile.html" class="text-blue-500 hover:text-blue-700 underline">
+                                สร้างเป้าหมาย
+                            </a>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Filter and sort goals that are relevant to tasks
+                const taskRelevantGoals = userGoals
+                    .filter(goal => isTaskRelevantGoal(goal))
+                    .sort((a, b) => {
+                        const aProgress = (a.progress / a.target) * 100;
+                        const bProgress = (b.progress / b.target) * 100;
+                        
+                        // Incomplete goals first, then by progress
+                        if (aProgress < 100 && bProgress >= 100) return -1;
+                        if (aProgress >= 100 && bProgress < 100) return 1;
+                        return aProgress - bProgress;
+                    })
+                    .slice(0, 4); // Show top 4 relevant goals
+                
+                if (taskRelevantGoals.length === 0) {
+                    taskRelatedGoalsSection.innerHTML = `
+                        <div class="text-center text-gray-500 py-4">
+                            <p class="text-sm">ไม่พบเป้าหมายที่เกี่ยวข้องกับงาน</p>
+                            <a href="profile.html" class="text-blue-500 hover:text-blue-700 text-sm underline">
+                                ดูเป้าหมายทั้งหมด
+                            </a>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const goalsHtml = taskRelevantGoals.map(goal => {
+                    const progressPercent = Math.round((goal.progress / goal.target) * 100);
+                    const isCompleted = progressPercent >= 100;
+                    const statusColor = getGoalStatusColor(progressPercent);
+                    const motivation = getMotivationMessage(progressPercent);
+                    
+                    return `
+                        <div class="bg-gradient-to-r from-${statusColor}-50 to-${statusColor}-100 border border-${statusColor}-200 rounded-lg p-4 relative">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center">
+                                    <span class="text-xl mr-3">${goal.icon}</span>
+                                    <div>
+                                        <div class="font-medium text-gray-800 text-sm">${goal.title}</div>
+                                        <div class="text-xs text-gray-600">${goal.description.substring(0, 40)}${goal.description.length > 40 ? '...' : ''}</div>
+                                    </div>
+                                </div>
+                                ${isCompleted ? '<span class="text-green-600 text-lg">🎉</span>' : ''}
+                            </div>
+                            
+                            <div class="mb-2">
+                                <div class="flex justify-between text-xs text-gray-600 mb-1">
+                                    <span>${goal.progress}/${goal.target}</span>
+                                    <span class="font-medium">${progressPercent}%</span>
+                                </div>
+                                <div class="w-full bg-white rounded-full h-2">
+                                    <div class="bg-${statusColor}-500 h-2 rounded-full transition-all duration-500" 
+                                         style="width: ${Math.min(progressPercent, 100)}%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="text-xs text-${statusColor}-700 font-medium">
+                                ${motivation}
+                            </div>
+                            
+                            ${goal.deadline ? `
+                                <div class="text-xs text-gray-500 mt-1">
+                                    ⏰ ${goal.deadline}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+                
+                taskRelatedGoalsSection.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        ${goalsHtml}
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error loading task-related goals:', error);
+                const taskRelatedGoalsSection = document.getElementById('task-related-goals');
+                if (taskRelatedGoalsSection) {
+                    taskRelatedGoalsSection.innerHTML = `
+                        <div class="text-center text-gray-500 py-4">
+                            <p class="text-sm">เกิดข้อผิดพลาดในการโหลดเป้าหมาย</p>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function isTaskRelevantGoal(goal) {
+            // Check if goal is related to task/productivity
+            const taskKeywords = ['งาน', 'task', 'productivity', 'ทำ', 'เสร็จ', 'project', 'work', 'complete', 'finish', 'deadline', 'target'];
+            const titleWords = goal.title.toLowerCase();
+            const descWords = goal.description.toLowerCase();
+            
+            return taskKeywords.some(keyword => 
+                titleWords.includes(keyword) || descWords.includes(keyword)
+            );
+        }
+
+        function getGoalStatusColor(progressPercent) {
+            if (progressPercent >= 100) return 'green';
+            if (progressPercent >= 75) return 'blue';
+            if (progressPercent >= 50) return 'yellow';
+            if (progressPercent >= 25) return 'orange';
+            return 'red';
+        }
+
+        function getMotivationMessage(progressPercent) {
+            if (progressPercent >= 100) return '🎉 สำเร็จแล้ว!';
+            if (progressPercent >= 80) return '🔥 เกือบถึงเป้าแล้ว!';
+            if (progressPercent >= 60) return '💪 ทำได้ดีมาก!';
+            if (progressPercent >= 40) return '⚡ มาต่อกัน!';
+            if (progressPercent >= 20) return '🚀 เริ่มต้นดี!';
+            return '🌟 เริ่มกันเลย!';
+        }
+
+        // Enhanced API Helper Functions
+        async function apiCall(endpoint, options = {}) {
+            const token = localStorage.getItem('token');
+            const config = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token && { 'Authorization': `Bearer ${token}` })
+                },
+                ...options
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Token expired or invalid
+                        localStorage.removeItem('token');
+                        showNotification('กรุณาเข้าสู่ระบบใหม่', 'error');
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 2000);
+                        throw new Error('Unauthorized');
+                    }
+                    throw new Error(data.error || data.message || 'Something went wrong');
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('API Call Error:', error);
+                throw error;
+            }
+        }
+        
+        // Initialize application with real API data
+        async function initializeApp() {
+            try {
+                // Check if user is logged in
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    showNotification('กรุณาเข้าสู่ระบบก่อน', 'warning');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
+                    return;
+                }
+                
+                // Show global loading
+                showGlobalLoading('กำลังเตรียมข้อมูล...');
+                
+                // Step 1: Load user info first (most important)
+                let userLoaded = false;
+                try {
+                    updateGlobalLoading('กำลังโหลดข้อมูลผู้ใช้...');
+                    const userInfo = await apiCall('/user/info');
+                    
+                    // Update user greeting immediately
+                    const greetingEl = document.getElementById('user-greeting');
+                    if (greetingEl && userInfo.user) {
+                        greetingEl.textContent = `Welcome, ${userInfo.user.username}`;
+                    }
+                    
+                    userLoaded = true;
+                    showNotification(`สวัสดี ${userInfo.user.username}!`, 'success');
+                } catch (error) {
+                    console.warn('Failed to load user info:', error);
+                    handleApiError(error, 'การโหลดข้อมูลผู้ใช้');
+                    
+                    // Set fallback greeting
+                    const greetingEl = document.getElementById('user-greeting');
+                    if (greetingEl) {
+                        greetingEl.textContent = 'Welcome, User';
+                    }
+                }
+                
+                // Step 2: Load categories (optional but useful)
+                try {
+                    updateGlobalLoading('กำลังโหลดหมวดหมู่...');
+                    await loadCategories();
+                } catch (error) {
+                    console.warn('Failed to load categories:', error);
+                    // Categories are optional, continue anyway
+                }
+                
+                // Step 3: Load tasks from API (main content)
+                await loadTasksFromAPI();
+                
+                // Step 3.5: Load task-related goals
+                loadTaskRelatedGoals();
+                
+                // Step 4: Initialize Pomodoro stats
+                try {
+                    updateGlobalLoading('กำลังโหลดสถิติ Pomodoro...');
+                    await initPomodoroStats();
+                    updatePomodoroDisplay();
+                } catch (error) {
+                    console.warn('Failed to load Pomodoro stats:', error);
+                    // Pomodoro is optional, continue anyway
+                }
+                
+                hideGlobalLoading();
+                
+                // Show appropriate welcome message
+                if (userLoaded) {
+                    showNotification('ระบบพร้อมใช้งาน', 'success');
+                } else {
+                    showNotification('โหลดข้อมูลเสร็จสิ้น (บางข้อมูลอาจไม่สมบูรณ์)', 'warning');
+                }
+                
+            } catch (error) {
+                console.error('App initialization error:', error);
+                hideGlobalLoading();
+                handleApiError(error, 'การเริ่มต้นแอปพลิเคชัน', true);
+                
+                // Show empty state with option to retry
+                showEmptyStateWithRetry();
+            }
+        }
+        
+        async function loadTasksFromAPI() {
+            try {
+                updateGlobalLoading('กำลังโหลดรายการงาน...');
+                const response = await apiCall('/tasks');
+                tasks = response.tasks || response || [];
+                filteredTasks = [...tasks];
+                
+                hideGlobalLoading();
+                
+                if (tasks.length === 0) {
+                    showEmptyState();
+                    showNotification('ยังไม่มีงานใดๆ เริ่มสร้างงานแรกของคุณ!', 'info');
+                } else {
+                    renderTasks();
+                    updateStats();
+                    showNotification(`โหลดงานทั้งหมด ${tasks.length} รายการเรียบร้อย`, 'success');
+                }
+                
+            } catch (error) {
+                console.error('Failed to load tasks:', error);
+                hideGlobalLoading();
+                handleApiError(error, 'การโหลดรายการงาน', true);
+                showEmptyStateWithRetry();
+            }
+        }
+        
+        function showLoadingState() {
+            const container = document.getElementById('tasks-container');
+            container.innerHTML = `
+                <div class="text-center py-12">
+                    <div class="spinner-border text-blue-500 mb-4" style="width: 3rem; height: 3rem;">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                    </div>
+                    <p class="text-gray-600">กำลังโหลดรายการงาน...</p>
+                </div>
+            `;
+        }
+        
+        function hideLoadingState() {
+            // Remove loading spinner if exists
+            const loadingSpinner = document.querySelector('.spinner-border');
+            if (loadingSpinner) {
+                loadingSpinner.parentElement.remove();
+            }
+        }
+        
+        function showEmptyState() {
+            const container = document.getElementById('tasks-container');
+            container.innerHTML = createEmptyState({
+                icon: '📝',
+                title: 'ยังไม่มีงานใดๆ',
+                description: 'เริ่มสร้างงานแรกของคุณเพื่อจัดการงานอย่างมีประสิทธิภาพ!',
+                actionText: '➕ สร้างงานแรก',
+                actionCallback: 'openAddTaskModal()'
+            });
+        }
+        
+        function showEmptyStateWithRetry() {
+            const container = document.getElementById('tasks-container');
+            container.innerHTML = createErrorState({
+                title: 'ไม่สามารถโหลดข้อมูลได้',
+                description: 'กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต หรือลองใหม่อีกครั้ง',
+                retryCallback: 'loadTasksFromAPI()'
+            }) + `
+                <div class="text-center mt-4">
+                    <button onclick="openAddTaskModal()" class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
+                        ➕ สร้างงานใหม่
+                    </button>
+                </div>
+            `;
+        }
+        
+        // Demo Task Management Functions (fallback for testing)
+        let demoTasks = [
+            {
+                id: 1,
+                title: "Complete project proposal",
+                description: "Write and submit the quarterly project proposal",
+                priority: "high",
+                status: "in_progress",
+                due_date: "2024-01-15",
+                created_at: "2024-01-10"
+            },
+            {
+                id: 2,
+                title: "Review code changes",
+                description: "Review pull requests from team members",
+                priority: "medium",
+                status: "pending",
+                due_date: "2024-01-12",
+                created_at: "2024-01-09"
+            },
+            {
+                id: 3,
+                title: "Update documentation",
+                description: "Update API documentation with latest changes",
+                priority: "low",
+                status: "completed",
+                due_date: "2024-01-11",
+                created_at: "2024-01-08"
+            }
+        ];
+        
+        let currentTaskFilter = 'all';
+        let currentTaskPriority = 'all';
+        let currentTaskStatus = 'all';
+        let taskIdCounter = 4;
+
+        function renderDemoTasks() {
+            const taskList = document.getElementById('taskList');
+            if (!taskList) return;
+            
+            let filteredTasks = demoTasks.filter(task => {
+                if (currentTaskFilter === 'pending' && task.status !== 'pending') return false;
+                if (currentTaskFilter === 'completed' && task.status !== 'completed') return false;
+                if (currentTaskPriority !== 'all' && task.priority !== currentTaskPriority) return false;
+                if (currentTaskStatus !== 'all' && task.status !== currentTaskStatus) return false;
+                return true;
+            });
+
+            taskList.innerHTML = filteredTasks.map(task => `
+                <div class="task-item ${task.priority}-priority ${task.status === 'completed' ? 'completed' : ''}" data-task-id="${task.id}">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-semibold text-gray-800 flex-1">${task.title}</h3>
+                        <div class="flex items-center space-x-2 ml-4">
+                            <span class="priority-badge priority-${task.priority}">${task.priority}</span>
+                            <select class="status-dropdown" onchange="updateDemoTaskStatus(${task.id}, this.value)">
+                                <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                <option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                                <option value="completed" ${task.status === 'completed' ? 'selected' : ''}>Completed</option>
+                                <option value="cancelled" ${task.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <p class="text-gray-600 text-sm mb-3">${task.description}</p>
+                    
+                    <div class="flex justify-between items-center text-xs text-gray-500">
+                        <span>Due: ${formatTaskDate(task.due_date)}</span>
+                        <div class="space-x-2">
+                            <button onclick="editDemoTask(${task.id})" class="text-blue-600 hover:text-blue-800">Edit</button>
+                            <button onclick="deleteDemoTask(${task.id})" class="text-red-600 hover:text-red-800">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            updateDemoTaskStats();
+        }
+
+        function updateDemoTaskStats() {
+            const totalTasks = demoTasks.length;
+            const completedTasks = demoTasks.filter(task => task.status === 'completed').length;
+            const pendingTasks = demoTasks.filter(task => task.status === 'pending').length;
+            const inProgressTasks = demoTasks.filter(task => task.status === 'in_progress').length;
+            
+            const progressPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+            
+            const totalEl = document.getElementById('totalTasks');
+            const completedEl = document.getElementById('completedTasks');
+            const pendingEl = document.getElementById('pendingTasks');
+            const inProgressEl = document.getElementById('inProgressTasks');
+            const progressEl = document.getElementById('progressFill');
+            
+            if (totalEl) totalEl.textContent = totalTasks;
+            if (completedEl) completedEl.textContent = completedTasks;
+            if (pendingEl) pendingEl.textContent = pendingTasks;
+            if (inProgressEl) inProgressEl.textContent = inProgressTasks;
+            if (progressEl) progressEl.style.width = progressPercentage + '%';
+        }
+
+        function addDemoTask() {
+            const title = document.getElementById('taskTitle');
+            const description = document.getElementById('taskDescription');
+            const priority = document.getElementById('taskPriority');
+            const dueDate = document.getElementById('taskDueDate');
+            
+            if (!title || !title.value.trim()) {
+                alert('Please enter a task title');
+                return;
+            }
+            
+            const newTask = {
+                id: taskIdCounter++,
+                title: title.value.trim(),
+                description: description ? description.value.trim() : '',
+                priority: priority ? priority.value : 'medium',
+                status: 'pending',
+                due_date: dueDate ? dueDate.value : new Date().toISOString().split('T')[0],
+                created_at: new Date().toISOString().split('T')[0]
+            };
+            
+            demoTasks.unshift(newTask);
+            
+            // Clear form
+            const form = document.getElementById('addTaskForm');
+            if (form) form.reset();
+            
+            renderDemoTasks();
+            
+            // Add animation
+            setTimeout(() => {
+                const newTaskElement = document.querySelector(`[data-task-id="${newTask.id}"]`);
+                if (newTaskElement) {
+                    newTaskElement.classList.add('task-added');
+                }
+            }, 100);
+        }
+
+        function updateDemoTaskStatus(taskId, newStatus) {
+            const task = demoTasks.find(t => t.id === taskId);
+            if (task) {
+                task.status = newStatus;
+                renderDemoTasks();
+            }
+        }
+
+        function editDemoTask(taskId) {
+            const task = demoTasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            const newTitle = prompt('Edit task title:', task.title);
+            if (newTitle !== null && newTitle.trim()) {
+                task.title = newTitle.trim();
+                
+                const newDescription = prompt('Edit task description:', task.description);
+                if (newDescription !== null) {
+                    task.description = newDescription.trim();
+                }
+                
+                renderDemoTasks();
+            }
+        }
+
+        function deleteDemoTask(taskId) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+                if (taskElement) {
+                    taskElement.classList.add('task-removed');
+                    setTimeout(() => {
+                        demoTasks = demoTasks.filter(t => t.id !== taskId);
+                        renderDemoTasks();
+                    }, 300);
+                }
+            }
+        }
+
+        function filterDemoTasks(filter) {
+            currentTaskFilter = filter;
+            
+            // Update active filter button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-500', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            
+            const activeBtn = document.querySelector(`[onclick="filterDemoTasks('${filter}')"]`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-gray-200', 'text-gray-700');
+                activeBtn.classList.add('bg-blue-500', 'text-white');
+            }
+            
+            renderDemoTasks();
+        }
+
+        function filterDemoByPriority() {
+            const priorityFilter = document.getElementById('priorityFilter');
+            if (priorityFilter) {
+                currentTaskPriority = priorityFilter.value;
+                renderDemoTasks();
+            }
+        }
+
+        function filterDemoByStatus() {
+            const statusFilter = document.getElementById('statusFilter');
+            if (statusFilter) {
+                currentTaskStatus = statusFilter.value;
+                renderDemoTasks();
+            }
+        }
+
+        function formatTaskDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        // Initialize demo tasks when backend is not available
+        function initDemoMode() {
+            renderDemoTasks();
+            // Initialize the default filter
+            filterDemoTasks('all');
+        }
+    </script>
+</body>
+</html>

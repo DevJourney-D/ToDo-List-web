@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เข้าสู่ระบบ - ToDo List App</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍅</text></svg>">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Custom gradient backgrounds */
+        .gradient-bg {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 50%, #2196f3 100%);
+            min-height: 100vh;
+        }
+        
+        /* Floating animation */
+        .float {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        /* Custom input styles */
+        .custom-input {
+            background: #ffffff;
+            border: 2px solid #e3f2fd;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(33, 150, 243, 0.1);
+        }
+        
+        .custom-input:focus {
+            background: #ffffff;
+            border: 2px solid #2196f3;
+            box-shadow: 0 4px 20px rgba(33, 150, 243, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        /* Button hover effects */
+        .btn-primary {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(33, 150, 243, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #ffffff;
+            color: #2196f3;
+            border: 2px solid #e3f2fd;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.2);
+        }
+        
+        /* Glass morphism effect */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(33, 150, 243, 0.1);
+            box-shadow: 0 8px 32px rgba(33, 150, 243, 0.1);
+        }
+        
+        .nav-glass {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(33, 150, 243, 0.1);
+        }
+        
+        /* Icon styles */
+        .icon-wrapper {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.2);
+            border: 3px solid #ffffff;
+        }
+        
+        /* Form elements */
+        .form-label {
+            color: #1565c0;
+            font-weight: 600;
+        }
+        
+        /* Decorative elements */
+        .decoration {
+            background: linear-gradient(135deg, #bbdefb 0%, #e3f2fd 100%);
+            border: 2px solid #ffffff;
+        }
+        
+        /* Title styling */
+        .main-title {
+            background: linear-gradient(135deg, #1565c0 0%, #2196f3 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .sub-title {
+            color: #1976d2;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .container {
+                padding: 0 16px;
+            }
+            
+            .nav-glass {
+                padding: 12px 16px;
+            }
+            
+            .nav-glass .container {
+                flex-direction: column;
+                gap: 16px;
+            }
+            
+            .nav-glass h1 {
+                font-size: 1.5rem;
+            }
+            
+            .space-x-3 {
+                display: flex;
+                gap: 12px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .gradient-bg {
+                min-height: 100vh;
+                padding: 20px 12px;
+            }
+            
+            .glass-card {
+                margin: 20px 12px;
+                padding: 20px;
+            }
+            
+            .icon-wrapper {
+                width: 60px;
+                height: 60px;
+                margin-bottom: 16px;
+            }
+            
+            .main-title {
+                font-size: 1.5rem;
+            }
+            
+            .text-4xl {
+                font-size: 2rem;
+            }
+            
+            .text-3xl {
+                font-size: 1.75rem;
+            }
+            
+            .text-2xl {
+                font-size: 1.25rem;
+            }
+            
+            .custom-input {
+                padding: 12px 16px;
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+            
+            .btn-primary,
+            .btn-secondary {
+                width: 100%;
+                padding: 12px 20px;
+                margin-bottom: 12px;
+                font-size: 1rem;
+            }
+            
+            .space-x-3 {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .space-x-3 a {
+                width: 100%;
+                text-align: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .gradient-bg {
+                padding: 16px 8px;
+            }
+            
+            .glass-card {
+                margin: 16px 8px;
+                padding: 16px;
+            }
+            
+            .icon-wrapper {
+                width: 50px;
+                height: 50px;
+                margin-bottom: 12px;
+            }
+            
+            .text-4xl {
+                font-size: 1.75rem;
+            }
+            
+            .text-3xl {
+                font-size: 1.5rem;
+            }
+            
+            .nav-glass h1 {
+                font-size: 1.25rem;
+            }
+            
+            .btn-primary,
+            .btn-secondary {
+                padding: 10px 16px;
+                font-size: 0.875rem;
+            }
+            
+            .custom-input {
+                padding: 10px 14px;
+            }
+        }
+        
+        /* iPad Air specific adjustments */
+        @media (min-width: 820px) and (max-width: 1024px) {
+            .space-x-3 {
+                flex-direction: row;
+                gap: 16px;
+            }
+            
+            .glass-card {
+                max-width: 500px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <div id="app" class="min-h-screen">
+        <!-- Navigation -->
+        <nav class="nav-glass text-blue-800 p-4 shadow-lg">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold main-title">🍅 ToDo List</h1>
+                <div class="space-x-3">
+                    <a href="register.html" class="btn-secondary px-6 py-2 rounded-full font-medium transition-all duration-300 shadow-md">
+                        ✨ สมัครสมาชิก
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="container mx-auto p-6">
+            <div class="flex items-center justify-center min-h-[calc(100vh-200px)]">
+                <div class="max-w-md w-full mx-4">
+                    <div class="glass-card rounded-3xl shadow-2xl p-10 float fade-in">
+                        <!-- Icon -->
+                        <div class="icon-wrapper">
+                            <span class="text-3xl">🔐</span>
+                        </div>
+                        
+                        <h2 class="text-4xl font-bold mb-3 text-center main-title">
+                            ยินดีต้อนรับกลับ
+                        </h2>
+                        
+                        <p class="text-center sub-title mb-10 text-lg">
+                            เข้าสู่ระบบเพื่อจัดการงานของคุณ
+                        </p>
+                        
+                        <form id="login-form" class="space-y-8">
+                            <div>
+                                <label class="block text-sm font-medium mb-3 form-label">👤 ชื่อผู้ใช้</label>
+                                <input type="text" id="username" required 
+                                       placeholder="กรุณาใส่ชื่อผู้ใช้"
+                                       class="custom-input w-full px-5 py-4 rounded-2xl focus:outline-none text-gray-800 text-lg">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-3 form-label">🔑 รหัสผ่าน</label>
+                                <input type="password" id="password" required 
+                                       placeholder="กรุณาใส่รหัสผ่าน"
+                                       class="custom-input w-full px-5 py-4 rounded-2xl focus:outline-none text-gray-800 text-lg">
+                            </div>
+                            
+                            <button type="submit" class="btn-primary w-full text-white py-4 rounded-2xl font-semibold text-lg">
+                                🚀 เข้าสู่ระบบ
+                            </button>
+                        </form>
+                        
+                        <div class="text-center mt-8">
+                            <a href="register.html" class="btn-secondary px-8 py-3 rounded-full font-medium transition-all duration-300 inline-block text-lg">
+                                💡 ยังไม่มีบัญชี? สมัครสมาชิก
+                            </a>
+                        </div>
+                        
+                        <!-- Decorative elements -->
+                        <div class="absolute -top-6 -right-6 w-12 h-12 decoration rounded-full opacity-60"></div>
+                        <div class="absolute -bottom-4 -left-4 w-8 h-8 decoration rounded-full opacity-70"></div>
+                        <div class="absolute top-10 -left-3 w-6 h-6 decoration rounded-full opacity-50"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
+
+    <script>
+        // API Configuration
+        const API_BASE = 'https://to-do-list-api-nrry.vercel.app/api/v1';
+
+        // Utility functions
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `p-4 rounded-lg shadow-lg text-white mb-2 transition-all duration-300 ${
+                type === 'error' ? 'bg-red-500' : 
+                type === 'success' ? 'bg-green-500' : 'bg-blue-500'
+            }`;
+            toast.textContent = message;
+            
+            const container = document.getElementById('toast-container');
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => container.removeChild(toast), 300);
+            }, 3000);
+        }
+
+        async function apiCall(endpoint, options = {}) {
+            const config = {
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                ...options
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, config);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Something went wrong');
+                }
+                
+                return data;
+            } catch (error) {
+                showToast(error.message, 'error');
+                throw error;
+            }
+        }
+
+        async function login(username, password) {
+            const data = await apiCall('/login', {
+                method: 'POST',
+                body: JSON.stringify({ username, password })
+            });
+            
+            localStorage.setItem('token', data.token);
+            showToast('เข้าสู่ระบบสำเร็จ!', 'success');
+            
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 1500);
+        }
+
+        // Event listener for login form
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                await login(username, password);
+            } catch (error) {
+                // Error already handled in apiCall
+            }
+        });
+
+        // Check if already logged in
+        if (localStorage.getItem('token')) {
+            window.location.href = 'dashboard.html';
+        }
+    </script>
+</body>
+</html>

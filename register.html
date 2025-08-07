@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สมัครสมาชิก - ToDo List App</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍅</text></svg>">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Custom gradient backgrounds */
+        .gradient-bg {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 50%, #2196f3 100%);
+            min-height: 100vh;
+        }
+        
+        /* Floating animation */
+        .float {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        /* Custom input styles */
+        .custom-input {
+            background: #ffffff;
+            border: 2px solid #e3f2fd;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(33, 150, 243, 0.1);
+        }
+        
+        .custom-input:focus {
+            background: #ffffff;
+            border: 2px solid #2196f3;
+            box-shadow: 0 4px 20px rgba(33, 150, 243, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        /* Button hover effects */
+        .btn-primary {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(33, 150, 243, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #ffffff;
+            color: #2196f3;
+            border: 2px solid #e3f2fd;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.2);
+        }
+        
+        /* Glass morphism effect */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(33, 150, 243, 0.1);
+            box-shadow: 0 8px 32px rgba(33, 150, 243, 0.1);
+        }
+        
+        .nav-glass {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(33, 150, 243, 0.1);
+        }
+        
+        /* Icon styles */
+        .icon-wrapper {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.2);
+            border: 3px solid #ffffff;
+        }
+        
+        /* Form elements */
+        .form-label {
+            color: #1565c0;
+            font-weight: 600;
+        }
+        
+        /* Decorative elements */
+        .decoration {
+            background: linear-gradient(135deg, #bbdefb 0%, #e3f2fd 100%);
+            border: 2px solid #ffffff;
+        }
+        
+        /* Title styling */
+        .main-title {
+            background: linear-gradient(135deg, #1565c0 0%, #2196f3 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .sub-title {
+            color: #1976d2;
+        }
+        
+        /* Feedback styles */
+        .feedback-success {
+            color: #4caf50;
+        }
+        
+        .feedback-error {
+            color: #f44336;
+        }
+        
+        .feedback-warning {
+            color: #ff9800;
+        }
+        
+        .input-success {
+            border-color: #4caf50 !important;
+            box-shadow: 0 4px 20px rgba(76, 175, 80, 0.2) !important;
+        }
+        
+        .input-error {
+            border-color: #f44336 !important;
+            box-shadow: 0 4px 20px rgba(244, 67, 54, 0.2) !important;
+        }
+        
+        .btn-disabled {
+            background: #e0e0e0;
+            color: #9e9e9e;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        
+        .btn-disabled:hover {
+            background: #e0e0e0;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .container {
+                padding: 0 16px;
+            }
+            
+            .nav-glass {
+                padding: 12px 16px;
+            }
+            
+            .nav-glass .container {
+                flex-direction: column;
+                gap: 16px;
+            }
+            
+            .nav-glass h1 {
+                font-size: 1.5rem;
+            }
+            
+            .space-x-3 {
+                display: flex;
+                gap: 12px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .gradient-bg {
+                min-height: 100vh;
+                padding: 20px 12px;
+            }
+            
+            .glass-card {
+                margin: 20px 12px;
+                padding: 20px;
+            }
+            
+            .icon-wrapper {
+                width: 60px;
+                height: 60px;
+                margin-bottom: 16px;
+            }
+            
+            .main-title {
+                font-size: 1.5rem;
+            }
+            
+            .text-4xl {
+                font-size: 2rem;
+            }
+            
+            .text-3xl {
+                font-size: 1.75rem;
+            }
+            
+            .text-2xl {
+                font-size: 1.25rem;
+            }
+            
+            .custom-input {
+                padding: 12px 16px;
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+            
+            .btn-primary,
+            .btn-secondary {
+                width: 100%;
+                padding: 12px 20px;
+                margin-bottom: 12px;
+                font-size: 1rem;
+            }
+            
+            .space-x-3 {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .space-x-3 a {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .max-w-md {
+                max-width: 100%;
+            }
+            
+            .mx-4 {
+                margin-left: 0;
+                margin-right: 0;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .gradient-bg {
+                padding: 16px 8px;
+            }
+            
+            .glass-card {
+                margin: 16px 8px;
+                padding: 16px;
+            }
+            
+            .icon-wrapper {
+                width: 50px;
+                height: 50px;
+                margin-bottom: 12px;
+            }
+            
+            .text-4xl {
+                font-size: 1.75rem;
+            }
+            
+            .text-3xl {
+                font-size: 1.5rem;
+            }
+            
+            .nav-glass h1 {
+                font-size: 1.25rem;
+            }
+            
+            .btn-primary,
+            .btn-secondary {
+                padding: 10px 16px;
+                font-size: 0.875rem;
+            }
+            
+            .custom-input {
+                padding: 10px 14px;
+            }
+            
+            .space-y-6 > * + * {
+                margin-top: 16px;
+            }
+            
+            .space-y-4 > * + * {
+                margin-top: 12px;
+            }
+        }
+        
+        /* iPad Air specific adjustments */
+        @media (min-width: 820px) and (max-width: 1024px) {
+            .space-x-3 {
+                flex-direction: row;
+                gap: 16px;
+            }
+            
+            .glass-card {
+                max-width: 500px;
+                margin: 0 auto;
+            }
+            
+            .max-w-md {
+                max-width: 500px;
+            }
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <div id="app" class="min-h-screen">
+        <!-- Navigation -->
+        <nav class="nav-glass text-blue-800 p-4 shadow-lg">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold main-title">🍅 ToDo List</h1>
+                <div class="space-x-3">
+                    <a href="index.html" class="btn-secondary px-6 py-2 rounded-full font-medium transition-all duration-300 shadow-md">
+                        🔑 เข้าสู่ระบบ
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="container mx-auto p-6">
+            <div class="flex items-center justify-center min-h-[calc(100vh-200px)]">
+                <div class="max-w-md w-full mx-4">
+                    <div class="glass-card rounded-3xl shadow-2xl p-10 float fade-in">
+                        <!-- Icon -->
+                        <div class="icon-wrapper">
+                            <span class="text-3xl">👋</span>
+                        </div>
+                        
+                        <h2 class="text-4xl font-bold mb-3 text-center main-title">
+                            สร้างบัญชีใหม่
+                        </h2>
+                        
+                        <p class="text-center sub-title mb-10 text-lg">
+                            เริ่มต้นการจัดการงานที่มีประสิทธิภาพ
+                        </p>
+                        
+                        <form id="register-form" class="space-y-8">
+                            <div>
+                                <label class="block text-sm font-medium mb-3 form-label">👤 ชื่อผู้ใช้</label>
+                                <input type="text" id="username" required 
+                                       placeholder="กรุณาใส่ชื่อผู้ใช้"
+                                       class="custom-input w-full px-5 py-4 rounded-2xl focus:outline-none text-gray-800 text-lg"
+                                       minlength="3" maxlength="20">
+                                <div id="username-feedback" class="mt-2 text-sm hidden"></div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-3 form-label">🔑 รหัสผ่าน</label>
+                                <input type="password" id="password" required 
+                                       placeholder="กรุณาใส่รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)"
+                                       class="custom-input w-full px-5 py-4 rounded-2xl focus:outline-none text-gray-800 text-lg"
+                                       minlength="6">
+                                <div id="password-feedback" class="mt-2 text-sm hidden"></div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-3 form-label">🔐 ยืนยันรหัสผ่าน</label>
+                                <input type="password" id="confirm-password" required 
+                                       placeholder="กรุณาใส่รหัสผ่านอีกครั้ง"
+                                       class="custom-input w-full px-5 py-4 rounded-2xl focus:outline-none text-gray-800 text-lg">
+                                <div id="confirm-password-feedback" class="mt-2 text-sm hidden"></div>
+                            </div>
+                            
+                            <button type="submit" id="submit-btn" class="btn-primary w-full text-white py-4 rounded-2xl font-semibold text-lg" disabled>
+                                ✨ สมัครสมาชิก
+                            </button>
+                        </form>
+                        
+                        <div class="text-center mt-8">
+                            <a href="index.html" class="btn-secondary px-8 py-3 rounded-full font-medium transition-all duration-300 inline-block text-lg">
+                                🏠 มีบัญชีแล้ว? เข้าสู่ระบบ
+                            </a>
+                        </div>
+                        
+                        <!-- Decorative elements -->
+                        <div class="absolute -top-6 -right-6 w-12 h-12 decoration rounded-full opacity-60"></div>
+                        <div class="absolute -bottom-4 -left-4 w-8 h-8 decoration rounded-full opacity-70"></div>
+                        <div class="absolute top-10 -left-3 w-6 h-6 decoration rounded-full opacity-50"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
+
+    <script>
+        // API Configuration
+        const API_BASE = 'https://to-do-list-api-nrry.vercel.app/api/v1';
+
+        // Utility functions
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `p-4 rounded-lg shadow-lg text-white mb-2 transition-all duration-300 ${
+                type === 'error' ? 'bg-red-500' : 
+                type === 'success' ? 'bg-green-500' : 'bg-blue-500'
+            }`;
+            toast.textContent = message;
+            
+            const container = document.getElementById('toast-container');
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => container.removeChild(toast), 300);
+            }, 3000);
+        }
+
+        async function apiCall(endpoint, options = {}) {
+            const config = {
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                ...options
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, config);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Something went wrong');
+                }
+                
+                return data;
+            } catch (error) {
+                showToast(error.message, 'error');
+                throw error;
+            }
+        }
+
+        async function register(username, password) {
+            const data = await apiCall('/register', {
+                method: 'POST',
+                body: JSON.stringify({ username, password })
+            });
+            
+            localStorage.setItem('token', data.token);
+            showToast('สมัครสมาชิกสำเร็จ!', 'success');
+            
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 1500);
+        }
+
+        // Validation functions
+        let usernameCheckTimeout;
+        
+        async function checkUsernameAvailability(username) {
+            if (username.length < 3) return false;
+            
+            try {
+                // Use GET method with query parameter
+                const response = await fetch(`${API_BASE}/check-username?username=${encodeURIComponent(username)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    // API returns { "exists": true/false }
+                    // If exists = true, username is taken (not available)
+                    // If exists = false, username is available
+                    return !data.exists;
+                } else if (response.status === 404) {
+                    // If endpoint doesn't exist, try to register to check if username exists
+                    return await fallbackUsernameCheck(username);
+                } else {
+                    // For other errors, assume not available
+                    console.warn('Username check failed, assuming not available');
+                    return false;
+                }
+            } catch (error) {
+                console.warn('Username check error:', error);
+                // Fallback: try to use register endpoint to check
+                return await fallbackUsernameCheck(username);
+            }
+        }
+        
+        async function fallbackUsernameCheck(username) {
+            try {
+                // Try to register with a dummy password to see if username exists
+                const response = await fetch(`${API_BASE}/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        username: username, 
+                        password: 'dummy_check_password_123' 
+                    })
+                });
+                
+                // If we get a success response, username is available
+                if (response.ok) {
+                    // Don't actually save the token, this is just a check
+                    return true;
+                }
+                
+                const data = await response.json();
+                
+                // Check if error message indicates username already exists
+                if (data.error && (
+                    data.error.toLowerCase().includes('username') && 
+                    (data.error.toLowerCase().includes('exist') || 
+                     data.error.toLowerCase().includes('taken') ||
+                     data.error.toLowerCase().includes('already'))
+                )) {
+                    return false; // Username is taken
+                }
+                
+                // For other errors, assume available
+                return true;
+                
+            } catch (error) {
+                console.warn('Fallback username check failed:', error);
+                // If all else fails, assume available
+                return true;
+            }
+        }
+        
+        function validatePassword(password) {
+            const minLength = 6;
+            const hasNumber = /\d/.test(password);
+            const hasLetter = /[a-zA-Z]/.test(password);
+            
+            if (password.length < minLength) {
+                return { valid: false, message: '❌ รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร' };
+            }
+            
+            if (!hasNumber || !hasLetter) {
+                return { valid: false, message: '⚠️ รหัสผ่านควรมีทั้งตัวอักษรและตัวเลข' };
+            }
+            
+            return { valid: true, message: '✅ รหัสผ่านแข็งแรง' };
+        }
+        
+        function validatePasswordMatch(password, confirmPassword) {
+            if (confirmPassword === '') {
+                return { valid: false, message: '' };
+            }
+            
+            if (password !== confirmPassword) {
+                return { valid: false, message: '❌ รหัสผ่านไม่ตรงกัน' };
+            }
+            
+            return { valid: true, message: '✅ รหัสผ่านตรงกัน' };
+        }
+        
+        function updateSubmitButton() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const submitBtn = document.getElementById('submit-btn');
+            
+            const isUsernameValid = username.length >= 3;
+            const isPasswordValid = validatePassword(password).valid;
+            const isPasswordMatch = password === confirmPassword && confirmPassword !== '';
+            
+            if (isUsernameValid && isPasswordValid && isPasswordMatch) {
+                submitBtn.disabled = false;
+                submitBtn.className = submitBtn.className.replace('btn-disabled', 'btn-primary');
+            } else {
+                submitBtn.disabled = true;
+                submitBtn.className = submitBtn.className.replace('btn-primary', 'btn-disabled');
+            }
+        }
+        
+        // Event listeners for real-time validation
+        document.getElementById('username').addEventListener('input', async function(e) {
+            const username = e.target.value;
+            const feedback = document.getElementById('username-feedback');
+            const input = e.target;
+            
+            // Clear previous timeout
+            clearTimeout(usernameCheckTimeout);
+            
+            if (username.length < 3) {
+                feedback.textContent = username.length > 0 ? '⚠️ ชื่อผู้ใช้ต้องมีอย่างน้อย 3 ตัวอักษร' : '';
+                feedback.className = 'mt-2 text-sm feedback-warning';
+                feedback.classList.toggle('hidden', username.length === 0);
+                input.className = input.className.replace(/input-(success|error)/, '');
+                updateSubmitButton();
+                return;
+            }
+            
+            // Check username availability with debounce
+            feedback.textContent = '🔄 กำลังตรวจสอบ...';
+            feedback.className = 'mt-2 text-sm feedback-warning';
+            feedback.classList.remove('hidden');
+            
+            usernameCheckTimeout = setTimeout(async () => {
+                const isAvailable = await checkUsernameAvailability(username);
+                
+                if (isAvailable) {
+                    feedback.textContent = '✅ ชื่อผู้ใช้สามารถใช้ได้';
+                    feedback.className = 'mt-2 text-sm feedback-success';
+                    input.className = input.className.replace(/input-(success|error)/, '') + ' input-success';
+                } else {
+                    feedback.textContent = '❌ ชื่อผู้ใช้นี้ถูกใช้แล้ว';
+                    feedback.className = 'mt-2 text-sm feedback-error';
+                    input.className = input.className.replace(/input-(success|error)/, '') + ' input-error';
+                }
+                
+                updateSubmitButton();
+            }, 800);
+        });
+        
+        document.getElementById('password').addEventListener('input', function(e) {
+            const password = e.target.value;
+            const feedback = document.getElementById('password-feedback');
+            const input = e.target;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            if (password === '') {
+                feedback.classList.add('hidden');
+                input.className = input.className.replace(/input-(success|error)/, '');
+                updateSubmitButton();
+                return;
+            }
+            
+            const validation = validatePassword(password);
+            feedback.textContent = validation.message;
+            feedback.className = `mt-2 text-sm ${validation.valid ? 'feedback-success' : 'feedback-error'}`;
+            feedback.classList.remove('hidden');
+            
+            input.className = input.className.replace(/input-(success|error)/, '') + 
+                            (validation.valid ? ' input-success' : ' input-error');
+            
+            // Re-validate confirm password if it's filled
+            if (confirmPassword) {
+                document.getElementById('confirm-password').dispatchEvent(new Event('input'));
+            }
+            
+            updateSubmitButton();
+        });
+        
+        document.getElementById('confirm-password').addEventListener('input', function(e) {
+            const confirmPassword = e.target.value;
+            const password = document.getElementById('password').value;
+            const feedback = document.getElementById('confirm-password-feedback');
+            const input = e.target;
+            
+            if (confirmPassword === '') {
+                feedback.classList.add('hidden');
+                input.className = input.className.replace(/input-(success|error)/, '');
+                updateSubmitButton();
+                return;
+            }
+            
+            const validation = validatePasswordMatch(password, confirmPassword);
+            feedback.textContent = validation.message;
+            feedback.className = `mt-2 text-sm ${validation.valid ? 'feedback-success' : 'feedback-error'}`;
+            feedback.classList.remove('hidden');
+            
+            input.className = input.className.replace(/input-(success|error)/, '') + 
+                            (validation.valid ? ' input-success' : ' input-error');
+            
+            updateSubmitButton();
+        });
+
+        // Event listener for register form
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            // Final validation before submit
+            if (username.length < 3) {
+                showToast('ชื่อผู้ใช้ต้องมีอย่างน้อย 3 ตัวอักษร', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showToast('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร', 'error');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showToast('รหัสผ่านไม่ตรงกัน', 'error');
+                return;
+            }
+            
+            // Disable submit button during registration
+            const submitBtn = document.getElementById('submit-btn');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = '🔄 กำลังสมัครสมาชิก...';
+            submitBtn.className = submitBtn.className.replace('btn-primary', 'btn-disabled');
+            
+            try {
+                await register(username, password);
+            } catch (error) {
+                // Re-enable button on error
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                submitBtn.className = submitBtn.className.replace('btn-disabled', 'btn-primary');
+            }
+        });
+
+        // Check if already logged in
+        if (localStorage.getItem('token')) {
+            window.location.href = 'dashboard.html';
+        }
+    </script>
+</body>
+</html>
