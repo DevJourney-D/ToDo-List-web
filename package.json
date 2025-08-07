@@ -1,0 +1,23 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "Simple HTML/JavaScript frontend สำหรับ ToDo List application",
+  "main": "common-notifications.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DevJourney-D/ToDo-List-web.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DevJourney-D/ToDo-List-web/issues"
+  },
+  "homepage": "https://github.com/DevJourney-D/ToDo-List-web#readme",
+  "dependencies": {
+    "@vercel/analytics": "^1.5.0"
+  }
+}
