@@ -705,8 +705,15 @@
         
         // Show dashboard elements
         function showDashboardElements() {
-            document.getElementById('dashboardStats').style.display = 'grid';
-            document.getElementById('progressOverview').style.display = 'block';
+            const dashboardStats = document.getElementById('dashboardStats');
+            const progressOverview = document.getElementById('progressOverview');
+            
+            if (dashboardStats) {
+                dashboardStats.style.display = 'grid';
+            }
+            if (progressOverview) {
+                progressOverview.style.display = 'block';
+            }
         }
         
         // Show welcome completion message
@@ -1053,12 +1060,20 @@
             const loadingState = document.getElementById('loadingState');
             const tasksContainer = document.getElementById('tasksContainer');
             
-            if (show) {
-                loadingState.style.display = 'block';
-                tasksContainer.classList.add('loading');
-            } else {
-                loadingState.style.display = 'none';
-                tasksContainer.classList.remove('loading');
+            if (loadingState) {
+                if (show) {
+                    loadingState.style.display = 'block';
+                } else {
+                    loadingState.style.display = 'none';
+                }
+            }
+            
+            if (tasksContainer) {
+                if (show) {
+                    tasksContainer.classList.add('loading');
+                } else {
+                    tasksContainer.classList.remove('loading');
+                }
             }
         }
         
@@ -1068,18 +1083,27 @@
             const loadingState = document.getElementById('loadingState');
             
             // Hide loading state
-            loadingState.style.display = 'none';
+            if (loadingState) {
+                loadingState.style.display = 'none';
+            }
             
             if (filteredTasks.length === 0) {
-                container.style.display = 'none';
-                emptyState.style.display = 'block';
+                if (container) {
+                    container.style.display = 'none';
+                }
+                if (emptyState) {
+                    emptyState.style.display = 'block';
+                }
                 return;
             }
             
-            container.style.display = 'grid';
-            emptyState.style.display = 'none';
-            
-            container.innerHTML = filteredTasks.map(task => createTaskCard(task)).join('');
+            if (container) {
+                container.style.display = 'grid';
+                container.innerHTML = filteredTasks.map(task => createTaskCard(task)).join('');
+            }
+            if (emptyState) {
+                emptyState.style.display = 'none';
+            }
         }
         
         function createTaskCard(task) {
