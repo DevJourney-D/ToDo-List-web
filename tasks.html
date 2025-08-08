@@ -1858,7 +1858,8 @@
         let categories = [];
         let isEditMode = false;
         
-        const API_BASE_URL = 'https://to-do-list-api-app.vercel.app/api/v1';
+        // Updated API Base URL - ใช้ URL ที่ถูกต้องตามข้อผิดพลาด
+        const API_BASE_URL = 'https://daily-palette.vercel.app/api/v1';
         
         // API Helper Functions
         async function apiRequest(endpoint, method = 'GET', data = null) {
@@ -2258,6 +2259,7 @@
                 statusText = task.status;
             }
             
+            const taskName = task.task_name || task.name || 'Untitled Task';
             const dueDateText = task.due_date ? 
                 `Due: ${formatDate(task.due_date)}` : 
                 'No due date';
@@ -2271,7 +2273,7 @@
                                    class="checkbox-custom mt-1">
                             <div class="flex-1">
                                 <div class="flex items-center space-x-3 mb-2">
-                                    <h4 class="font-semibold text-gray-900 ${task.is_completed ? 'line-through' : ''}">${task.task_name}</h4>
+                                    <h4 class="font-semibold text-gray-900 ${task.is_completed ? 'line-through' : ''}">${taskName}</h4>
                                     <span class="priority-badge priority-${priorityText}">${priorityText}</span>
                                     <select class="status-dropdown" onchange="updateTaskStatus(${task.id}, this.value)" 
                                             style="font-size: 0.75rem; padding: 2px 4px; border-radius: 4px; border: 1px solid #ccc;">
@@ -2296,7 +2298,7 @@
                             <button onclick="duplicateTask(${task.id})" class="text-green-600 hover:text-green-800 p-2" title="Duplicate">
                                 📋
                             </button>
-                            <button onclick="deleteTask(${task.id})" class="text-red-600 hover:text-red-800 p-2" title="Delete">
+                            <button onclick="deleteTask(${task.id}, '${taskName.replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-800 p-2" title="Delete ${taskName}">
                                 🗑️
                             </button>
                         </div>
@@ -2356,7 +2358,7 @@
             
             const taskId = document.getElementById('task-id').value;
             const taskData = {
-                name: document.getElementById('task-name').value.trim(),
+                task_name: document.getElementById('task-name').value.trim(), // ใช้ task_name แทน name
                 description: document.getElementById('task-description').value.trim(),
                 priority: parseInt(document.getElementById('task-priority').value),
                 status: document.getElementById('task-status').value,
@@ -2364,7 +2366,7 @@
                 category: document.getElementById('task-category').value
             };
             
-            if (!taskData.name) {
+            if (!taskData.task_name) {
                 showNotification('Task name is required', 'error');
                 return;
             }
@@ -2374,8 +2376,10 @@
                 
                 let response;
                 if (taskId) {
-                    response = await apiRequest(`/tasks/${taskId}`, 'PUT', taskData);
+                    // ใช้ PATCH สำหรับการอัปเดต (partial update)
+                    response = await apiRequest(`/tasks/${taskId}`, 'PATCH', taskData);
                 } else {
+                    // ใช้ POST สำหรับการสร้างใหม่
                     response = await apiRequest('/tasks', 'POST', taskData);
                 }
                 
@@ -2387,47 +2391,75 @@
             } catch (error) {
                 hideLoading();
                 console.error('Failed to save task:', error);
-                showNotification('Failed to save task: ' + error.message, 'error');
+                handleAPIError(error, 'Task save operation');
+                
+                // Show additional help for API configuration issues
+                if (error.message.includes('Route not found') || error.message.includes('API endpoint not found')) {
+                    showNotification('💡 Tip: Try using the API Test button to diagnose connectivity issues.', 'info', 8000);
+                }
             }
         }
 
-        async function deleteTask(taskId, taskName = 'this task') {
-            confirmDelete(taskName, async () => {
+        async function deleteTask(taskId, taskName = null) {
+            // หา task เพื่อดึง task name ถ้าไม่ได้ส่งมา
+            const task = tasks.find(t => t.id === taskId);
+            const displayName = taskName || (task ? (task.task_name || task.name) : 'this task');
+            
+            confirmDelete(displayName, async () => {
                 try {
                     showLoading('Deleting task...');
-                    await apiRequest(`/tasks/${taskId}`, 'DELETE');
+                    
+                    // ส่ง task name ไปให้หลังบ้านด้วย
+                    const deleteData = {
+                        task_name: task ? (task.task_name || task.name) : displayName
+                    };
+                    
+                    await apiRequest(`/tasks/${taskId}`, 'DELETE', deleteData);
                     hideLoading();
-                    showNotification('Task deleted successfully!', 'success');
+                    showNotification(`Task "${displayName}" deleted successfully!`, 'success');
                     await loadTasks();
                 } catch (error) {
                     hideLoading();
                     console.error('Failed to delete task:', error);
-                    showNotification('Failed to delete task: ' + error.message, 'error');
+                    handleAPIError(error, 'Task delete operation');
                 }
             });
         }
 
         async function toggleTaskComplete(taskId, isCompleted) {
             const newStatus = isCompleted ? 'completed' : 'pending';
+            const task = tasks.find(t => t.id === taskId);
             
             try {
-                await apiRequest(`/tasks/${taskId}`, 'PUT', { status: newStatus });
+                const updateData = {
+                    status: newStatus,
+                    task_name: task ? (task.task_name || task.name) : `Task ${taskId}` // ส่ง task name ด้วย
+                };
+                
+                await apiRequest(`/tasks/${taskId}`, 'PATCH', updateData);
                 showNotification('Task status updated!', 'success');
                 await loadTasks();
             } catch (error) {
                 console.error('Failed to update task status:', error);
-                showNotification('Failed to update task status: ' + error.message, 'error');
+                handleAPIError(error, 'Toggle task complete operation');
             }
         }
 
         async function updateTaskStatus(taskId, newStatus) {
+            const task = tasks.find(t => t.id === taskId);
+            
             try {
-                await apiRequest(`/tasks/${taskId}`, 'PUT', { status: newStatus });
+                const updateData = {
+                    status: newStatus,
+                    task_name: task ? (task.task_name || task.name) : `Task ${taskId}` // ส่ง task name ด้วย
+                };
+                
+                await apiRequest(`/tasks/${taskId}`, 'PATCH', updateData);
                 showNotification('Task status updated!', 'success');
                 await loadTasks();
             } catch (error) {
                 console.error('Failed to update task status:', error);
-                showNotification('Failed to update task status: ' + error.message, 'error');
+                handleAPIError(error, 'Update task status operation');
             }
         }
 
@@ -2447,8 +2479,9 @@
                 return;
             }
             
+            const originalTaskName = task.task_name || task.name || 'Untitled Task';
             const duplicatedTask = {
-                name: task.task_name + ' (Copy)',
+                task_name: originalTaskName + ' (Copy)', // ใช้ task_name
                 description: task.description,
                 priority: task.priority,
                 status: 'pending',
@@ -2460,12 +2493,12 @@
                 showLoading('Duplicating task...');
                 await apiRequest('/tasks', 'POST', duplicatedTask);
                 hideLoading();
-                showNotification('Task duplicated successfully!', 'success');
+                showNotification(`Task "${originalTaskName}" duplicated successfully!`, 'success');
                 await loadTasks();
             } catch (error) {
                 hideLoading();
                 console.error('Failed to duplicate task:', error);
-                showNotification('Failed to duplicate task: ' + error.message, 'error');
+                handleAPIError(error, 'Task duplicate operation');
             }
         }
 
