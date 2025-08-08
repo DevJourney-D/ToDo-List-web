@@ -1,0 +1,216 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Thai Font */
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+
+/* Base Styles */
+@layer base {
+  body {
+    font-family: 'Sarabun', 'Inter', system-ui, sans-serif;
+    line-height: 1.6;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Custom Components */
+@layer components {
+  /* Button Styles */
+  .btn-primary {
+    @apply bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-4 py-2 rounded-lg transition-all duration-200;
+  }
+  
+  .btn-danger {
+    @apply bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg;
+  }
+  
+  /* Card Styles */
+  .task-card {
+    @apply bg-white rounded-xl shadow-card hover:shadow-card-hover transition-all duration-300 border border-gray-100 hover:border-gray-200;
+  }
+  
+  .task-card.completed {
+    @apply bg-gray-50 opacity-75;
+  }
+  
+  .task-card.overdue {
+    @apply border-red-200 bg-red-50;
+  }
+  
+  /* Priority Styles */
+  .priority-low {
+    @apply border-l-4 border-l-green-400;
+  }
+  
+  .priority-medium {
+    @apply border-l-4 border-l-yellow-400;
+  }
+  
+  .priority-high {
+    @apply border-l-4 border-l-red-400;
+  }
+  
+  /* Status Styles */
+  .status-pending {
+    @apply text-orange-600 bg-orange-100 px-2 py-1 rounded-full text-xs;
+  }
+  
+  .status-in-progress {
+    @apply text-blue-600 bg-blue-100 px-2 py-1 rounded-full text-xs;
+  }
+  
+  .status-completed {
+    @apply text-green-600 bg-green-100 px-2 py-1 rounded-full text-xs;
+  }
+  
+  .status-cancelled {
+    @apply text-red-600 bg-red-100 px-2 py-1 rounded-full text-xs;
+  }
+  
+  /* Filter Tab Styles */
+  .filter-tab {
+    @apply px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border;
+  }
+  
+  .filter-tab:not(.active) {
+    @apply bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-gray-700;
+  }
+  
+  .filter-tab.active {
+    @apply bg-blue-500 text-white border-blue-500 shadow-md;
+  }
+  
+  /* Modal Styles */
+  .modal-overlay {
+    @apply bg-black bg-opacity-50 backdrop-blur-sm;
+  }
+  
+  .modal-content {
+    @apply bg-white shadow-2xl;
+  }
+  
+  /* Badge Styles */
+  .category-badge {
+    @apply text-xs px-2 py-1 rounded-full font-medium;
+  }
+  
+  .recurring-badge {
+    @apply text-xs px-2 py-1 rounded-full font-medium;
+  }
+  
+  /* Loading Animation */
+  .loading {
+    @apply opacity-75;
+  }
+  
+  /* Checkbox Styles */
+  .task-checkbox {
+    @apply w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2;
+  }
+  
+  /* Empty State */
+  .empty-state {
+    @apply bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300;
+  }
+}
+
+/* Custom Utilities */
+@layer utilities {
+  .fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+  .slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  .bounce-in {
+    animation: bounceIn 0.6s ease-out;
+  }
+  
+  /* Text Gradients */
+  .text-gradient {
+    @apply bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent;
+  }
+  
+  /* Scrollbar Styles */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(156 163 175) rgb(243 244 246);
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: rgb(243 244 246);
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgb(156 163 175);
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgb(107 114 128);
+  }
+}
+
+/* Animation Keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Toast Container */
+#toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  max-width: 24rem;
+}
