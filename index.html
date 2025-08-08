@@ -259,17 +259,8 @@
 </head>
 <body class="gradient-bg min-h-screen">
     <div id="app" class="min-h-screen">
-        <!-- Navigation -->
-        <nav class="nav-glass text-blue-800 p-4 shadow-lg">
-            <div class="container mx-auto flex justify-between items-center">
-                <h1 class="text-2xl font-bold main-title">🍅 ToDo List</h1>
-                <div class="space-x-3">
-                    <a href="register.html" class="btn-secondary px-6 py-2 rounded-full font-medium transition-all duration-300 shadow-md">
-                        ✨ สมัครสมาชิก
-                    </a>
-                </div>
-            </div>
-        </nav>
+        <!-- Navigation will be injected here by nav-component.js -->
+        <div id="nav-container"></div>
 
         <!-- Main Content -->
         <div class="container mx-auto p-6">
@@ -327,6 +318,9 @@
 
     <!-- Toast Notifications -->
     <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
+
+    <!-- Navigation Component -->
+    <script src="nav-component.js"></script>
 
     <!-- Vercel Analytics -->
     <script>
