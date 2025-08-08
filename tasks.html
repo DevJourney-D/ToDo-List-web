@@ -1568,9 +1568,14 @@
                             <h1 class="text-3xl font-bold text-gray-800 mb-2">📋 Task Management</h1>
                             <p class="text-gray-600">Manage all your tasks, set priorities, and track progress</p>
                         </div>
-                        <button onclick="addDemoTaskQuick()" class="btn-primary">
-                            ➕ Add New Task
-                        </button>
+                        <div class="flex space-x-3">
+                            <button onclick="showAPIStatus()" class="btn-secondary" title="Test API Connection">
+                                🔧 API Test
+                            </button>
+                            <button onclick="openAddTaskModal()" class="btn-primary">
+                                ➕ Add New Task
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -1885,10 +1890,19 @@
                         return null;
                     }
                     
+                    if (response.status === 404) {
+                        throw new Error(`Route not found: ${method} ${endpoint}. Please check if the API endpoint exists.`);
+                    }
+                    
                     let errorMessage = `HTTP error! status: ${response.status}`;
                     try {
                         const errorData = await response.json();
                         errorMessage = errorData.message || errorData.error || errorMessage;
+                        
+                        // If it's a route not found error, provide more helpful message
+                        if (errorData.error === "Route not found") {
+                            errorMessage = `API endpoint ${method} ${endpoint} is not available on the server. Please check your backend configuration.`;
+                        }
                     } catch (e) {
                         // If can't parse error response, use status text
                         errorMessage = response.statusText || errorMessage;
@@ -2118,24 +2132,166 @@
             document.getElementById('loading-overlay').style.display = 'none';
         }
         
+        // Enhanced error handling for API issues
+        function handleAPIError(error, context = 'API request') {
+            console.error(`${context} failed:`, error);
+            
+            if (error.message.includes('Route not found') || 
+                error.message.includes('API endpoint not found') ||
+                error.message.includes('404')) {
+                showAPIAlert();
+                showNotification(`${context} failed: API endpoint not available. Please check your backend configuration.`, 'error');
+            } else if (error.message.includes('Unable to connect')) {
+                showNotification(`${context} failed: Cannot connect to server. Please check if your backend is running.`, 'error');
+            } else {
+                showNotification(`${context} failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Functions to manage API status alert
+        function showAPIAlert() {
+            const alertElement = document.getElementById('api-status-alert');
+            if (alertElement) {
+                alertElement.style.display = 'block';
+            }
+        }
+        
+        function hideAPIAlert() {
+            const alertElement = document.getElementById('api-status-alert');
+            if (alertElement) {
+                alertElement.style.display = 'none';
+            }
+        }
+        
+        // API Diagnostic Function - helps debug API connectivity
+        async function testAPIEndpoints() {
+            console.log('🔍 Testing API endpoints...');
+            const endpoints = [
+                { method: 'GET', path: '/health', description: 'Health check' },
+                { method: 'GET', path: '/api/v1/status', description: 'API status' },
+                { method: 'GET', path: '/tasks', description: 'Get all tasks' },
+                { method: 'POST', path: '/tasks', description: 'Create task' },
+                { method: 'PATCH', path: '/tasks/1', description: 'Update task (PATCH)' },
+                { method: 'DELETE', path: '/tasks/1', description: 'Delete task' }
+            ];
+            
+            const results = [];
+            
+            for (const endpoint of endpoints) {
+                try {
+                    const config = {
+                        method: endpoint.method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        }
+                    };
+                    
+                    if (endpoint.method === 'POST') {
+                        config.body = JSON.stringify({ 
+                            task_name: 'Test Task', 
+                            description: 'API Test',
+                            priority: 1,
+                            status: 'pending'
+                        });
+                    } else if (endpoint.method === 'PATCH') {
+                        config.body = JSON.stringify({ 
+                            task_name: 'Updated Test Task',
+                            status: 'in_progress'
+                        });
+                    } else if (endpoint.method === 'DELETE') {
+                        config.body = JSON.stringify({ 
+                            task_name: 'Test Task to Delete'
+                        });
+                    }
+                    
+                    const response = await fetch(`${API_BASE_URL}${endpoint.path}`, config);
+                    results.push({
+                        ...endpoint,
+                        status: response.status,
+                        success: response.ok,
+                        error: response.ok ? null : await response.text()
+                    });
+                } catch (error) {
+                    results.push({
+                        ...endpoint,
+                        status: 'FAILED',
+                        success: false,
+                        error: error.message
+                    });
+                }
+            }
+            
+            console.table(results);
+            return results;
+        }
+        
+        // Function to display API diagnostic results to user
+        function showAPIStatus() {
+            showConfirmation({
+                title: 'API Diagnostics',
+                message: 'Running API endpoint tests... Check browser console for detailed results.',
+                type: 'info',
+                confirmText: 'Run Test',
+                cancelText: 'Cancel',
+                onConfirm: async () => {
+                    showLoading('Testing API endpoints...');
+                    try {
+                        const results = await testAPIEndpoints();
+                        hideLoading();
+                        
+                        const workingEndpoints = results.filter(r => r.success).length;
+                        const totalEndpoints = results.length;
+                        
+                        showNotification(
+                            `API Test Complete: ${workingEndpoints}/${totalEndpoints} endpoints working. Check console for details.`, 
+                            workingEndpoints > 0 ? 'success' : 'error',
+                            10000
+                        );
+                    } catch (error) {
+                        hideLoading();
+                        showNotification('API test failed: ' + error.message, 'error');
+                    }
+                }
+            });
+        }
+        
         // Task Management Functions
         async function loadTasks() {
             try {
                 showLoading('Loading tasks...');
                 const response = await apiRequest('/tasks');
-                // Backend returns response with tasks array and total count
-                tasks = response.tasks || [];
+                
+                // Handle different response structures from backend
+                if (response.tasks) {
+                    // Backend returns { tasks: [...], total: 10, ... }
+                    tasks = response.tasks;
+                } else if (Array.isArray(response)) {
+                    // Backend returns tasks array directly
+                    tasks = response;
+                } else if (response.data && Array.isArray(response.data)) {
+                    // Backend returns { data: [...], ... }
+                    tasks = response.data;
+                } else {
+                    // Fallback
+                    tasks = [];
+                }
+                
                 filteredTasks = [...tasks];
                 renderTasks();
                 updateStats();
                 hideLoading();
+                hideAPIAlert(); // Hide alert if tasks load successfully
+                
+                console.log(`✅ Loaded ${tasks.length} tasks from API`);
+                
             } catch (error) {
                 hideLoading();
-                console.error('Failed to load tasks:', error);
-                showNotification('Failed to load tasks: ' + error.message, 'error');
+                handleAPIError(error, 'Loading tasks');
                 
                 // Load demo tasks for testing
                 loadDemoTasks();
+                showNotification('Loaded demo tasks for testing. API connection issues detected.', 'warning', 6000);
             }
         }
         
@@ -2238,7 +2394,7 @@
                         <div class="text-6xl mb-4">📝</div>
                         <h3 class="text-xl font-bold text-gray-700 mb-2">No tasks found</h3>
                         <p class="text-gray-500 mb-6">Create your first task to get started!</p>
-                        <button onclick="addDemoTaskQuick()" class="btn-primary">
+                        <button onclick="openAddTaskModal()" class="btn-primary">
                             ➕ Add Your First Task
                         </button>
                     </div>
@@ -2509,36 +2665,46 @@
             document.getElementById('save-btn-text').textContent = 'Create Task';
             document.getElementById('task-form').reset();
             document.getElementById('task-id').value = '';
+            
+            // Set default values
+            document.getElementById('task-priority').value = '2'; // Default to medium priority
+            document.getElementById('task-status').value = 'pending'; // Default status
+            
             document.getElementById('task-modal').style.display = 'flex';
         }
         
-        // Demo Add Task Function (simple prompt-based)
-        function addDemoTaskQuick() {
+        // Demo Add Task Function (simple prompt-based) - Updated to use real API
+        async function addDemoTaskQuick() {
             const title = prompt('Enter task title:');
             if (title && title.trim()) {
                 const description = prompt('Enter task description (optional):') || '';
-                const priority = prompt('Enter priority (high/medium/low):') || 'medium';
+                const priorityInput = prompt('Enter priority (1=low, 2=medium, 3=high):') || '2';
+                
+                // Convert priority to number
+                let priority = parseInt(priorityInput);
+                if (isNaN(priority) || priority < 1 || priority > 3) {
+                    priority = 2; // Default to medium
+                }
                 
                 const newTask = {
-                    id: taskIdCounter++,
-                    title: title.trim(),
+                    task_name: title.trim(),
                     description: description.trim(),
-                    priority: ['high', 'medium', 'low'].includes(priority.toLowerCase()) ? priority.toLowerCase() : 'medium',
+                    priority: priority,
                     status: 'pending',
-                    due_date: new Date().toISOString().split('T')[0],
-                    created_at: new Date().toISOString().split('T')[0]
+                    due_date: null, // No due date for quick add
+                    category: ''
                 };
                 
-                demoTasks.unshift(newTask);
-                renderDemoTasks();
-                
-                // Add animation
-                setTimeout(() => {
-                    const newTaskElement = document.querySelector(`[data-task-id="${newTask.id}"]`);
-                    if (newTaskElement) {
-                        newTaskElement.classList.add('task-added');
-                    }
-                }, 100);
+                try {
+                    showLoading('Creating task...');
+                    await apiRequest('/tasks', 'POST', newTask);
+                    hideLoading();
+                    showNotification(`Task "${title}" created successfully!`, 'success');
+                    await loadTasks(); // Reload tasks from API
+                } catch (error) {
+                    hideLoading();
+                    handleAPIError(error, 'Creating quick task');
+                }
             }
         }
 
@@ -2580,16 +2746,32 @@
                     taskDescription.toLowerCase().includes(searchTerm) ||
                     taskCategory.toLowerCase().includes(searchTerm);
                 
-                const matchesPriority = !priorityFilter || task.priority == priorityFilter;
+                const matchesPriority = priorityFilter === 'all' || !priorityFilter || 
+                    (priorityFilter === 'high' && task.priority == 3) ||
+                    (priorityFilter === 'medium' && task.priority == 2) ||
+                    (priorityFilter === 'low' && task.priority == 1);
                 
                 const taskStatus = task.is_completed ? 'completed' : (task.status || 'pending');
-                const matchesStatus = !statusFilter || taskStatus === statusFilter;
+                const matchesStatus = statusFilter === 'all' || !statusFilter || taskStatus === statusFilter;
                 
                 return matchesSearch && matchesPriority && matchesStatus;
             });
             
             renderTasks();
             updateStats();
+        }
+
+        // เพิ่มฟังก์ชันที่เรียกใช้จากฟิลเตอร์
+        function filterDemoTasks() {
+            filterTasks();
+        }
+
+        function filterDemoByPriority() {
+            filterTasks();
+        }
+
+        function filterDemoByStatus() {
+            filterTasks();
         }
 
         function sortTasks() {
@@ -3156,40 +3338,7 @@
             return '🌟 เริ่มกันเลย!';
         }
 
-        // Enhanced API Helper Functions
-        async function apiCall(endpoint, options = {}) {
-            const token = localStorage.getItem('token');
-            const config = {
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token && { 'Authorization': `Bearer ${token}` })
-                },
-                ...options
-            };
-
-            try {
-                const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        // Token expired or invalid
-                        localStorage.removeItem('token');
-                        showNotification('กรุณาเข้าสู่ระบบใหม่', 'error');
-                        setTimeout(() => {
-                            window.location.href = 'index.html';
-                        }, 2000);
-                        throw new Error('Unauthorized');
-                    }
-                    throw new Error(data.error || data.message || 'Something went wrong');
-                }
-                
-                return data;
-            } catch (error) {
-                console.error('API Call Error:', error);
-                throw error;
-            }
-        }
+        // Enhanced API Helper Functions - ลบออกเนื่องจากใช้ apiRequest แทน
         
         // Initialize application with real API data
         async function initializeApp() {
@@ -3204,148 +3353,52 @@
                     return;
                 }
                 
-                // Show global loading
-                showGlobalLoading('กำลังเตรียมข้อมูล...');
+                // Show loading
+                showLoading('กำลังเตรียมข้อมูล...');
                 
-                // Step 1: Load user info first (most important)
-                let userLoaded = false;
+                // Step 1: Load categories (optional but useful)
                 try {
-                    updateGlobalLoading('กำลังโหลดข้อมูลผู้ใช้...');
-                    const userInfo = await apiCall('/user/info');
-                    
-                    // Update user greeting immediately
-                    const greetingEl = document.getElementById('user-greeting');
-                    if (greetingEl && userInfo.user) {
-                        greetingEl.textContent = `Welcome, ${userInfo.user.username}`;
-                    }
-                    
-                    userLoaded = true;
-                    showNotification(`สวัสดี ${userInfo.user.username}!`, 'success');
-                } catch (error) {
-                    console.warn('Failed to load user info:', error);
-                    handleApiError(error, 'การโหลดข้อมูลผู้ใช้');
-                    
-                    // Set fallback greeting
-                    const greetingEl = document.getElementById('user-greeting');
-                    if (greetingEl) {
-                        greetingEl.textContent = 'Welcome, User';
-                    }
-                }
-                
-                // Step 2: Load categories (optional but useful)
-                try {
-                    updateGlobalLoading('กำลังโหลดหมวดหมู่...');
                     await loadCategories();
                 } catch (error) {
                     console.warn('Failed to load categories:', error);
                     // Categories are optional, continue anyway
                 }
                 
-                // Step 3: Load tasks from API (main content)
-                await loadTasksFromAPI();
+                // Step 2: Load tasks from API (main content)
+                await loadTasks();
                 
-                // Step 3.5: Load task-related goals
+                // Step 3: Load task-related goals
                 loadTaskRelatedGoals();
                 
-                // Step 4: Initialize Pomodoro stats
-                try {
-                    updateGlobalLoading('กำลังโหลดสถิติ Pomodoro...');
-                    await initPomodoroStats();
-                    updatePomodoroDisplay();
-                } catch (error) {
-                    console.warn('Failed to load Pomodoro stats:', error);
-                    // Pomodoro is optional, continue anyway
-                }
-                
-                hideGlobalLoading();
-                
-                // Show appropriate welcome message
-                if (userLoaded) {
-                    showNotification('ระบบพร้อมใช้งาน', 'success');
-                } else {
-                    showNotification('โหลดข้อมูลเสร็จสิ้น (บางข้อมูลอาจไม่สมบูรณ์)', 'warning');
-                }
+                hideLoading();
+                showNotification('ระบบพร้อมใช้งาน', 'success');
                 
             } catch (error) {
                 console.error('App initialization error:', error);
-                hideGlobalLoading();
-                handleApiError(error, 'การเริ่มต้นแอปพลิเคชัน', true);
+                hideLoading();
+                handleAPIError(error, 'การเริ่มต้นแอปพลิเคชัน');
                 
-                // Show empty state with option to retry
-                showEmptyStateWithRetry();
+                // Load demo tasks as fallback
+                loadDemoTasks();
+                showNotification('โหลดข้อมูลทดสอบ เนื่องจากเชื่อมต่อ API ไม่สำเร็จ', 'warning');
             }
         }
         
-        async function loadTasksFromAPI() {
-            try {
-                updateGlobalLoading('กำลังโหลดรายการงาน...');
-                const response = await apiCall('/tasks');
-                tasks = response.tasks || response || [];
-                filteredTasks = [...tasks];
-                
-                hideGlobalLoading();
-                
-                if (tasks.length === 0) {
-                    showEmptyState();
-                    showNotification('ยังไม่มีงานใดๆ เริ่มสร้างงานแรกของคุณ!', 'info');
-                } else {
-                    renderTasks();
-                    updateStats();
-                    showNotification(`โหลดงานทั้งหมด ${tasks.length} รายการเรียบร้อย`, 'success');
-                }
-                
-            } catch (error) {
-                console.error('Failed to load tasks:', error);
-                hideGlobalLoading();
-                handleApiError(error, 'การโหลดรายการงาน', true);
-                showEmptyStateWithRetry();
-            }
+        // Refresh tasks function
+        function refreshTasks() {
+            loadTasks();
         }
-        
-        function showLoadingState() {
-            const container = document.getElementById('tasks-container');
-            container.innerHTML = `
-                <div class="text-center py-12">
-                    <div class="spinner-border text-blue-500 mb-4" style="width: 3rem; height: 3rem;">
-                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-                    </div>
-                    <p class="text-gray-600">กำลังโหลดรายการงาน...</p>
-                </div>
-            `;
-        }
-        
-        function hideLoadingState() {
-            // Remove loading spinner if exists
-            const loadingSpinner = document.querySelector('.spinner-border');
-            if (loadingSpinner) {
-                loadingSpinner.parentElement.remove();
-            }
-        }
-        
-        function showEmptyState() {
-            const container = document.getElementById('tasks-container');
-            container.innerHTML = createEmptyState({
-                icon: '📝',
-                title: 'ยังไม่มีงานใดๆ',
-                description: 'เริ่มสร้างงานแรกของคุณเพื่อจัดการงานอย่างมีประสิทธิภาพ!',
-                actionText: '➕ สร้างงานแรก',
-                actionCallback: 'openAddTaskModal()'
-            });
-        }
-        
-        function showEmptyStateWithRetry() {
-            const container = document.getElementById('tasks-container');
-            container.innerHTML = createErrorState({
-                title: 'ไม่สามารถโหลดข้อมูลได้',
-                description: 'กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต หรือลองใหม่อีกครั้ง',
-                retryCallback: 'loadTasksFromAPI()'
-            }) + `
-                <div class="text-center mt-4">
-                    <button onclick="openAddTaskModal()" class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
-                        ➕ สร้างงานใหม่
-                    </button>
-                </div>
-            `;
+
+        function updateStats() {
+            const totalTasks = tasks.length;
+            const pendingTasks = tasks.filter(task => !task.is_completed && (task.status || 'pending') === 'pending').length;
+            const progressTasks = tasks.filter(task => !task.is_completed && task.status === 'in_progress').length;
+            const completedTasks = tasks.filter(task => task.is_completed || task.status === 'completed').length;
+            
+            document.getElementById('total-tasks').textContent = totalTasks;
+            document.getElementById('pending-tasks').textContent = pendingTasks;
+            document.getElementById('progress-tasks').textContent = progressTasks;
+            document.getElementById('completed-tasks').textContent = completedTasks;
         }
         
         // Demo Task Management Functions (fallback for testing)
