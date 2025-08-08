@@ -35,11 +35,26 @@ class DateUtils {
         return dateStr < todayStr;
     }
 
-    // Format date for display in Thai format
+    // Format date for display in Thai format (DD/MM/YYYY)
     static formatThaiDate(date) {
         if (!date) return '';
         const d = date instanceof Date ? date : new Date(date + 'T00:00:00');
-        return d.toLocaleDateString('th-TH');
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
+
+    // Format date for display with Thai month names
+    static formatThaiDateWithMonthName(date) {
+        if (!date) return '';
+        const d = date instanceof Date ? date : new Date(date + 'T00:00:00');
+        const months = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                       'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+        const day = d.getDate();
+        const month = months[d.getMonth()];
+        const year = d.getFullYear();
+        return `${day} ${month} ${year}`;
     }
 }
 

@@ -179,7 +179,7 @@
             // Update header
             document.getElementById('user-name').textContent = user.display_name || user.username || 'Unknown User';
             document.getElementById('user-email').textContent = user.email || 'No email provided';
-            document.getElementById('user-since').textContent = `Member since: ${user.created_at ? new Date(user.created_at).toLocaleDateString('th-TH') : 'Unknown'}`;
+            document.getElementById('user-since').textContent = `Member since: ${user.created_at ? window.dateUtils.formatThaiDate(new Date(user.created_at)) : 'Unknown'}`;
             
             // Update avatar
             const avatar = document.getElementById('user-avatar');
@@ -246,7 +246,7 @@
                         <span class="font-medium text-gray-800">${activity.description || 'Unknown activity'}</span>
                     </div>
                     <span class="text-xs text-gray-400">
-                        ${activity.created_at ? new Date(activity.created_at).toLocaleDateString('th-TH') : 'Unknown date'}
+                        ${activity.created_at ? window.dateUtils.formatThaiDate(new Date(activity.created_at)) : 'Unknown date'}
                     </span>
                 </div>
             `).join('');
@@ -355,11 +355,17 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            // Wait for shared API to be ready
-            if (window.apiManager && window.dataManager) {
+            // Wait for shared API and DateUtils to be ready
+            if (window.apiManager && window.dataManager && window.dateUtils) {
                 loadProfile();
             } else {
-                setTimeout(loadProfile, 100);
+                setTimeout(function() {
+                    if (window.apiManager && window.dataManager && window.dateUtils) {
+                        loadProfile();
+                    } else {
+                        setTimeout(arguments.callee, 100);
+                    }
+                }, 100);
             }
         });
     </script>

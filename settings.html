@@ -401,11 +401,17 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            // Wait for shared API to be ready
-            if (window.apiManager && window.dataManager) {
+            // Wait for shared API and DateUtils to be ready
+            if (window.apiManager && window.dataManager && window.dateUtils) {
                 loadSettings();
             } else {
-                setTimeout(loadSettings, 100);
+                setTimeout(function() {
+                    if (window.apiManager && window.dataManager && window.dateUtils) {
+                        loadSettings();
+                    } else {
+                        setTimeout(arguments.callee, 100);
+                    }
+                }, 100);
             }
         });
     </script>

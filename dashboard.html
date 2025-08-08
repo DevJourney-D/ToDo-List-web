@@ -217,7 +217,7 @@
                                     </span>
                                 </div>
                                 <span class="text-xs text-gray-400">
-                                    ${task.created_at ? new Date(task.created_at).toLocaleDateString('th-TH') : 'วันนี้'}
+                                    ${task.created_at ? window.dateUtils.formatThaiDate(task.created_at.split('T')[0]) : 'วันนี้'}
                                 </span>
                             </div>
                         `).join('')}

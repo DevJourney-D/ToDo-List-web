@@ -260,7 +260,7 @@
             
             if (dayTasks.length === 0) {
                 detailsSection.style.display = 'none';
-                showToast(`ไม่มีงานในวันที่ ${date.toLocaleDateString('th-TH')}`, 'info');
+                showToast(`ไม่มีงานในวันที่ ${window.dateUtils.formatThaiDate(date)}`, 'info');
                 return;
             }
             

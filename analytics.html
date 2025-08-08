@@ -154,11 +154,10 @@
             // Calculate completion rate
             const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
             
-            // Calculate overdue tasks
-            const today = new Date();
+            // Calculate overdue tasks using DateUtils
             const overdueTasks = tasks.filter(task => {
                 if (!task.due_date || task.is_completed) return false;
-                return new Date(task.due_date) < today;
+                return window.dateUtils.isOverdue(task.due_date);
             }).length;
 
             // Priority distribution
@@ -410,8 +409,8 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            // Wait for shared API to be ready
-            if (window.apiManager && window.dataManager) {
+            // Wait for shared API and DateUtils to be ready
+            if (window.apiManager && window.dataManager && window.dateUtils) {
                 loadAnalytics();
             } else {
                 setTimeout(loadAnalytics, 100);
