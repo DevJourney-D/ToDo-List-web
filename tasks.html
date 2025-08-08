@@ -2170,8 +2170,12 @@
                 { method: 'GET', path: '/health', description: 'Health check' },
                 { method: 'GET', path: '/api/v1/status', description: 'API status' },
                 { method: 'GET', path: '/tasks', description: 'Get all tasks' },
+                { method: 'GET', path: '/tasks/categories', description: 'Get categories' },
                 { method: 'POST', path: '/tasks', description: 'Create task' },
                 { method: 'PATCH', path: '/tasks/1', description: 'Update task (PATCH)' },
+                { method: 'PATCH', path: '/tasks/1/complete', description: 'Mark task completed' },
+                { method: 'PATCH', path: '/tasks/1/status', description: 'Update task status' },
+                { method: 'POST', path: '/tasks/1/duplicate', description: 'Duplicate task' },
                 { method: 'DELETE', path: '/tasks/1', description: 'Delete task' }
             ];
             
@@ -2187,17 +2191,21 @@
                         }
                     };
                     
-                    if (endpoint.method === 'POST') {
+                    if (endpoint.method === 'POST' && endpoint.path === '/tasks') {
                         config.body = JSON.stringify({ 
                             task_name: 'Test Task', 
                             description: 'API Test',
                             priority: 1,
                             status: 'pending'
                         });
-                    } else if (endpoint.method === 'PATCH') {
+                    } else if (endpoint.method === 'PATCH' && endpoint.path === '/tasks/1') {
                         config.body = JSON.stringify({ 
                             task_name: 'Updated Test Task',
                             status: 'in_progress'
+                        });
+                    } else if (endpoint.method === 'PATCH' && endpoint.path === '/tasks/1/status') {
+                        config.body = JSON.stringify({ 
+                            status: 'completed'
                         });
                     } else if (endpoint.method === 'DELETE') {
                         config.body = JSON.stringify({ 
@@ -2565,12 +2573,8 @@
                 try {
                     showLoading('Deleting task...');
                     
-                    // ส่ง task name ไปให้หลังบ้านด้วย
-                    const deleteData = {
-                        task_name: task ? (task.task_name || task.name) : displayName
-                    };
-                    
-                    await apiRequest(`/tasks/${taskId}`, 'DELETE', deleteData);
+                    // ใช้ DELETE endpoint โดยไม่ต้องส่ง body (ตามมาตรฐาน REST)
+                    await apiRequest(`/tasks/${taskId}`, 'DELETE');
                     hideLoading();
                     showNotification(`Task "${displayName}" deleted successfully!`, 'success');
                     await loadTasks();
@@ -2583,16 +2587,19 @@
         }
 
         async function toggleTaskComplete(taskId, isCompleted) {
-            const newStatus = isCompleted ? 'completed' : 'pending';
             const task = tasks.find(t => t.id === taskId);
             
             try {
-                const updateData = {
-                    status: newStatus,
-                    task_name: task ? (task.task_name || task.name) : `Task ${taskId}` // ส่ง task name ด้วย
-                };
+                // ใช้ endpoint เฉพาะสำหรับ mark completed
+                if (isCompleted) {
+                    await apiRequest(`/tasks/${taskId}/complete`, 'PATCH');
+                } else {
+                    // ใช้ status endpoint สำหรับ uncomplete
+                    await apiRequest(`/tasks/${taskId}/status`, 'PATCH', {
+                        status: 'pending'
+                    });
+                }
                 
-                await apiRequest(`/tasks/${taskId}`, 'PATCH', updateData);
                 showNotification('Task status updated!', 'success');
                 await loadTasks();
             } catch (error) {
@@ -2602,15 +2609,12 @@
         }
 
         async function updateTaskStatus(taskId, newStatus) {
-            const task = tasks.find(t => t.id === taskId);
-            
             try {
-                const updateData = {
-                    status: newStatus,
-                    task_name: task ? (task.task_name || task.name) : `Task ${taskId}` // ส่ง task name ด้วย
-                };
+                // ใช้ status endpoint เฉพาะ
+                await apiRequest(`/tasks/${taskId}/status`, 'PATCH', {
+                    status: newStatus
+                });
                 
-                await apiRequest(`/tasks/${taskId}`, 'PATCH', updateData);
                 showNotification('Task status updated!', 'success');
                 await loadTasks();
             } catch (error) {
@@ -2628,6 +2632,95 @@
             openEditTaskModal(task);
         }
 
+        // Enhanced Task Management Functions ตาม Backend Routes
+        async function getTasksByCategory(category) {
+            try {
+                const response = await apiRequest(`/tasks/category/${encodeURIComponent(category)}`);
+                return response.tasks || response || [];
+            } catch (error) {
+                console.error('Failed to get tasks by category:', error);
+                handleAPIError(error, 'Get tasks by category');
+                return [];
+            }
+        }
+
+        async function getTasksByPriority(priority) {
+            try {
+                const response = await apiRequest(`/tasks/priority/${priority}`);
+                return response.tasks || response || [];
+            } catch (error) {
+                console.error('Failed to get tasks by priority:', error);
+                handleAPIError(error, 'Get tasks by priority');
+                return [];
+            }
+        }
+
+        async function getTasksByStatus(status) {
+            try {
+                const response = await apiRequest(`/tasks/status/${status}`);
+                return response.tasks || response || [];
+            } catch (error) {
+                console.error('Failed to get tasks by status:', error);
+                handleAPIError(error, 'Get tasks by status');
+                return [];
+            }
+        }
+
+        async function getTasksDueToday() {
+            try {
+                const response = await apiRequest('/tasks/due/today');
+                return response.tasks || response || [];
+            } catch (error) {
+                console.error('Failed to get tasks due today:', error);
+                handleAPIError(error, 'Get tasks due today');
+                return [];
+            }
+        }
+
+        async function getTasksDueThisWeek() {
+            try {
+                const response = await apiRequest('/tasks/due/week');
+                return response.tasks || response || [];
+            } catch (error) {
+                console.error('Failed to get tasks due this week:', error);
+                handleAPIError(error, 'Get tasks due this week');
+                return [];
+            }
+        }
+
+        async function getOverdueTasks() {
+            try {
+                const response = await apiRequest('/tasks/overdue');
+                return response.tasks || response || [];
+            } catch (error) {
+                console.error('Failed to get overdue tasks:', error);
+                handleAPIError(error, 'Get overdue tasks');
+                return [];
+            }
+        }
+
+        async function searchTasks(query) {
+            try {
+                const response = await apiRequest(`/tasks/search?q=${encodeURIComponent(query)}`);
+                return response.tasks || response || [];
+            } catch (error) {
+                console.error('Failed to search tasks:', error);
+                handleAPIError(error, 'Search tasks');
+                return [];
+            }
+        }
+
+        async function getSingleTask(taskId) {
+            try {
+                const response = await apiRequest(`/tasks/${taskId}`);
+                return response.task || response;
+            } catch (error) {
+                console.error('Failed to get single task:', error);
+                handleAPIError(error, 'Get single task');
+                return null;
+            }
+        }
+
         async function duplicateTask(taskId) {
             const task = tasks.find(t => t.id === taskId);
             if (!task) {
@@ -2636,18 +2729,11 @@
             }
             
             const originalTaskName = task.task_name || task.name || 'Untitled Task';
-            const duplicatedTask = {
-                task_name: originalTaskName + ' (Copy)', // ใช้ task_name
-                description: task.description,
-                priority: task.priority,
-                status: 'pending',
-                due_date: task.due_date,
-                category: task.category
-            };
             
             try {
                 showLoading('Duplicating task...');
-                await apiRequest('/tasks', 'POST', duplicatedTask);
+                // ใช้ duplicate endpoint เฉพาะ
+                await apiRequest(`/tasks/${taskId}/duplicate`, 'POST');
                 hideLoading();
                 showNotification(`Task "${originalTaskName}" duplicated successfully!`, 'success');
                 await loadTasks();
@@ -2730,8 +2816,65 @@
             document.getElementById('task-form').reset();
         }
 
-        // Filter and Sort Functions
-        function filterTasks() {
+        // Filter and Sort Functions - Enhanced with Backend Integration
+        async function filterTasks() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const priorityFilter = document.getElementById('priority-filter').value;
+            const statusFilter = document.getElementById('status-filter').value;
+            
+            try {
+                let apiTasks = [];
+                
+                // Use backend endpoints when possible for better performance
+                if (searchTerm && searchTerm.trim()) {
+                    // Use search endpoint
+                    apiTasks = await searchTasks(searchTerm.trim());
+                } else if (priorityFilter && priorityFilter !== 'all') {
+                    // Use priority endpoint
+                    const priorityValue = priorityFilter === 'high' ? 3 : priorityFilter === 'medium' ? 2 : 1;
+                    apiTasks = await getTasksByPriority(priorityValue);
+                } else if (statusFilter && statusFilter !== 'all') {
+                    // Use status endpoint
+                    apiTasks = await getTasksByStatus(statusFilter);
+                } else {
+                    // Use local filtering for combined filters or no filters
+                    apiTasks = [...tasks];
+                }
+                
+                // Apply additional local filtering if needed
+                filteredTasks = apiTasks.filter(task => {
+                    const taskName = task.task_name || task.name || '';
+                    const taskDescription = task.description || '';
+                    const taskCategory = task.category || '';
+                    
+                    const matchesSearch = !searchTerm || 
+                        taskName.toLowerCase().includes(searchTerm) ||
+                        taskDescription.toLowerCase().includes(searchTerm) ||
+                        taskCategory.toLowerCase().includes(searchTerm);
+                    
+                    const matchesPriority = priorityFilter === 'all' || !priorityFilter || 
+                        (priorityFilter === 'high' && task.priority == 3) ||
+                        (priorityFilter === 'medium' && task.priority == 2) ||
+                        (priorityFilter === 'low' && task.priority == 1);
+                    
+                    const taskStatus = task.is_completed ? 'completed' : (task.status || 'pending');
+                    const matchesStatus = statusFilter === 'all' || !statusFilter || taskStatus === statusFilter;
+                    
+                    return matchesSearch && matchesPriority && matchesStatus;
+                });
+                
+                renderTasks();
+                updateStats();
+                
+            } catch (error) {
+                console.error('Filter error, falling back to local filtering:', error);
+                // Fallback to local filtering
+                localFilterTasks();
+            }
+        }
+
+        // Local filtering fallback
+        function localFilterTasks() {
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
             const priorityFilter = document.getElementById('priority-filter').value;
             const statusFilter = document.getElementById('status-filter').value;
@@ -2772,6 +2915,57 @@
 
         function filterDemoByStatus() {
             filterTasks();
+        }
+
+        // Quick filter functions using backend endpoints
+        async function showTasksDueToday() {
+            try {
+                showLoading('Loading tasks due today...');
+                const todayTasks = await getTasksDueToday();
+                filteredTasks = todayTasks;
+                renderTasks();
+                updateStats();
+                hideLoading();
+                showNotification(`Found ${todayTasks.length} tasks due today`, 'info');
+            } catch (error) {
+                hideLoading();
+                handleAPIError(error, 'Load tasks due today');
+            }
+        }
+
+        async function showOverdueTasks() {
+            try {
+                showLoading('Loading overdue tasks...');
+                const overdueTasks = await getOverdueTasks();
+                filteredTasks = overdueTasks;
+                renderTasks();
+                updateStats();
+                hideLoading();
+                showNotification(`Found ${overdueTasks.length} overdue tasks`, overdueTasks.length > 0 ? 'warning' : 'success');
+            } catch (error) {
+                hideLoading();
+                handleAPIError(error, 'Load overdue tasks');
+            }
+        }
+
+        async function showTasksDueThisWeek() {
+            try {
+                showLoading('Loading tasks due this week...');
+                const weekTasks = await getTasksDueThisWeek();
+                filteredTasks = weekTasks;
+                renderTasks();
+                updateStats();
+                hideLoading();
+                showNotification(`Found ${weekTasks.length} tasks due this week`, 'info');
+            } catch (error) {
+                hideLoading();
+                handleAPIError(error, 'Load tasks due this week');
+            }
+        }
+
+        // Function to reset filters and show all tasks
+        async function showAllTasks() {
+            await loadTasks();
         }
 
         function sortTasks() {
@@ -3159,6 +3353,30 @@
                 } else if (e.code === 'KeyR' && e.ctrlKey) {
                     e.preventDefault();
                     resetPomodoro();
+                } else if (e.code === 'KeyN' && e.ctrlKey) {
+                    // Ctrl+N: New task
+                    e.preventDefault();
+                    openAddTaskModal();
+                } else if (e.code === 'KeyF' && e.ctrlKey) {
+                    // Ctrl+F: Focus search
+                    e.preventDefault();
+                    const searchInput = document.getElementById('search-input');
+                    if (searchInput) {
+                        searchInput.focus();
+                        searchInput.select();
+                    }
+                } else if (e.code === 'KeyT' && e.ctrlKey && e.shiftKey) {
+                    // Ctrl+Shift+T: Show tasks due today
+                    e.preventDefault();
+                    showTasksDueToday();
+                } else if (e.code === 'KeyO' && e.ctrlKey && e.shiftKey) {
+                    // Ctrl+Shift+O: Show overdue tasks
+                    e.preventDefault();
+                    showOverdueTasks();
+                } else if (e.code === 'KeyA' && e.ctrlKey && e.shiftKey) {
+                    // Ctrl+Shift+A: Show all tasks
+                    e.preventDefault();
+                    showAllTasks();
                 }
             }
         });
