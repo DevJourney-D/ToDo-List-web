@@ -91,30 +91,129 @@ const NAV_STYLES = `
         font-weight: 500;
         font-size: 0.875rem;
     }
-    
-    /* Mobile responsive */
+
+    .mobile-menu-button {
+        display: none;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #374151;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 6px;
+        transition: background-color 0.2s ease;
+    }
+
+    .mobile-menu-button:hover {
+        background: #f3f4f6;
+    }
+
+    .mobile-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border-bottom: 1px solid #e5e7eb;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 50;
+    }
+
+    .mobile-menu.active {
+        display: block;
+    }
+
+    .mobile-menu-content {
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .mobile-user-section {
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+        margin-bottom: 0.5rem;
+    }
+
+    .mobile-nav-link {
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        color: #374151;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+    }
+
+    .mobile-nav-link:hover {
+        background: #f8fafc;
+        border-color: #e2e8f0;
+    }
+
+    .mobile-nav-link.active {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+    }
+
+    .mobile-nav-link.btn-danger {
+        background: #fef2f2;
+        color: #dc2626;
+        border-color: #fecaca;
+        margin-top: 0.5rem;
+    }
+
+    .mobile-nav-link.btn-danger:hover {
+        background: #ef4444;
+        color: white;
+        border-color: #ef4444;
+    }
+
+    .mobile-nav-link.btn-secondary {
+        background: #f8fafc;
+        color: #475569;
+        border-color: #e2e8f0;
+    }
+
+    /* Desktop and Tablet responsive */
     @media (max-width: 1024px) {
         .nav-container .container {
-            flex-direction: column;
-            gap: 1rem;
             padding: 1rem;
         }
         
         .nav-menu {
-            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .nav-link {
+            padding: 8px 14px;
+            font-size: 0.875rem;
         }
     }
     
+    /* Mobile responsive */
     @media (max-width: 768px) {
+        .mobile-menu-button {
+            display: block;
+        }
+
         .nav-menu {
-            gap: 0.25rem;
+            display: none;
         }
-        
-        .nav-link {
-            padding: 6px 12px;
-            font-size: 0.75rem;
+
+        .nav-container .container > div:last-child {
+            display: none;
         }
-        
+
+        .nav-container .container {
+            position: relative;
+        }
+
         .nav-brand {
             font-size: 1.25rem;
         }
@@ -122,21 +221,20 @@ const NAV_STYLES = `
     
     @media (max-width: 480px) {
         .nav-container .container {
-            padding: 0.75rem;
-        }
-        
-        .nav-menu {
-            flex-wrap: wrap;
-            gap: 0.25rem;
-        }
-        
-        .nav-link {
-            padding: 4px 8px;
-            font-size: 0.7rem;
+            padding: 0.75rem 1rem;
         }
         
         .nav-brand {
-            font-size: 1rem;
+            font-size: 1.125rem;
+        }
+
+        .mobile-menu-content {
+            padding: 0.75rem;
+        }
+
+        .mobile-nav-link {
+            padding: 10px 14px;
+            font-size: 0.875rem;
         }
     }
 `;
@@ -168,18 +266,33 @@ function generateNavigation(currentPage = '', isLoggedIn = false, username = '')
         const isActive = item.id === pageId ? 'active' : '';
         return `<a href="${item.href}" class="nav-link ${isActive}">${item.label}</a>`;
     }).join('');
+
+    // Mobile menu HTML
+    const mobileMenuHtml = menuItems.map(item => {
+        const isActive = item.id === pageId ? 'active' : '';
+        return `<a href="${item.href}" class="mobile-nav-link ${isActive}" onclick="closeMobileMenu()">${item.label}</a>`;
+    }).join('');
     
     const rightSideHtml = isLoggedIn ? 
         `<span class="user-greeting">สวัสดี, ${username || 'User'}</span>
          <button onclick="logout()" class="nav-link btn-danger">📤 ออกจากระบบ</button>` :
         `<a href="register.html" class="nav-link btn-secondary">✨ สมัครสมาชิก</a>`;
+
+    const mobileRightSideHtml = isLoggedIn ? 
+        `<div class="mobile-user-section">
+            <div class="text-sm text-gray-600 mb-2">สวัสดี, ${username || 'User'}</div>
+        </div>
+        ${mobileMenuHtml}
+        <button onclick="logout(); closeMobileMenu();" class="mobile-nav-link btn-danger">📤 ออกจากระบบ</button>` :
+        `${mobileMenuHtml}
+        <a href="register.html" class="mobile-nav-link btn-secondary" onclick="closeMobileMenu()">✨ สมัครสมาชิก</a>`;
     
     return `
         <nav class="nav-container">
             <div class="container mx-auto flex justify-between items-center px-4 py-3">
                 <div class="flex items-center space-x-8">
                     <a href="${isLoggedIn ? 'dashboard.html' : 'index.html'}" class="nav-brand">
-                        🍅 ToDo List
+                        ToDo List
                     </a>
                     <div class="nav-menu">
                         ${menuHtml}
@@ -187,6 +300,14 @@ function generateNavigation(currentPage = '', isLoggedIn = false, username = '')
                 </div>
                 <div class="flex items-center space-x-4">
                     ${rightSideHtml}
+                </div>
+                <button class="mobile-menu-button" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+                    <span id="mobile-menu-icon">☰</span>
+                </button>
+            </div>
+            <div id="mobile-menu" class="mobile-menu">
+                <div class="mobile-menu-content">
+                    ${mobileRightSideHtml}
                 </div>
             </div>
         </nav>
@@ -210,6 +331,62 @@ function initNavigation(currentPage = '', isLoggedIn = false, username = '') {
     
     // Replace navigation content
     navContainer.outerHTML = generateNavigation(currentPage, isLoggedIn, username);
+    
+    // Add mobile menu functionality
+    addMobileMenuFunctionality();
+}
+
+// Mobile menu functions
+function toggleMobileMenu() {
+    const mobileMenu = document.getElementById('mobile-menu');
+    const menuIcon = document.getElementById('mobile-menu-icon');
+    
+    if (mobileMenu) {
+        const isActive = mobileMenu.classList.contains('active');
+        if (isActive) {
+            mobileMenu.classList.remove('active');
+            menuIcon.textContent = '☰';
+        } else {
+            mobileMenu.classList.add('active');
+            menuIcon.textContent = '✕';
+        }
+    }
+}
+
+function closeMobileMenu() {
+    const mobileMenu = document.getElementById('mobile-menu');
+    const menuIcon = document.getElementById('mobile-menu-icon');
+    
+    if (mobileMenu) {
+        mobileMenu.classList.remove('active');
+        if (menuIcon) {
+            menuIcon.textContent = '☰';
+        }
+    }
+}
+
+function addMobileMenuFunctionality() {
+    // Close mobile menu when clicking outside
+    document.addEventListener('click', function(event) {
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileMenuButton = document.querySelector('.mobile-menu-button');
+        
+        if (mobileMenu && mobileMenuButton) {
+            const isClickInsideMenu = mobileMenu.contains(event.target);
+            const isClickOnButton = mobileMenuButton.contains(event.target);
+            
+            if (!isClickInsideMenu && !isClickOnButton && mobileMenu.classList.contains('active')) {
+                closeMobileMenu();
+            }
+        }
+    });
+
+    // Close mobile menu on window resize to desktop size
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+            closeMobileMenu();
+        }
+    });
 }
 
 // Auto-detect current page and login status
@@ -353,7 +530,14 @@ if (typeof showToast === 'undefined') {
 
 // Export for use in other scripts
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { initNavigation, autoInitNavigation, generateNavigation, logout };
+    module.exports = { 
+        initNavigation, 
+        autoInitNavigation, 
+        generateNavigation, 
+        logout, 
+        toggleMobileMenu, 
+        closeMobileMenu 
+    };
 }
 
 // Auto-initialize if DOM is ready
