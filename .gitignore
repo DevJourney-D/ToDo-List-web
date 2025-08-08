@@ -22,6 +22,12 @@ Thumbs.db
 # Logs
 *.log
 
-# Build outputs
-dist/
-build/
+# Build outputs - Keep dist folder but ignore generated CSS
+# dist/
+# build/
+
+# Vercel
+.vercel
+
+# Generated CSS file (will be built during deployment)
+dist/styles.css
