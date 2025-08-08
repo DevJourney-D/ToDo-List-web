@@ -38,7 +38,25 @@ class DateUtils {
     // Format date for display in Thai format (DD/MM/YYYY)
     static formatThaiDate(date) {
         if (!date) return '';
-        const d = date instanceof Date ? date : new Date(date + 'T00:00:00');
+        let d;
+        if (date instanceof Date) {
+            d = date;
+        } else if (typeof date === 'string') {
+            // Handle different date string formats
+            if (date.includes('T') || date.includes('Z')) {
+                // ISO format with time (e.g., "2025-08-09T05:00:00Z" or "2025-08-09T05:00:00")
+                d = new Date(date);
+            } else {
+                // Date only format (e.g., "2025-08-09")
+                d = new Date(date + 'T00:00:00');
+            }
+        } else {
+            d = new Date(date);
+        }
+        
+        // Check if date is valid
+        if (isNaN(d.getTime())) return '';
+        
         const day = String(d.getDate()).padStart(2, '0');
         const month = String(d.getMonth() + 1).padStart(2, '0');
         const year = d.getFullYear();
@@ -48,7 +66,25 @@ class DateUtils {
     // Format date for display with Thai month names
     static formatThaiDateWithMonthName(date) {
         if (!date) return '';
-        const d = date instanceof Date ? date : new Date(date + 'T00:00:00');
+        let d;
+        if (date instanceof Date) {
+            d = date;
+        } else if (typeof date === 'string') {
+            // Handle different date string formats
+            if (date.includes('T') || date.includes('Z')) {
+                // ISO format with time (e.g., "2025-08-09T05:00:00Z" or "2025-08-09T05:00:00")
+                d = new Date(date);
+            } else {
+                // Date only format (e.g., "2025-08-09")
+                d = new Date(date + 'T00:00:00');
+            }
+        } else {
+            d = new Date(date);
+        }
+        
+        // Check if date is valid
+        if (isNaN(d.getTime())) return '';
+        
         const months = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
                        'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
         const day = d.getDate();
