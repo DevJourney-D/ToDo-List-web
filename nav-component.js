@@ -10,7 +10,7 @@ const NAV_STYLES = `
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         position: sticky;
         top: 0;
-        z-index: 100;
+        z-index: 50;
     }
     
     .nav-brand {
@@ -94,18 +94,45 @@ const NAV_STYLES = `
 
     .mobile-menu-button {
         display: none;
-        background: none;
-        border: none;
-        font-size: 1.5rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        border: 1px solid #e2e8f0;
+        font-size: 1.25rem;
         color: #374151;
         cursor: pointer;
-        padding: 8px;
-        border-radius: 6px;
-        transition: background-color 0.2s ease;
+        padding: 10px;
+        border-radius: 8px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .mobile-menu-button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .mobile-menu-button:hover::before {
+        left: 100%;
     }
 
     .mobile-menu-button:hover {
-        background: #f3f4f6;
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        color: white;
+        border-color: #1d4ed8;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.25);
+    }
+
+    .mobile-menu-button:active {
+        transform: translateY(0);
+        box-shadow: 0 3px 10px rgba(59, 130, 246, 0.2);
     }
 
     .mobile-menu {
@@ -116,68 +143,123 @@ const NAV_STYLES = `
         right: 0;
         background: white;
         border-bottom: 1px solid #e5e7eb;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        z-index: 50;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        z-index: 40;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        max-height: 0;
+        overflow: hidden;
     }
 
     .mobile-menu.active {
         display: block;
+        opacity: 1;
+        transform: translateY(0);
+        max-height: 500px;
     }
 
     .mobile-menu-content {
-        padding: 1rem;
+        padding: 1.5rem 1rem;
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 0.75rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
     }
 
     .mobile-user-section {
-        padding: 1rem;
-        border-bottom: 1px solid #e5e7eb;
-        margin-bottom: 0.5rem;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #e2e8f0;
+        margin-bottom: 0.75rem;
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        border-radius: 12px;
+        color: white;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    }
+
+    .mobile-user-section .text-sm {
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 500;
+        font-size: 0.875rem;
     }
 
     .mobile-nav-link {
-        padding: 12px 16px;
-        border-radius: 8px;
+        padding: 14px 18px;
+        border-radius: 12px;
         font-weight: 500;
         text-decoration: none;
         color: #374151;
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        transition: all 0.2s ease;
+        gap: 0.875rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         border: 1px solid transparent;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .mobile-nav-link::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .mobile-nav-link:hover::before {
+        left: 100%;
     }
 
     .mobile-nav-link:hover {
-        background: #f8fafc;
-        border-color: #e2e8f0;
+        background: linear-gradient(135deg, #f1f5f9 0%, #ffffff 100%);
+        border-color: #3b82f6;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+        color: #1d4ed8;
     }
 
     .mobile-nav-link.active {
-        background: #3b82f6;
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
         color: white;
-        border-color: #3b82f6;
+        border-color: #1d4ed8;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+    }
+
+    .mobile-nav-link.active::before {
+        display: none;
     }
 
     .mobile-nav-link.btn-danger {
-        background: #fef2f2;
+        background: linear-gradient(135deg, #fef2f2 0%, #fef7f7 100%);
         color: #dc2626;
         border-color: #fecaca;
-        margin-top: 0.5rem;
+        margin-top: 1rem;
     }
 
     .mobile-nav-link.btn-danger:hover {
-        background: #ef4444;
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
         color: white;
-        border-color: #ef4444;
+        border-color: #dc2626;
+        box-shadow: 0 8px 25px rgba(239, 68, 68, 0.25);
     }
 
     .mobile-nav-link.btn-secondary {
-        background: #f8fafc;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
         color: #475569;
         border-color: #e2e8f0;
+    }
+
+    .mobile-nav-link.btn-secondary:hover {
+        background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+        color: #1e293b;
+        border-color: #94a3b8;
     }
 
     /* Desktop and Tablet responsive */
@@ -199,7 +281,9 @@ const NAV_STYLES = `
     /* Mobile responsive */
     @media (max-width: 768px) {
         .mobile-menu-button {
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .nav-menu {
@@ -216,25 +300,50 @@ const NAV_STYLES = `
 
         .nav-brand {
             font-size: 1.25rem;
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 2px 4px rgba(220, 38, 38, 0.1);
+        }
+
+        .nav-container {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         }
     }
     
     @media (max-width: 480px) {
         .nav-container .container {
-            padding: 0.75rem 1rem;
+            padding: 1rem;
         }
         
         .nav-brand {
             font-size: 1.125rem;
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .mobile-menu-content {
-            padding: 0.75rem;
+            padding: 1rem;
         }
 
         .mobile-nav-link {
-            padding: 10px 14px;
+            padding: 12px 16px;
             font-size: 0.875rem;
+        }
+
+        .mobile-menu-button {
+            font-size: 1.125rem;
+            padding: 8px;
+        }
+
+        .mobile-user-section {
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
         }
     }
 `;
@@ -302,7 +411,7 @@ function generateNavigation(currentPage = '', isLoggedIn = false, username = '')
                     ${rightSideHtml}
                 </div>
                 <button class="mobile-menu-button" onclick="toggleMobileMenu()" aria-label="Toggle menu">
-                    <span id="mobile-menu-icon">☰</span>
+                    <span id="mobile-menu-icon" style="transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);">☰</span>
                 </button>
             </div>
             <div id="mobile-menu" class="mobile-menu">
@@ -346,9 +455,11 @@ function toggleMobileMenu() {
         if (isActive) {
             mobileMenu.classList.remove('active');
             menuIcon.textContent = '☰';
+            menuIcon.style.transform = 'rotate(0deg)';
         } else {
             mobileMenu.classList.add('active');
             menuIcon.textContent = '✕';
+            menuIcon.style.transform = 'rotate(180deg)';
         }
     }
 }
@@ -361,6 +472,7 @@ function closeMobileMenu() {
         mobileMenu.classList.remove('active');
         if (menuIcon) {
             menuIcon.textContent = '☰';
+            menuIcon.style.transform = 'rotate(0deg)';
         }
     }
 }
@@ -458,6 +570,7 @@ function logout() {
     // Create custom confirmation modal
     const modal = document.createElement('div');
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    modal.style.zIndex = '9999';
     modal.innerHTML = `
         <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
             <div class="text-center">
@@ -515,7 +628,8 @@ if (typeof showToast === 'undefined') {
                        type === 'success' ? 'bg-green-500' : 
                        type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500';
         
-        toast.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300`;
+        toast.className = `fixed top-20 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300`;
+        toast.style.zIndex = '9999';
         toast.textContent = message;
         
         document.body.appendChild(toast);
