@@ -172,35 +172,68 @@
 
                 <!-- Today's Tasks -->
                 <div class="excel-card p-6 mb-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-xl font-bold text-gray-800">งานวันนี้</h2>
-                        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <span class="text-blue-600 text-lg">📋</span>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800">งานที่ต้องทำวันนี้</h2>
+                                <p class="text-gray-600 text-sm">รายการงานที่กำหนดส่งวันนี้</p>
+                            </div>
+                        </div>
+                        <span class="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
                             ${todayTasks.length} งาน
                         </span>
                     </div>
-                    <div class="space-y-3">
-                        ${todayTasks.length === 0 ? 
-                            '<div class="text-center text-gray-500 py-8"><div class="text-3xl mb-2">🎉</div><p>ไม่มีงานวันนี้ เยี่ยมมาก!</p></div>' :
-                            todayTasks.slice(0, 5).map(task => `
-                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                    <div class="flex items-center space-x-3">
-                                        <input type="checkbox" ${task.is_completed ? 'checked' : ''} 
-                                               onchange="toggleTask('${task.id}', this.checked)"
-                                               class="w-4 h-4 text-blue-600 rounded">
-                                        <span class="font-medium ${task.is_completed ? 'line-through text-gray-500' : 'text-gray-800'}">
-                                            ${task.task_name || task.title || 'Untitled Task'}
-                                        </span>
-                                    </div>
-                                    <div class="flex items-center space-x-2">
-                                        <span class="priority-badge priority-${task.priority === 3 ? 'high' : task.priority === 2 ? 'medium' : 'low'}">
-                                            ${task.priority === 3 ? 'สูง' : task.priority === 2 ? 'กลาง' : 'ต่ำ'}
-                                        </span>
+                    
+                    ${todayTasks.length === 0 ? 
+                        '<div class="text-center text-gray-500 py-12 border-2 border-dashed border-gray-200 rounded-lg"><div class="text-4xl mb-3">🎉</div><h3 class="text-lg font-medium text-gray-700 mb-2">ยอดเยี่ยม!</h3><p class="text-gray-500">ไม่มีงานที่ต้องทำวันนี้</p></div>' :
+                        `<div class="space-y-3">
+                            ${todayTasks.map((task, index) => `
+                                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-4">
+                                            <div class="flex items-center space-x-3">
+                                                <span class="text-gray-400 font-mono text-sm">${String(index + 1).padStart(2, '0')}</span>
+                                                <input type="checkbox" ${task.is_completed ? 'checked' : ''} 
+                                                       onchange="toggleTask('${task.id}', this.checked)"
+                                                       class="w-5 h-5 text-blue-600 rounded">
+                                            </div>
+                                            <div class="flex-1">
+                                                <span class="font-medium text-lg ${task.is_completed ? 'line-through text-gray-500' : 'text-gray-800'}">
+                                                    ${task.task_name || task.title || 'Untitled Task'}
+                                                </span>
+                                                ${task.description ? `<p class="text-gray-500 text-sm mt-1">${task.description}</p>` : ''}
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-3">
+                                            <span class="priority-badge priority-${task.priority === 3 ? 'high' : task.priority === 2 ? 'medium' : 'low'}">
+                                                ${task.priority === 3 ? '🔥 สูง' : task.priority === 2 ? '⚡ กลาง' : '📝 ต่ำ'}
+                                            </span>
+                                            ${task.due_date ? `<span class="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">
+                                                📅 ${window.dateUtils.formatThaiDate(task.due_date)}
+                                            </span>` : ''}
+                                        </div>
                                     </div>
                                 </div>
-                            `).join('')
-                        }
-                    </div>
-                    ${todayTasks.length > 5 ? `<div class="text-center mt-4"><a href="tasks.html" class="text-blue-600 hover:text-blue-800">ดูงานทั้งหมด (${todayTasks.length})</a></div>` : ''}
+                            `).join('')}
+                        </div>`
+                    }
+                    
+                    ${todayTasks.length > 0 ? `
+                        <div class="mt-6 pt-4 border-t border-gray-200">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-600">
+                                    เสร็จแล้ว: <span class="font-medium">${todayTasks.filter(t => t.is_completed).length}</span> จาก ${todayTasks.length} งาน
+                                </span>
+                                <a href="tasks.html" class="text-blue-600 hover:text-blue-800 font-medium">
+                                    ดูงานทั้งหมด →
+                                </a>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
                 </div>
 
                 <!-- Recent Activity -->
