@@ -955,12 +955,26 @@
         async function toggleTask(taskId, isCompleted) {
             try {
                 showToast('กำลังอัปเดตงาน...', 'info');
-                await apiCall(`/tasks/${taskId}`, {
-                    method: 'PATCH',
-                    body: JSON.stringify({ is_completed: isCompleted })
-                });
-                showToast('อัปเดตงานเรียบร้อย', 'success');
-                await loadTasks();
+                
+                // Try API call first
+                try {
+                    await apiCall(`/tasks/${taskId}`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({ is_completed: isCompleted })
+                    });
+                    showToast('อัปเดตงานเรียบร้อย', 'success');
+                } catch (apiError) {
+                    // Fallback: Update local data only
+                    console.warn('API update failed, updating locally:', apiError);
+                    const task = tasks.find(t => t.id === taskId);
+                    if (task) {
+                        task.is_completed = isCompleted;
+                        task.updated_at = new Date().toISOString();
+                    }
+                    showToast('อัปเดตงานในเครื่อง (ไม่ได้เชื่อมต่อเซิร์ฟเวอร์)', 'warning');
+                }
+                
+                // Update UI regardless
                 generateCalendar();
                 updateStats();
                 if (selectedDate) {
@@ -995,11 +1009,26 @@
             
             try {
                 showToast('กำลังลบงาน...', 'info');
-                await apiCall(`/tasks/${taskId}`, {
-                    method: 'DELETE'
-                });
-                showToast(`ลบงาน "${taskName}" เรียบร้อย`, 'success');
-                await loadTasks();
+                
+                // Try API call first
+                try {
+                    await apiCall(`/tasks/${taskId}`, {
+                        method: 'DELETE'
+                    });
+                    showToast(`ลบงาน "${taskName}" เรียบร้อย`, 'success');
+                } catch (apiError) {
+                    // Fallback: Remove from local data only
+                    console.warn('API delete failed, removing locally:', apiError);
+                    showToast(`ลบงาน "${taskName}" ในเครื่อง (ไม่ได้เชื่อมต่อเซิร์ฟเวอร์)`, 'warning');
+                }
+                
+                // Remove from local tasks array
+                const taskIndex = tasks.findIndex(t => t.id === taskId);
+                if (taskIndex > -1) {
+                    tasks.splice(taskIndex, 1);
+                }
+                
+                // Update UI
                 generateCalendar();
                 updateStats();
                 if (selectedDate) {
@@ -1061,30 +1090,98 @@
                 showToast(`สวัสดี ${userInfo.user.username}!`, 'success');
                 return userInfo;
             } catch (error) {
-                console.warn('Failed to load user info:', error);
-                showToast('ไม่สามารถโหลดข้อมูลผู้ใช้ได้', 'warning');
-                // Set default user info
+                console.warn('Failed to load user info from API:', error);
+                showToast('ไม่สามารถเชื่อมต่อ API ได้ ใช้ข้อมูลตัวอย่าง', 'warning');
+                
+                // Use sample user info for demonstration
+                const sampleUser = {
+                    user: {
+                        username: localStorage.getItem('username') || 'DemoUser',
+                        id: 1
+                    }
+                };
+                
                 const greetingEl = document.getElementById('user-greeting');
                 if (greetingEl) {
-                    greetingEl.textContent = 'Welcome, User';
+                    greetingEl.textContent = `Welcome, ${sampleUser.user.username}`;
                 }
-                return { user: { username: 'User', id: 1 } };
+                
+                showToast(`สวัสดี ${sampleUser.user.username}! (โหมดตัวอย่าง)`, 'info');
+                return sampleUser;
             }
         }
 
         async function loadTasks() {
             try {
+                showToast('กำลังโหลดรายการงาน...', 'info');
                 const response = await apiCall('/tasks');
                 tasks = response.tasks || response || [];
-                showToast(`โหลดงานเรียบร้อย (${tasks.length} งาน)`, 'success');
+                
+                if (tasks.length === 0) {
+                    showToast('ยังไม่มีงานในระบบ', 'info');
+                } else {
+                    showToast(`โหลดงานเรียบร้อย (${tasks.length} งาน)`, 'success');
+                }
+                
                 return tasks;
             } catch (error) {
-                console.warn('Failed to load tasks:', error);
-                showToast('ไม่สามารถโหลดรายการงานได้', 'error');
-                // Return empty array if API fails
-                tasks = [];
+                console.warn('Failed to load tasks from API:', error);
+                showToast('ไม่สามารถเชื่อมต่อ API ได้ แสดงข้อมูลตัวอย่าง', 'warning');
+                
+                // Load sample tasks for demonstration
+                tasks = getSampleTasks();
+                showToast(`แสดงข้อมูลตัวอย่าง (${tasks.length} งาน)`, 'info');
                 return tasks;
             }
+        }
+
+        function getSampleTasks() {
+            const today = new Date(2025, 7, 7); // 7 สิงหาคม 2568
+            const tomorrow = new Date(2025, 7, 8);
+            const nextWeek = new Date(2025, 7, 14);
+            
+            return [
+                {
+                    id: 1,
+                    task_name: "ทบทวนการเรียน JavaScript",
+                    description: "ศึกษา ES6+ Features และ Async/Await",
+                    priority: 3,
+                    due_date: formatDate(today),
+                    is_completed: false,
+                    created_at: "2025-08-06T10:00:00Z",
+                    updated_at: "2025-08-06T10:00:00Z"
+                },
+                {
+                    id: 2,
+                    task_name: "ซื้อของใช้ในบ้าน",
+                    description: "น้ำมันทอด, ข้าว, น้ำปลา",
+                    priority: 2,
+                    due_date: formatDate(tomorrow),
+                    is_completed: false,
+                    created_at: "2025-08-06T11:00:00Z",
+                    updated_at: "2025-08-06T11:00:00Z"
+                },
+                {
+                    id: 3,
+                    task_name: "ออกกำลังกาย",
+                    description: "วิ่ง 30 นาทีในสวนสาธารณะ",
+                    priority: 1,
+                    due_date: formatDate(today),
+                    is_completed: true,
+                    created_at: "2025-08-06T06:00:00Z",
+                    updated_at: "2025-08-07T07:00:00Z"
+                },
+                {
+                    id: 4,
+                    task_name: "ประชุมทีม",
+                    description: "ประชุมวางแผนโปรเจกต์ใหม่",
+                    priority: 3,
+                    due_date: formatDate(nextWeek),
+                    is_completed: false,
+                    created_at: "2025-08-05T14:00:00Z",
+                    updated_at: "2025-08-05T14:00:00Z"
+                }
+            ];
         }
 
         function updateStats() {

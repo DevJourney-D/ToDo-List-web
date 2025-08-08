@@ -2120,7 +2120,10 @@
         
         // Toggle Edit Mode
         function toggleEditMode() {
-            if (!userInfo) return;
+            if (!userInfo) {
+                showNotification('Please wait for profile to load', 'warning');
+                return;
+            }
             
             isEditMode = !isEditMode;
             const editBtn = document.getElementById('edit-profile-btn');
@@ -2128,8 +2131,8 @@
             
             if (isEditMode) {
                 editBtn.innerHTML = '✖️ Cancel Edit';
-                editBtn.className = 'btn-cancel px-4 py-2 rounded-lg font-medium transition-colors';
-                profileCard.classList.add('edit-mode');
+                editBtn.className = 'bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors';
+                if (profileCard) profileCard.classList.add('edit-mode');
                 
                 // Switch to edit form
                 const profileSection = document.getElementById('profile-info-section');
@@ -2140,7 +2143,7 @@
             } else {
                 editBtn.innerHTML = '✏️ Edit Profile';
                 editBtn.className = 'bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors';
-                profileCard.classList.remove('edit-mode');
+                if (profileCard) profileCard.classList.remove('edit-mode');
                 
                 // Switch back to view mode
                 displayUserProfile(userInfo);
@@ -2195,11 +2198,18 @@
         
         // Save Profile (PATCH method)
         async function saveProfile() {
+            if (!userInfo) {
+                showNotification('User information not loaded', 'error');
+                return;
+            }
+
             const displayName = document.getElementById('edit-display-name')?.value;
             const email = document.getElementById('edit-email')?.value;
             const location = document.getElementById('edit-location')?.value;
             const bio = document.getElementById('edit-bio')?.value;
-            
+            const currentPassword = document.getElementById('edit-current-password')?.value;
+            const newPassword = document.getElementById('edit-new-password')?.value;
+
             const updateData = {};
             
             // Only include fields that have valid string values
@@ -2222,9 +2232,17 @@
             if (bio && bio.trim() !== '') {
                 updateData.bio = bio.trim();
             }
+
+            // Handle password change if provided
+            if (currentPassword && newPassword) {
+                const passwordChanged = await changePassword(currentPassword, newPassword);
+                if (!passwordChanged) {
+                    return; // Stop if password change failed
+                }
+            }
             
             // Validate that we have at least one field to update
-            if (Object.keys(updateData).length === 0) {
+            if (Object.keys(updateData).length === 0 && !currentPassword) {
                 showNotification('Please fill in at least one field to update', 'warning');
                 return;
             }
@@ -2236,7 +2254,7 @@
                 // Check if backend is available
                 const backendConnected = await testBackendConnection();
                 
-                if (backendConnected) {
+                if (backendConnected && Object.keys(updateData).length > 0) {
                     // Try real API call
                     const jsonString = JSON.stringify(updateData);
                     console.log('JSON to send:', jsonString);
@@ -2253,7 +2271,7 @@
                     } else {
                         throw new Error('Invalid response from server');
                     }
-                } else {
+                } else if (Object.keys(updateData).length > 0) {
                     // Demo mode - update locally only
                     console.log('Demo mode: Updating profile locally');
                     Object.assign(userInfo.user, updateData);
@@ -2261,9 +2279,12 @@
                 }
                 
                 // Update display and storage regardless of mode
-                displayUserProfile(userInfo);
+                if (Object.keys(updateData).length > 0) {
+                    localStorage.setItem('userProfile', JSON.stringify(userInfo));
+                }
+                
+                // Exit edit mode
                 toggleEditMode();
-                localStorage.setItem('userProfile', JSON.stringify(userInfo));
                 
             } catch (error) {
                 console.error('Failed to update profile:', error);
@@ -2276,11 +2297,12 @@
                 } else {
                     // Fallback to demo mode if API fails
                     console.log('API failed, falling back to demo mode');
-                    Object.assign(userInfo.user, updateData);
-                    displayUserProfile(userInfo);
-                    toggleEditMode();
-                    localStorage.setItem('userProfile', JSON.stringify(userInfo));
-                    showNotification('Demo mode: Profile updated locally (API unavailable)', 'warning');
+                    if (Object.keys(updateData).length > 0) {
+                        Object.assign(userInfo.user, updateData);
+                        localStorage.setItem('userProfile', JSON.stringify(userInfo));
+                        showNotification('Demo mode: Profile updated locally (API unavailable)', 'warning');
+                        toggleEditMode();
+                    }
                 }
             }
         }
@@ -2289,7 +2311,9 @@
         function cancelEdit() {
             if (confirm('Are you sure you want to cancel? All changes will be lost.')) {
                 // Restore original data
-                userInfo = JSON.parse(JSON.stringify(originalUserData));
+                if (originalUserData) {
+                    userInfo = JSON.parse(JSON.stringify(originalUserData));
+                }
                 toggleEditMode();
             }
         }
@@ -2499,145 +2523,10 @@
         // Start the profile page
         document.addEventListener('DOMContentLoaded', function() {
             initProfile();
-            
-            // Add edit profile click handler
-            const editBtn = document.getElementById('editProfileBtn');
-            if (editBtn) {
-                editBtn.addEventListener('click', function() {
-                    isEditMode = true;
-                    loadProfile();
-                });
-            }
-            
-            // Add save profile click handler
-            document.addEventListener('click', function(e) {
-                if (e.target && e.target.id === 'saveProfileBtn') {
-                    e.preventDefault();
-                    saveProfile();
-                }
-                
-                // Change password handler
-                if (e.target && e.target.id === 'changePasswordBtn') {
-                    e.preventDefault();
-                    const currentPassword = document.getElementById('currentPassword').value;
-                    const newPassword = document.getElementById('newPassword').value;
-                    const confirmPassword = document.getElementById('confirmPassword').value;
-                    
-                    if (newPassword !== confirmPassword) {
-                        showNotification('New passwords do not match', 'warning');
-                        return;
-                    }
-                    
-                    changePassword(currentPassword, newPassword).then(success => {
-                        if (success) {
-                            // Clear password fields
-                            document.getElementById('currentPassword').value = '';
-                            document.getElementById('newPassword').value = '';
-                            document.getElementById('confirmPassword').value = '';
-                        }
-                    });
-                }
-                
-                // Cancel edit handler
-                if (e.target && e.target.id === 'cancelEditBtn') {
-                    e.preventDefault();
-                    isEditMode = false;
-                    loadProfile();
-                }
-            });
         });
         
-        // Edit Mode Functions
-        function toggleEditMode() {
-            isEditMode = !isEditMode;
-            if (userInfo) {
-                displayUserProfile(userInfo);
-            }
-            
-            const editBtn = document.getElementById('edit-profile-btn');
-            if (editBtn) {
-                editBtn.textContent = isEditMode ? '❌ Cancel' : '✏️ Edit Profile';
-                editBtn.onclick = isEditMode ? cancelEdit : toggleEditMode;
-            }
-        }
-        
-        function cancelEdit() {
-            isEditMode = false;
-            if (userInfo) {
-                displayUserProfile(userInfo);
-            }
-            
-            const editBtn = document.getElementById('edit-profile-btn');
-            if (editBtn) {
-                editBtn.textContent = '✏️ Edit Profile';
-                editBtn.onclick = toggleEditMode;
-            }
-        }
-        
-        async function saveProfile() {
-            try {
-                // Get form data
-                const displayName = document.getElementById('edit-display-name')?.value?.trim();
-                const email = document.getElementById('edit-email')?.value?.trim();
-                const location = document.getElementById('edit-location')?.value?.trim();
-                const bio = document.getElementById('edit-bio')?.value?.trim();
-                
-                const profileData = {
-                    display_name: displayName,
-                    email: email,
-                    location: location,
-                    bio: bio
-                };
-                
-                // Validate data
-                if (email && !isValidEmail(email)) {
-                    showNotification('Please enter a valid email address', 'warning');
-                    return;
-                }
-                
-                // Try to save to API
-                const backendConnected = await testBackendConnection();
-                
-                if (backendConnected) {
-                    try {
-                        const result = await apiRequest('/user/update', 'PATCH', profileData);
-                        if (result) {
-                            // Update local user info
-                            userInfo.user = { ...userInfo.user, ...profileData };
-                            originalUserData = JSON.parse(JSON.stringify(userInfo));
-                            localStorage.setItem('userProfile', JSON.stringify(userInfo));
-                            
-                            showNotification('Profile updated successfully!', 'success');
-                        }
-                    } catch (error) {
-                        console.warn('API update failed:', error);
-                        showNotification('API not available, saving locally', 'warning');
-                        
-                        // Save locally as fallback
-                        userInfo.user = { ...userInfo.user, ...profileData };
-                        localStorage.setItem('userProfile', JSON.stringify(userInfo));
-                        showNotification('Profile saved locally', 'info');
-                    }
-                } else {
-                    // Save to localStorage only
-                    userInfo.user = { ...userInfo.user, ...profileData };
-                    localStorage.setItem('userProfile', JSON.stringify(userInfo));
-                    showNotification('Profile saved locally (demo mode)', 'info');
-                }
-                
-                // Exit edit mode
-                cancelEdit();
-                
-            } catch (error) {
-                console.error('Failed to save profile:', error);
-                showNotification('Failed to save profile: ' + error.message, 'error');
-            }
-        }
-        
-        function isValidEmail(email) {
-            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return re.test(email);
-        }
+        // Edit Mode Functions (Remove duplicate)
+        // These functions are already defined above
         
         function changeAvatar() {
             showNotification('Avatar change feature coming soon!', 'info');
