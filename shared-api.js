@@ -1,4 +1,48 @@
 // Shared API utilities to reduce code duplication and improve performance
+
+// Date utility functions for consistent timezone handling
+class DateUtils {
+    // Convert date to local date string (YYYY-MM-DD) without timezone issues
+    static toLocalDateString(date) {
+        if (!date) return null;
+        const d = date instanceof Date ? date : new Date(date + 'T00:00:00');
+        return d.getFullYear() + '-' + 
+               String(d.getMonth() + 1).padStart(2, '0') + '-' + 
+               String(d.getDate()).padStart(2, '0');
+    }
+
+    // Get today's date in local timezone
+    static getTodayString() {
+        const today = new Date();
+        return this.toLocalDateString(today);
+    }
+
+    // Compare two dates (date strings or Date objects) 
+    static isSameDate(date1, date2) {
+        return this.toLocalDateString(date1) === this.toLocalDateString(date2);
+    }
+
+    // Check if date is today
+    static isToday(date) {
+        return this.isSameDate(date, new Date());
+    }
+
+    // Check if date is before today (overdue)
+    static isOverdue(date) {
+        if (!date) return false;
+        const dateStr = this.toLocalDateString(date);
+        const todayStr = this.getTodayString();
+        return dateStr < todayStr;
+    }
+
+    // Format date for display in Thai format
+    static formatThaiDate(date) {
+        if (!date) return '';
+        const d = date instanceof Date ? date : new Date(date + 'T00:00:00');
+        return d.toLocaleDateString('th-TH');
+    }
+}
+
 class APIManager {
     constructor() {
         this.baseURL = 'https://to-do-list-api-app.vercel.app/api/v1';
@@ -287,8 +331,9 @@ class DataManager {
 // Global instances
 window.apiManager = new APIManager();
 window.dataManager = new DataManager(window.apiManager);
+window.dateUtils = DateUtils;
 
 // Export for use in other files
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { APIManager, DataManager };
+    module.exports = { APIManager, DataManager, DateUtils };
 }

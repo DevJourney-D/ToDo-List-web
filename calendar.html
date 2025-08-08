@@ -177,8 +177,8 @@
         // Modal functions
         function showAddTaskModal() {
             document.getElementById('add-task-modal').style.display = 'flex';
-            // Set default date to today
-            document.getElementById('task-due-date').value = new Date().toISOString().split('T')[0];
+            // Set default date to today using DateUtils
+            document.getElementById('task-due-date').value = window.dateUtils.getTodayString();
         }
 
         function hideAddTaskModal() {
@@ -199,11 +199,9 @@
 
         // Get tasks for specific date
         function getTasksForDate(date) {
-            const dateStr = date.toISOString().split('T')[0];
             return tasks.filter(task => {
                 if (!task.due_date) return false;
-                const taskDate = new Date(task.due_date).toISOString().split('T')[0];
-                return taskDate === dateStr;
+                return window.dateUtils.isSameDate(task.due_date, date);
             });
         }
 
@@ -411,8 +409,8 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            // Wait for shared API to be ready
-            if (window.apiManager && window.dataManager) {
+            // Wait for shared API and DateUtils to be ready
+            if (window.apiManager && window.dataManager && window.dateUtils) {
                 loadCalendar();
             } else {
                 setTimeout(loadCalendar, 100);

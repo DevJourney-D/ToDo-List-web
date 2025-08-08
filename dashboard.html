@@ -121,17 +121,16 @@
             const pendingTasks = totalTasks - completedTasks;
             const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
             
-            // Get today's tasks
-            const today = new Date().toISOString().split('T')[0];
+            // Get today's tasks using DateUtils
             const todayTasks = tasks.filter(task => {
                 if (!task.due_date) return false;
-                return new Date(task.due_date).toISOString().split('T')[0] === today;
+                return window.dateUtils.isToday(task.due_date);
             });
             
-            // Get overdue tasks
+            // Get overdue tasks using DateUtils
             const overdueTasks = tasks.filter(task => {
                 if (!task.due_date || task.is_completed) return false;
-                return new Date(task.due_date) < new Date();
+                return window.dateUtils.isOverdue(task.due_date);
             });
 
             content.innerHTML = `
@@ -299,8 +298,8 @@
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
-            // Wait for shared API to be ready
-            if (window.apiManager && window.dataManager) {
+            // Wait for shared API and DateUtils to be ready
+            if (window.apiManager && window.dataManager && window.dateUtils) {
                 loadDashboard();
             } else {
                 // Fallback if shared API not loaded

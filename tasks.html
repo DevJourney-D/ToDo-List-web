@@ -217,7 +217,7 @@
                                     <span class="priority-badge priority-${priorityText}">${priorityLabel}</span>
                                 </div>
                                 ${task.description ? `<p class="text-sm text-gray-600 mt-1 ml-7">${task.description}</p>` : ''}
-                                ${task.due_date ? `<p class="text-xs text-gray-500 mt-1 ml-7">ครบกำหนด: ${new Date(task.due_date).toLocaleDateString('th-TH')}</p>` : ''}
+                                ${task.due_date ? `<p class="text-xs text-gray-500 mt-1 ml-7">ครบกำหนด: ${window.dateUtils.formatThaiDate(task.due_date)}</p>` : ''}
                             </div>
                             <div class="flex items-center space-x-2">
                                 <button onclick="deleteTask('${task.id}')" class="text-red-600 hover:text-red-800 transition-colors" title="ลบ">🗑️</button>
@@ -399,8 +399,8 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            // Wait for shared API to be ready
-            if (window.apiManager && window.dataManager) {
+            // Wait for shared API and DateUtils to be ready
+            if (window.apiManager && window.dataManager && window.dateUtils) {
                 loadTasks();
             } else {
                 setTimeout(loadTasks, 100);
