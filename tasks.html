@@ -1615,12 +1615,12 @@
                     <!-- Search -->
                     <div class="lg:col-span-2">
                         <input type="text" id="search-input" placeholder="🔍 Search tasks..." 
-                               class="search-input" onkeyup="filterDemoTasks()">
+                               class="search-input" onkeyup="filterTasks()">
                     </div>
                     
                     <!-- Filter Controls -->
                     <div class="filter-section p-4">
-                        <select id="priority-filter" class="form-select" onchange="filterDemoByPriority()">
+                        <select id="priority-filter" class="form-select" onchange="filterByPriority()">
                             <option value="all">All Priorities</option>
                             <option value="high">High Priority</option>
                             <option value="medium">Medium Priority</option>
@@ -1629,7 +1629,7 @@
                     </div>
                     
                     <div class="filter-section p-4">
-                        <select id="status-filter" class="form-select" onchange="filterDemoByStatus()">
+                        <select id="status-filter" class="form-select" onchange="filterByStatus()">
                             <option value="all">All Status</option>
                             <option value="pending">Pending</option>
                             <option value="in_progress">In Progress</option>
@@ -2267,22 +2267,29 @@
         // Task Management Functions
         async function loadTasks() {
             try {
-                showLoading('Loading tasks...');
+                showLoading('Loading tasks from API...');
+                console.log('🔄 Requesting tasks from:', `${API_BASE_URL}/tasks`);
+                
                 const response = await apiRequest('/tasks');
+                console.log('📡 Raw API Response:', response);
                 
                 // Handle different response structures from backend
                 if (response.tasks) {
                     // Backend returns { tasks: [...], total: 10, ... }
                     tasks = response.tasks;
+                    console.log('✅ Found tasks in response.tasks');
                 } else if (Array.isArray(response)) {
                     // Backend returns tasks array directly
                     tasks = response;
+                    console.log('✅ Response is tasks array directly');
                 } else if (response.data && Array.isArray(response.data)) {
                     // Backend returns { data: [...], ... }
                     tasks = response.data;
+                    console.log('✅ Found tasks in response.data');
                 } else {
                     // Fallback
                     tasks = [];
+                    console.warn('⚠️ No tasks found in response, using empty array');
                 }
                 
                 filteredTasks = [...tasks];
@@ -2291,15 +2298,27 @@
                 hideLoading();
                 hideAPIAlert(); // Hide alert if tasks load successfully
                 
-                console.log(`✅ Loaded ${tasks.length} tasks from API`);
+                console.log(`✅ Successfully loaded ${tasks.length} tasks from API:`, tasks);
+                
+                if (tasks.length > 0) {
+                    showNotification(`📝 โหลดงาน ${tasks.length} รายการจาก API เรียบร้อย`, 'success');
+                } else {
+                    showNotification('📝 ไม่มีงานในระบบ - พร้อมสร้างงานใหม่', 'info');
+                }
                 
             } catch (error) {
                 hideLoading();
                 handleAPIError(error, 'Loading tasks');
                 
-                // Load demo tasks for testing
-                loadDemoTasks();
-                showNotification('Loaded demo tasks for testing. API connection issues detected.', 'warning', 6000);
+                // Instead of loading demo tasks, show empty state with error guidance
+                tasks = [];
+                filteredTasks = [];
+                renderTasks();
+                updateStats();
+                
+                // Show helpful error message with API diagnosis
+                showNotification('ไม่สามารถโหลดงานจาก API ได้ กรุณาตรวจสอบการเชื่อมต่อ', 'error', 10000);
+                showAPIAlert();
             }
         }
         
@@ -2350,63 +2369,60 @@
             }
         }
         
-        function loadDemoTasks() {
-            const today = new Date();
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            
-            tasks = [
-                {
-                    id: 1,
-                    task_name: 'Complete project documentation',
-                    description: 'Write comprehensive documentation for the new project',
-                    priority: 3,
-                    due_date: tomorrow.toISOString().split('T')[0],
-                    category: 'Work',
-                    is_completed: false,
-                    created_at: today.toISOString()
-                },
-                {
-                    id: 2,
-                    task_name: 'Review code changes',
-                    description: 'Review and approve pending pull requests',
-                    priority: 2,
-                    due_date: today.toISOString().split('T')[0],
-                    category: 'Work',
-                    is_completed: false,
-                    created_at: today.toISOString()
-                },
-                {
-                    id: 3,
-                    task_name: 'Buy groceries',
-                    description: 'Buy milk, bread, and vegetables',
-                    priority: 1,
-                    due_date: null,
-                    category: 'Personal',
-                    is_completed: true,
-                    created_at: today.toISOString()
-                }
-            ];
-            filteredTasks = [...tasks];
-            renderTasks();
-            updateStats();
-            showNotification('โหลดข้อมูลตัวอย่างเรียบร้อย', 'info');
-        }
+        // ===== REMOVED loadDemoTasks() - System now uses API data only =====
         
         function renderTasks() {
             const container = document.getElementById('tasks-container');
             
             if (filteredTasks.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="text-6xl mb-4">📝</div>
-                        <h3 class="text-xl font-bold text-gray-700 mb-2">No tasks found</h3>
-                        <p class="text-gray-500 mb-6">Create your first task to get started!</p>
-                        <button onclick="openAddTaskModal()" class="btn-primary">
-                            ➕ Add Your First Task
-                        </button>
-                    </div>
-                `;
+                // Check if we have token and show appropriate message
+                const hasToken = localStorage.getItem('token');
+                const isAPIError = document.getElementById('api-status-alert')?.style.display !== 'none';
+                
+                if (!hasToken) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="text-6xl mb-4">🔐</div>
+                            <h3 class="text-xl font-bold text-gray-700 mb-2">Please Login</h3>
+                            <p class="text-gray-500 mb-6">You need to login to access your tasks</p>
+                            <button onclick="window.location.href='index.html'" class="btn-primary">
+                                � Go to Login
+                            </button>
+                        </div>
+                    `;
+                } else if (isAPIError) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="text-6xl mb-4">🌐</div>
+                            <h3 class="text-xl font-bold text-gray-700 mb-2">API Connection Error</h3>
+                            <p class="text-gray-500 mb-6">Unable to load tasks from server. Please check your connection.</p>
+                            <div class="flex gap-3">
+                                <button onclick="loadTasks()" class="btn-primary">
+                                    🔄 Retry Loading
+                                </button>
+                                <button onclick="showAPIStatus()" class="btn-secondary">
+                                    🔧 Test API
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="text-6xl mb-4">�📝</div>
+                            <h3 class="text-xl font-bold text-gray-700 mb-2">No tasks found</h3>
+                            <p class="text-gray-500 mb-6">Create your first task to get started!</p>
+                            <div class="flex gap-3">
+                                <button onclick="openAddTaskModal()" class="btn-primary">
+                                    ➕ Add Your First Task
+                                </button>
+                                <button onclick="addQuickTask()" class="btn-secondary">
+                                    ⚡ Quick Add
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
                 return;
             }
             
@@ -2759,8 +2775,8 @@
             document.getElementById('task-modal').style.display = 'flex';
         }
         
-        // Demo Add Task Function (simple prompt-based) - Updated to use real API
-        async function addDemoTaskQuick() {
+        // Quick Task Creation - Uses Real API
+        async function addQuickTask() {
             const title = prompt('Enter task title:');
             if (title && title.trim()) {
                 const description = prompt('Enter task description (optional):') || '';
@@ -2902,19 +2918,6 @@
             
             renderTasks();
             updateStats();
-        }
-
-        // เพิ่มฟังก์ชันที่เรียกใช้จากฟิลเตอร์
-        function filterDemoTasks() {
-            filterTasks();
-        }
-
-        function filterDemoByPriority() {
-            filterTasks();
-        }
-
-        function filterDemoByStatus() {
-            filterTasks();
         }
 
         // Quick filter functions using backend endpoints
@@ -3572,39 +3575,95 @@
                 }
                 
                 // Show loading
-                showLoading('กำลังเตรียมข้อมูล...');
+                showLoading('กำลังเชื่อมต่อ API...');
                 
-                // Step 1: Load categories (optional but useful)
+                // Step 1: Test API connectivity
+                try {
+                    await apiRequest('/health');
+                    hideAPIAlert(); // Hide API error alert if connection successful
+                    console.log('✅ API connection successful');
+                } catch (healthError) {
+                    console.warn('⚠️ API health check failed:', healthError);
+                    showAPIAlert();
+                    // Continue anyway to try loading data
+                }
+                
+                showLoading('กำลังโหลดหมวดหมู่...');
+                
+                // Step 2: Load categories (optional but useful)
                 try {
                     await loadCategories();
+                    console.log('✅ Categories loaded');
                 } catch (error) {
-                    console.warn('Failed to load categories:', error);
+                    console.warn('⚠️ Failed to load categories:', error);
                     // Categories are optional, continue anyway
                 }
                 
-                // Step 2: Load tasks from API (main content)
-                await loadTasks();
+                showLoading('กำลังโหลดงาน...');
                 
-                // Step 3: Load task-related goals
+                // Step 3: Load tasks from API (main content)
+                await loadTasks();
+                console.log('✅ Tasks loaded successfully');
+                
+                // Step 4: Load task-related goals
+                showLoading('กำลังโหลดเป้าหมาย...');
                 loadTaskRelatedGoals();
                 
                 hideLoading();
-                showNotification('ระบบพร้อมใช้งาน', 'success');
+                showNotification('✅ ระบบพร้อมใช้งาน - ข้อมูลโหลดจาก API เรียบร้อย', 'success');
                 
             } catch (error) {
-                console.error('App initialization error:', error);
+                console.error('❌ App initialization error:', error);
                 hideLoading();
                 handleAPIError(error, 'การเริ่มต้นแอปพลิเคชัน');
                 
-                // Load demo tasks as fallback
-                loadDemoTasks();
-                showNotification('โหลดข้อมูลทดสอบ เนื่องจากเชื่อมต่อ API ไม่สำเร็จ', 'warning');
+                // Don't load demo tasks - show error state instead
+                tasks = [];
+                filteredTasks = [];
+                renderTasks();
+                updateStats();
+                
+                showNotification('❌ ไม่สามารถเริ่มต้นระบบได้ กรุณาตรวจสอบการเชื่อมต่อ API', 'error', 0);
+                showAPIAlert();
             }
         }
         
-        // Refresh tasks function
-        function refreshTasks() {
-            loadTasks();
+        // Refresh tasks from API
+        async function refreshTasks() {
+            try {
+                showLoading('Refreshing tasks...');
+                await loadTasks();
+                hideLoading();
+                showNotification('✅ Tasks refreshed successfully!', 'success');
+            } catch (error) {
+                hideLoading();
+                handleAPIError(error, 'Refreshing tasks');
+            }
+        }
+
+        // Force reload all data from API
+        async function forceReloadData() {
+            try {
+                showLoading('Reloading all data from API...');
+                
+                // Clear current data
+                tasks = [];
+                filteredTasks = [];
+                categories = [];
+                
+                // Reload everything
+                await loadCategories();
+                await loadTasks();
+                loadTaskRelatedGoals();
+                
+                hideLoading();
+                showNotification('✅ All data reloaded from API successfully!', 'success');
+                hideAPIAlert();
+            } catch (error) {
+                hideLoading();
+                handleAPIError(error, 'Force reload data');
+                showAPIAlert();
+            }
         }
 
         function updateStats() {
@@ -3619,230 +3678,63 @@
             document.getElementById('completed-tasks').textContent = completedTasks;
         }
         
-        // Demo Task Management Functions (fallback for testing)
-        let demoTasks = [
-            {
-                id: 1,
-                title: "Complete project proposal",
-                description: "Write and submit the quarterly project proposal",
-                priority: "high",
-                status: "in_progress",
-                due_date: "2024-01-15",
-                created_at: "2024-01-10"
-            },
-            {
-                id: 2,
-                title: "Review code changes",
-                description: "Review pull requests from team members",
-                priority: "medium",
-                status: "pending",
-                due_date: "2024-01-12",
-                created_at: "2024-01-09"
-            },
-            {
-                id: 3,
-                title: "Update documentation",
-                description: "Update API documentation with latest changes",
-                priority: "low",
-                status: "completed",
-                due_date: "2024-01-11",
-                created_at: "2024-01-08"
-            }
-        ];
-        
-        let currentTaskFilter = 'all';
-        let currentTaskPriority = 'all';
-        let currentTaskStatus = 'all';
-        let taskIdCounter = 4;
+        // =============================================
+        // CLEANED UP - API-ONLY TASK MANAGEMENT SYSTEM
+        // All demo functions removed - uses real API data only
+        // =============================================
 
-        function renderDemoTasks() {
-            const taskList = document.getElementById('taskList');
-            if (!taskList) return;
-            
-            let filteredTasks = demoTasks.filter(task => {
-                if (currentTaskFilter === 'pending' && task.status !== 'pending') return false;
-                if (currentTaskFilter === 'completed' && task.status !== 'completed') return false;
-                if (currentTaskPriority !== 'all' && task.priority !== currentTaskPriority) return false;
-                if (currentTaskStatus !== 'all' && task.status !== currentTaskStatus) return false;
-                return true;
-            });
-
-            taskList.innerHTML = filteredTasks.map(task => `
-                <div class="task-item ${task.priority}-priority ${task.status === 'completed' ? 'completed' : ''}" data-task-id="${task.id}">
-                    <div class="flex justify-between items-start mb-2">
-                        <h3 class="font-semibold text-gray-800 flex-1">${task.title}</h3>
-                        <div class="flex items-center space-x-2 ml-4">
-                            <span class="priority-badge priority-${task.priority}">${task.priority}</span>
-                            <select class="status-dropdown" onchange="updateDemoTaskStatus(${task.id}, this.value)">
-                                <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>Pending</option>
-                                <option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
-                                <option value="completed" ${task.status === 'completed' ? 'selected' : ''}>Completed</option>
-                                <option value="cancelled" ${task.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <p class="text-gray-600 text-sm mb-3">${task.description}</p>
-                    
-                    <div class="flex justify-between items-center text-xs text-gray-500">
-                        <span>Due: ${formatTaskDate(task.due_date)}</span>
-                        <div class="space-x-2">
-                            <button onclick="editDemoTask(${task.id})" class="text-blue-600 hover:text-blue-800">Edit</button>
-                            <button onclick="deleteDemoTask(${task.id})" class="text-red-600 hover:text-red-800">Delete</button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-
-            updateDemoTaskStats();
-        }
-
-        function updateDemoTaskStats() {
-            const totalTasks = demoTasks.length;
-            const completedTasks = demoTasks.filter(task => task.status === 'completed').length;
-            const pendingTasks = demoTasks.filter(task => task.status === 'pending').length;
-            const inProgressTasks = demoTasks.filter(task => task.status === 'in_progress').length;
-            
-            const progressPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-            
-            const totalEl = document.getElementById('totalTasks');
-            const completedEl = document.getElementById('completedTasks');
-            const pendingEl = document.getElementById('pendingTasks');
-            const inProgressEl = document.getElementById('inProgressTasks');
-            const progressEl = document.getElementById('progressFill');
-            
-            if (totalEl) totalEl.textContent = totalTasks;
-            if (completedEl) completedEl.textContent = completedTasks;
-            if (pendingEl) pendingEl.textContent = pendingTasks;
-            if (inProgressEl) inProgressEl.textContent = inProgressTasks;
-            if (progressEl) progressEl.style.width = progressPercentage + '%';
-        }
-
-        function addDemoTask() {
-            const title = document.getElementById('taskTitle');
-            const description = document.getElementById('taskDescription');
-            const priority = document.getElementById('taskPriority');
-            const dueDate = document.getElementById('taskDueDate');
-            
-            if (!title || !title.value.trim()) {
-                alert('Please enter a task title');
-                return;
+        // Keyboard shortcuts and utility functions
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + N: New task
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault();
+                openAddTaskModal();
             }
             
-            const newTask = {
-                id: taskIdCounter++,
-                title: title.value.trim(),
-                description: description ? description.value.trim() : '',
-                priority: priority ? priority.value : 'medium',
-                status: 'pending',
-                due_date: dueDate ? dueDate.value : new Date().toISOString().split('T')[0],
-                created_at: new Date().toISOString().split('T')[0]
+            // Ctrl/Cmd + R: Refresh tasks
+            if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+                e.preventDefault();
+                refreshTasks();
+            }
+            
+            // Ctrl/Cmd + Shift + R: Force reload all data
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'R') {
+                e.preventDefault();
+                forceReloadData();
+            }
+            
+            // F5: Refresh tasks (alternative)
+            if (e.key === 'F5') {
+                e.preventDefault();
+                refreshTasks();
+            }
+        });
+
+        // Additional utility functions for API-only operation
+        function getAPIStatus() {
+            const hasToken = !!localStorage.getItem('token');
+            const isAPIAlertVisible = document.getElementById('api-status-alert')?.style.display !== 'none';
+            
+            return {
+                hasToken,
+                isAPIAlertVisible,
+                tasksCount: tasks.length,
+                isOnline: navigator.onLine
             };
-            
-            demoTasks.unshift(newTask);
-            
-            // Clear form
-            const form = document.getElementById('addTaskForm');
-            if (form) form.reset();
-            
-            renderDemoTasks();
-            
-            // Add animation
-            setTimeout(() => {
-                const newTaskElement = document.querySelector(`[data-task-id="${newTask.id}"]`);
-                if (newTaskElement) {
-                    newTaskElement.classList.add('task-added');
-                }
-            }, 100);
         }
 
-        function updateDemoTaskStatus(taskId, newStatus) {
-            const task = demoTasks.find(t => t.id === taskId);
-            if (task) {
-                task.status = newStatus;
-                renderDemoTasks();
-            }
-        }
+        // Global functions for debugging and development
+        window.taskSystemDebug = {
+            getAPIStatus,
+            forceReloadData,
+            refreshTasks,
+            testAPIEndpoints,
+            showAPIStatus,
+            tasks: () => tasks,
+            filteredTasks: () => filteredTasks,
+            categories: () => categories
+        };
 
-        function editDemoTask(taskId) {
-            const task = demoTasks.find(t => t.id === taskId);
-            if (!task) return;
-            
-            const newTitle = prompt('Edit task title:', task.title);
-            if (newTitle !== null && newTitle.trim()) {
-                task.title = newTitle.trim();
-                
-                const newDescription = prompt('Edit task description:', task.description);
-                if (newDescription !== null) {
-                    task.description = newDescription.trim();
-                }
-                
-                renderDemoTasks();
-            }
-        }
-
-        function deleteDemoTask(taskId) {
-            if (confirm('Are you sure you want to delete this task?')) {
-                const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
-                if (taskElement) {
-                    taskElement.classList.add('task-removed');
-                    setTimeout(() => {
-                        demoTasks = demoTasks.filter(t => t.id !== taskId);
-                        renderDemoTasks();
-                    }, 300);
-                }
-            }
-        }
-
-        function filterDemoTasks(filter) {
-            currentTaskFilter = filter;
-            
-            // Update active filter button
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('bg-blue-500', 'text-white');
-                btn.classList.add('bg-gray-200', 'text-gray-700');
-            });
-            
-            const activeBtn = document.querySelector(`[onclick="filterDemoTasks('${filter}')"]`);
-            if (activeBtn) {
-                activeBtn.classList.remove('bg-gray-200', 'text-gray-700');
-                activeBtn.classList.add('bg-blue-500', 'text-white');
-            }
-            
-            renderDemoTasks();
-        }
-
-        function filterDemoByPriority() {
-            const priorityFilter = document.getElementById('priorityFilter');
-            if (priorityFilter) {
-                currentTaskPriority = priorityFilter.value;
-                renderDemoTasks();
-            }
-        }
-
-        function filterDemoByStatus() {
-            const statusFilter = document.getElementById('statusFilter');
-            if (statusFilter) {
-                currentTaskStatus = statusFilter.value;
-                renderDemoTasks();
-            }
-        }
-
-        function formatTaskDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-        }
-
-        // Initialize demo tasks when backend is not available
-        function initDemoMode() {
-            renderDemoTasks();
-            // Initialize the default filter
-            filterDemoTasks('all');
-        }
     </script>
 
     <!-- Navigation Component -->
