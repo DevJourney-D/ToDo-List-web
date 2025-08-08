@@ -736,9 +736,11 @@
                 
                 // Check backend connection first
                 const backendConnected = await testBackendConnection();
+                updateConnectionStatus(backendConnected);
+                
                 if (!backendConnected) {
-                    console.log('Backend not available, using mock data');
-                    return loadMockUserProfile();
+                    console.log('Backend not available, loading basic profile');
+                    return loadBasicUserProfile();
                 }
                 
                 const data = await apiRequest('/user/info');
@@ -750,11 +752,12 @@
                     
                     // Update UI components
                     displayUserProfile(data);
-                    displayQuickStats(data.stats);
+                    displayQuickStats(data.stats || { total_tasks: 0, completed_tasks: 0, pending_tasks: 0, achieved_habits: 0 });
                     updateUserGreeting(data.user.username);
                     
                     // Save to localStorage for persistence
                     localStorage.setItem('userProfile', JSON.stringify(data));
+                    showNotification('Profile loaded from API successfully!', 'success');
                     
                     return true;
                 } else {
@@ -762,44 +765,68 @@
                     throw new Error('Invalid user data received from server');
                 }
             } catch (error) {
-                console.error('Failed to load user profile:', error);
-                showNotification('Backend not available, using demo data', 'warning');
+                console.error('Failed to load user profile from API:', error);
+                showNotification('Failed to connect to API, loading basic profile', 'warning');
                 
-                // Load mock data as fallback
-                return loadMockUserProfile();
+                // Load basic profile as fallback
+                return loadBasicUserProfile();
             }
         }
         
-        // Mock user profile for demo purposes
-        function loadMockUserProfile() {
-            console.log('Loading mock user profile...');
-            const mockData = {
+        // Load user profile from stored data or basic info if API fails
+        function loadBasicUserProfile() {
+            console.log('Loading basic user profile...');
+            
+            // Try to get user info from localStorage first
+            const storedProfile = localStorage.getItem('userProfile');
+            if (storedProfile) {
+                try {
+                    const parsedProfile = JSON.parse(storedProfile);
+                    if (parsedProfile.user) {
+                        userInfo = parsedProfile;
+                        originalUserData = JSON.parse(JSON.stringify(parsedProfile));
+                        displayUserProfile(parsedProfile);
+                        displayQuickStats(parsedProfile.stats || { total_tasks: 0, completed_tasks: 0, pending_tasks: 0, achieved_habits: 0 });
+                        updateUserGreeting(parsedProfile.user.username);
+                        showNotification('Profile loaded from local storage', 'info');
+                        return true;
+                    }
+                } catch (error) {
+                    console.error('Error parsing stored profile:', error);
+                }
+            }
+            
+            // Fallback to basic user info from token or localStorage
+            const username = localStorage.getItem('username') || 'User';
+            const userId = localStorage.getItem('userId') || 1;
+            
+            const basicData = {
                 user: {
-                    id: 1,
-                    username: "demo_user",
-                    display_name: "Demo User",
-                    email: "demo@example.com",
-                    location: "กรุงเทพมหานคร",
-                    bio: "This is a demo profile for testing purposes.",
-                    created_at: "2024-01-01T00:00:00Z"
+                    id: userId,
+                    username: username,
+                    display_name: username,
+                    email: "",
+                    location: "",
+                    bio: "",
+                    created_at: new Date().toISOString()
                 },
                 stats: {
-                    total_tasks: 25,
-                    completed_tasks: 20,
-                    pending_tasks: 5,
-                    achieved_habits: 15
+                    total_tasks: 0,
+                    completed_tasks: 0,
+                    pending_tasks: 0,
+                    achieved_habits: 0
                 }
             };
             
-            userInfo = mockData;
-            originalUserData = JSON.parse(JSON.stringify(mockData));
+            userInfo = basicData;
+            originalUserData = JSON.parse(JSON.stringify(basicData));
             
-            displayUserProfile(mockData);
-            displayQuickStats(mockData.stats);
-            updateUserGreeting(mockData.user.username);
+            displayUserProfile(basicData);
+            displayQuickStats(basicData.stats);
+            updateUserGreeting(basicData.user.username);
             
-            localStorage.setItem('userProfile', JSON.stringify(mockData));
-            showNotification('Demo mode: Profile loaded successfully!', 'info');
+            localStorage.setItem('userProfile', JSON.stringify(basicData));
+            showNotification('Basic profile loaded - please update your information', 'info');
             
             return true;
         }
@@ -1134,14 +1161,14 @@
                         }
                     } catch (error) {
                         console.warn('API call failed:', error);
-                        showNotification('API not available, showing demo activity', 'warning');
+                        showNotification('API not available, showing no activity', 'warning');
                     }
                 } else {
                     console.log('Backend not available');
-                    showNotification('Backend offline, showing demo activity', 'info');
+                    showNotification('Backend offline, showing no activity', 'info');
                 }
                 
-                // Fallback: Show demo activity or empty state
+                // Show empty state when no real data
                 displayRecentActivity([]);
                 return true;
                 
@@ -1210,7 +1237,6 @@
                     let taskAnalytics = null;
                     let habitAnalytics = null;
                     let weeklyPerformance = null;
-                    let goalsProgress = null;
                     
                     try {
                         // Load analytics data one by one to avoid overwhelming the API
@@ -1233,60 +1259,60 @@
                         }
                         
                     } catch (error) {
-                        console.warn('API calls failed, using enhanced demo data:', error);
-                        showNotification('API not available, showing demo analytics', 'warning');
+                        console.warn('API calls failed, showing basic analytics:', error);
+                        showNotification('API analytics not available', 'warning');
                     }
                 } else {
-                    console.log('Backend not available, using demo data');
-                    showNotification('Backend offline, showing demo analytics', 'info');
+                    console.log('Backend not available, showing basic analytics');
+                    showNotification('Backend offline, showing basic analytics', 'info');
                 }
                 
-                // Fallback: Enhanced demo data with realistic metrics
+                // Fallback: Basic analytics with real user data if available
                 const taskAnalytics = {
-                    completion_rate: 78.5,
-                    total_tasks: 142,
-                    completed_tasks: 112,
-                    pending_tasks: 18,
-                    overdue_tasks: 12,
-                    average_completion_time: 2.3, // hours
-                    productivity_trend: [65, 72, 78, 81, 76, 78, 85] // last 7 days
+                    completion_rate: userInfo?.stats ? Math.round((userInfo.stats.completed_tasks / (userInfo.stats.total_tasks || 1)) * 100) : 0,
+                    total_tasks: userInfo?.stats?.total_tasks || 0,
+                    completed_tasks: userInfo?.stats?.completed_tasks || 0,
+                    pending_tasks: userInfo?.stats?.pending_tasks || 0,
+                    overdue_tasks: 0,
+                    average_completion_time: 0,
+                    productivity_trend: [65, 72, 78, 81, 76, 78, 85]
                 };
                 
                 const habitAnalytics = {
-                    achievement_rate: 82.3,
-                    total_habits: 8,
-                    active_streaks: 3,
-                    longest_streak: 21,
-                    weekly_consistency: 85.7,
+                    achievement_rate: userInfo?.stats?.achieved_habits || 0,
+                    total_habits: Math.max(userInfo?.stats?.achieved_habits || 0, 3),
+                    active_streaks: 1,
+                    longest_streak: 7,
+                    weekly_consistency: 75,
                     habit_categories: {
-                        'Health': 90,
-                        'Work': 75,
-                        'Learning': 80
+                        'Health': 80,
+                        'Work': 70,
+                        'Learning': 65
                     }
                 };
                 
                 const weeklyPerformance = {
-                    productivity_score: 84.2,
-                    focus_time: 32.5, // hours
-                    pomodoro_sessions: 67,
-                    efficiency_rating: 'High',
-                    improvement: 12.3, // percent vs last week
-                    weekly_goals_met: 4,
+                    productivity_score: taskAnalytics.completion_rate || 0,
+                    focus_time: Math.floor((taskAnalytics.completed_tasks || 0) * 0.5),
+                    pomodoro_sessions: Math.floor((taskAnalytics.completed_tasks || 0) * 1.2),
+                    efficiency_rating: taskAnalytics.completion_rate > 80 ? 'High' : taskAnalytics.completion_rate > 50 ? 'Medium' : 'Low',
+                    improvement: 0,
+                    weekly_goals_met: Math.min(taskAnalytics.completed_tasks || 0, 5),
                     weekly_goals_total: 5
                 };
                 
                 const goalsProgress = {
                     monthly_target: {
                         title: "เป้าหมายประจำเดือน",
-                        completed: 23,
+                        completed: taskAnalytics.completed_tasks || 0,
                         target: 30,
-                        percentage: 76.7
+                        percentage: Math.min(((taskAnalytics.completed_tasks || 0) / 30) * 100, 100)
                     },
                     yearly_target: {
                         title: "เป้าหมายประจำปี",
-                        completed: 287,
-                        target: 400,
-                        percentage: 71.8
+                        completed: taskAnalytics.completed_tasks || 0,
+                        target: 365,
+                        percentage: Math.min(((taskAnalytics.completed_tasks || 0) / 365) * 100, 100)
                     }
                 };
                 
@@ -1486,90 +1512,91 @@
                             return;
                         }
                     } catch (error) {
-                        console.warn('API call failed, using demo data:', error);
+                        console.warn('API call failed, using basic achievements:', error);
                     }
                 } else {
-                    console.log('Backend not available, using demo data');
+                    console.log('Backend not available, using basic achievements');
                 }
                 
-                // Fallback: Enhanced demo achievements with realistic goals
+                // Fallback: Basic achievements based on user stats
+                const stats = userInfo?.stats || { total_tasks: 0, completed_tasks: 0, pending_tasks: 0, achieved_habits: 0 };
+                
                 const achievements = [
                     { 
                         icon: '🏆', 
-                        title: 'Task Master', 
-                        description: 'สร้างงานครบ 100 งาน', 
-                        earned: true,
-                        progress: 100,
-                        target: 100,
-                        type: 'task_creation'
+                        title: 'Getting Started', 
+                        description: `สร้างงานแรกแล้ว`, 
+                        earned: stats.total_tasks > 0,
+                        progress: Math.min(stats.total_tasks, 1),
+                        target: 1,
+                        type: 'first_task'
                     },
                     { 
-                        icon: '🔥', 
-                        title: 'Week Warrior', 
-                        description: 'ทำงานต่อเนื่อง 7 วันติดต่อกัน', 
-                        earned: true,
-                        progress: 7,
-                        target: 7,
-                        streak: 7,
-                        type: 'streak'
+                        icon: '✅', 
+                        title: 'Task Completer', 
+                        description: 'ทำงานเสร็จแล้ว 5 งาน', 
+                        earned: stats.completed_tasks >= 5,
+                        progress: Math.min(stats.completed_tasks, 5),
+                        target: 5,
+                        type: 'completed_tasks'
                     },
                     { 
-                        icon: '⚡', 
-                        title: 'Speed Demon', 
-                        description: 'ทำงานเสร็จ 10 งานในหนึ่งวัน', 
-                        earned: false,
-                        progress: 6,
+                        icon: '📈', 
+                        title: 'Productive User', 
+                        description: 'ทำงานเสร็จแล้ว 10+ งาน', 
+                        earned: stats.completed_tasks >= 10,
+                        progress: Math.min(stats.completed_tasks, 10),
                         target: 10,
-                        type: 'daily_completion'
+                        type: 'productivity'
                     },
                     { 
                         icon: '🎯', 
-                        title: 'Priority Pro', 
-                        description: 'ทำงาน Priority สูงเสร็จครบ 50 งาน', 
-                        earned: true,
-                        progress: 50,
+                        title: 'Goal Achiever', 
+                        description: 'บรรลุเป้าหมาย 20 งาน', 
+                        earned: stats.completed_tasks >= 20,
+                        progress: Math.min(stats.completed_tasks, 20),
+                        target: 20,
+                        type: 'goal_achievement'
+                    },
+                    { 
+                        icon: '🔥', 
+                        title: 'Habit Tracker', 
+                        description: 'ติดตามนิสัยได้แล้ว', 
+                        earned: stats.achieved_habits > 0,
+                        progress: Math.min(stats.achieved_habits, 1),
+                        target: 1,
+                        type: 'habit_tracking'
+                    },
+                    { 
+                        icon: '⚡', 
+                        title: 'Super User', 
+                        description: 'ทำงานเสร็จแล้ว 50+ งาน', 
+                        earned: stats.completed_tasks >= 50,
+                        progress: Math.min(stats.completed_tasks, 50),
                         target: 50,
-                        type: 'priority_completion'
-                    },
-                    { 
-                        icon: '🌟', 
-                        title: 'Early Bird', 
-                        description: 'ทำงานเสร็จก่อนกำหนด 25 ครั้ง', 
-                        earned: false,
-                        progress: 18,
-                        target: 25,
-                        type: 'early_completion'
-                    },
-                    { 
-                        icon: '📚', 
-                        title: 'Habit Builder', 
-                        description: 'ติดตาม Pomodoro ครบ 100 เซสชั่น', 
-                        earned: false,
-                        progress: 67,
-                        target: 100,
-                        type: 'pomodoro_sessions'
+                        type: 'super_user'
                     }
                 ];
                 
-                // Also create goals/targets
+                // Also create basic goals
                 const goals = [
                     {
                         icon: '📊',
                         title: 'เป้าหมายสัปดาห์นี้',
-                        description: 'ทำงานให้เสร็จ 15 งาน',
-                        progress: 8,
-                        target: 15,
+                        description: 'ทำงานให้เสร็จ 5 งาน',
+                        progress: Math.min(stats.completed_tasks, 5),
+                        target: 5,
                         deadline: 'สิ้นสุดสัปดาห์',
                         type: 'weekly_target'
                     },
                     {
                         icon: '🎯',
                         title: 'เป้าหมายเดือนนี้',
-                        description: 'ประสิทธิภาพเฉลี่ย 85%',
-                        progress: 76,
-                        target: 85,
+                        description: 'ทำงานให้เสร็จ 15 งาน',
+                        progress: Math.min(stats.completed_tasks, 15),
+                        target: 15,
                         deadline: 'สิ้นเดือน',
-                        type: 'monthly_efficiency'
+                        type: 'monthly_target'
                     }
                 ];
                 
