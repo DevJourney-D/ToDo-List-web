@@ -1572,6 +1572,12 @@
                             <button onclick="showAPIStatus()" class="btn-secondary" title="Test API Connection">
                                 🔧 API Test
                             </button>
+                            <button onclick="exportTasks()" class="btn-secondary" title="Export Tasks">
+                                💾 Export
+                            </button>
+                            <button onclick="importTasks()" class="btn-secondary" title="Import Tasks">
+                                📥 Import
+                            </button>
                             <button onclick="openAddTaskModal()" class="btn-primary">
                                 ➕ Add New Task
                             </button>
@@ -2167,8 +2173,8 @@
         async function testAPIEndpoints() {
             console.log('🔍 Testing API endpoints...');
             const endpoints = [
-                { method: 'GET', path: '/health', description: 'Health check' },
-                { method: 'GET', path: '/api/v1/status', description: 'API status' },
+                { method: 'GET', path: '/ping', description: 'Health check' },
+                { method: 'GET', path: '/user/info', description: 'User info' },
                 { method: 'GET', path: '/tasks', description: 'Get all tasks' },
                 { method: 'GET', path: '/tasks/categories', description: 'Get categories' },
                 { method: 'POST', path: '/tasks', description: 'Create task' },
@@ -2176,7 +2182,14 @@
                 { method: 'PATCH', path: '/tasks/1/complete', description: 'Mark task completed' },
                 { method: 'PATCH', path: '/tasks/1/status', description: 'Update task status' },
                 { method: 'POST', path: '/tasks/1/duplicate', description: 'Duplicate task' },
-                { method: 'DELETE', path: '/tasks/1', description: 'Delete task' }
+                { method: 'DELETE', path: '/tasks/1', description: 'Delete task' },
+                { method: 'GET', path: '/tasks/due/today', description: 'Tasks due today' },
+                { method: 'GET', path: '/tasks/due/week', description: 'Tasks due this week' },
+                { method: 'GET', path: '/tasks/overdue', description: 'Overdue tasks' },
+                { method: 'GET', path: '/tasks/search', description: 'Search tasks' },
+                { method: 'GET', path: '/tasks/status/pending', description: 'Tasks by status' },
+                { method: 'GET', path: '/tasks/priority/3', description: 'Tasks by priority' },
+                { method: 'PATCH', path: '/tasks/1/reschedule', description: 'Reschedule task' }
             ];
             
             const results = [];
@@ -2475,6 +2488,9 @@
                             <button onclick="editTask(${task.id})" class="text-blue-600 hover:text-blue-800 p-2" title="Edit">
                                 ✏️
                             </button>
+                            <button onclick="rescheduleTask(${task.id})" class="text-purple-600 hover:text-purple-800 p-2" title="Reschedule">
+                                📅
+                            </button>
                             <button onclick="duplicateTask(${task.id})" class="text-green-600 hover:text-green-800 p-2" title="Duplicate">
                                 📋
                             </button>
@@ -2760,6 +2776,41 @@
             }
         }
 
+        // Reschedule Task Function
+        async function rescheduleTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) {
+                showNotification('Task not found', 'error');
+                return;
+            }
+            
+            const originalTaskName = task.task_name || task.name || 'Untitled Task';
+            const currentDueDate = task.due_date ? task.due_date.split('T')[0] : '';
+            const newDueDate = prompt(`Reschedule "${originalTaskName}"\nCurrent due date: ${currentDueDate || 'No due date'}\n\nEnter new due date (YYYY-MM-DD):`, currentDueDate);
+            
+            if (newDueDate === null) return; // User cancelled
+            
+            // Validate date format
+            if (newDueDate && !/^\d{4}-\d{2}-\d{2}$/.test(newDueDate)) {
+                showNotification('Invalid date format. Please use YYYY-MM-DD format.', 'error');
+                return;
+            }
+            
+            try {
+                showLoading('Rescheduling task...');
+                await apiRequest(`/tasks/${taskId}/reschedule`, 'PATCH', {
+                    due_date: newDueDate || null
+                });
+                hideLoading();
+                showNotification(`Task "${originalTaskName}" rescheduled successfully!`, 'success');
+                await loadTasks();
+            } catch (error) {
+                hideLoading();
+                console.error('Failed to reschedule task:', error);
+                handleAPIError(error, 'Task reschedule operation');
+            }
+        }
+
         // Modal Functions
         function openAddTaskModal() {
             isEditMode = false;
@@ -2994,6 +3045,141 @@
             });
             
             renderTasks();
+        }
+
+        // Dashboard & Analytics Functions
+        async function getDashboardSummary() {
+            try {
+                const response = await apiRequest('/dashboard/summary');
+                return response;
+            } catch (error) {
+                console.error('Failed to get dashboard summary:', error);
+                handleAPIError(error, 'Get dashboard summary');
+                return null;
+            }
+        }
+
+        async function getUpcomingTasks() {
+            try {
+                const response = await apiRequest('/dashboard/upcoming');
+                return response.tasks || response || [];
+            } catch (error) {
+                console.error('Failed to get upcoming tasks:', error);
+                handleAPIError(error, 'Get upcoming tasks');
+                return [];
+            }
+        }
+
+        async function getRecentActivity() {
+            try {
+                const response = await apiRequest('/dashboard/recent');
+                return response.activities || response || [];
+            } catch (error) {
+                console.error('Failed to get recent activity:', error);
+                handleAPIError(error, 'Get recent activity');
+                return [];
+            }
+        }
+
+        // Analytics Functions
+        async function getTaskAnalytics() {
+            try {
+                const response = await apiRequest('/analytics/tasks');
+                return response;
+            } catch (error) {
+                console.error('Failed to get task analytics:', error);
+                handleAPIError(error, 'Get task analytics');
+                return null;
+            }
+        }
+
+        async function getAnalyticsOverview() {
+            try {
+                const response = await apiRequest('/analytics/overview');
+                return response;
+            } catch (error) {
+                console.error('Failed to get analytics overview:', error);
+                handleAPIError(error, 'Get analytics overview');
+                return null;
+            }
+        }
+
+        async function getWeeklyPerformance() {
+            try {
+                const response = await apiRequest('/analytics/performance/weekly');
+                return response;
+            } catch (error) {
+                console.error('Failed to get weekly performance:', error);
+                handleAPIError(error, 'Get weekly performance');
+                return null;
+            }
+        }
+
+        async function getMonthlyPerformance() {
+            try {
+                const response = await apiRequest('/analytics/performance/monthly');
+                return response;
+            } catch (error) {
+                console.error('Failed to get monthly performance:', error);
+                handleAPIError(error, 'Get monthly performance');
+                return null;
+            }
+        }
+
+        async function getTimeAllocation() {
+            try {
+                const response = await apiRequest('/analytics/time-allocation');
+                return response;
+            } catch (error) {
+                console.error('Failed to get time allocation:', error);
+                handleAPIError(error, 'Get time allocation');
+                return null;
+            }
+        }
+
+        async function getProductivityTrends() {
+            try {
+                const response = await apiRequest('/analytics/productivity-trends');
+                return response;
+            } catch (error) {
+                console.error('Failed to get productivity trends:', error);
+                handleAPIError(error, 'Get productivity trends');
+                return null;
+            }
+        }
+
+        // Calendar Functions
+        async function getTasksByDate(date) {
+            try {
+                const response = await apiRequest(`/tasks/calendar/day/${date}`);
+                return response.tasks || response || [];
+            } catch (error) {
+                console.error('Failed to get tasks by date:', error);
+                handleAPIError(error, 'Get tasks by date');
+                return [];
+            }
+        }
+
+        async function getTasksForWeek(date) {
+            try {
+                const response = await apiRequest(`/tasks/calendar/week/${date}`);
+                return response.tasks || response || [];
+            } catch (error) {
+                console.error('Failed to get tasks for week:', error);
+                handleAPIError(error, 'Get tasks for week');
+                return [];
+            }
+        }
+
+        async function getTasksForMonth(date) {
+            try {
+                const response = await apiRequest(`/tasks/calendar/month/${date}`);
+                return response.tasks || response || [];
+            } catch (error) {
+                console.error('Failed to get tasks for month:', error);
+                handleAPIError(error, 'Get tasks for month');
+                return [];
+            }
         }
 
         // Pomodoro Timer Functions
@@ -3577,13 +3763,13 @@
                 // Show loading
                 showLoading('กำลังเชื่อมต่อ API...');
                 
-                // Step 1: Test API connectivity
+                // Step 1: Test API connectivity using ping endpoint
                 try {
-                    await apiRequest('/health');
+                    await apiRequest('/ping');
                     hideAPIAlert(); // Hide API error alert if connection successful
                     console.log('✅ API connection successful');
-                } catch (healthError) {
-                    console.warn('⚠️ API health check failed:', healthError);
+                } catch (pingError) {
+                    console.warn('⚠️ API ping check failed:', pingError);
                     showAPIAlert();
                     // Continue anyway to try loading data
                 }
@@ -3605,7 +3791,11 @@
                 await loadTasks();
                 console.log('✅ Tasks loaded successfully');
                 
-                // Step 4: Load task-related goals
+                // Step 4: Initialize Pomodoro stats
+                showLoading('กำลังโหลดสถิติ Pomodoro...');
+                await initPomodoroStats();
+                
+                // Step 5: Load task-related goals
                 showLoading('กำลังโหลดเป้าหมาย...');
                 loadTaskRelatedGoals();
                 
@@ -3664,6 +3854,82 @@
                 handleAPIError(error, 'Force reload data');
                 showAPIAlert();
             }
+        }
+
+        // Export/Import Functions
+        async function exportTasks() {
+            try {
+                showLoading('Exporting tasks...');
+                const response = await apiRequest('/tasks/export');
+                
+                // Create download link
+                const blob = new Blob([JSON.stringify(response.tasks || response, null, 2)], { 
+                    type: 'application/json' 
+                });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `tasks-export-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                hideLoading();
+                showNotification('✅ Tasks exported successfully!', 'success');
+            } catch (error) {
+                hideLoading();
+                console.error('Failed to export tasks:', error);
+                handleAPIError(error, 'Export tasks');
+            }
+        }
+
+        async function importTasks() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = async function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                try {
+                    showLoading('Importing tasks...');
+                    
+                    const text = await file.text();
+                    const tasksData = JSON.parse(text);
+                    
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    // Use special config for file upload
+                    const config = {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: formData
+                    };
+                    
+                    const response = await fetch(`${API_BASE_URL}/tasks/import`, config);
+                    
+                    if (!response.ok) {
+                        throw new Error(`Import failed: ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    hideLoading();
+                    showNotification(`✅ Tasks imported successfully! ${result.imported || 0} tasks added.`, 'success');
+                    await loadTasks(); // Reload tasks
+                } catch (error) {
+                    hideLoading();
+                    console.error('Failed to import tasks:', error);
+                    handleAPIError(error, 'Import tasks');
+                }
+            };
+            
+            input.click();
         }
 
         function updateStats() {
@@ -3725,11 +3991,44 @@
 
         // Global functions for debugging and development
         window.taskSystemDebug = {
+            // API Status & Testing
             getAPIStatus,
             forceReloadData,
             refreshTasks,
             testAPIEndpoints,
             showAPIStatus,
+            
+            // Task Management
+            loadTasks,
+            loadCategories,
+            exportTasks,
+            importTasks,
+            duplicateTask,
+            rescheduleTask,
+            
+            // Filtering & Search
+            showTasksDueToday,
+            showOverdueTasks,
+            showTasksDueThisWeek,
+            showAllTasks,
+            
+            // Dashboard & Analytics
+            getDashboardSummary,
+            getUpcomingTasks,
+            getRecentActivity,
+            getTaskAnalytics,
+            getAnalyticsOverview,
+            getWeeklyPerformance,
+            getMonthlyPerformance,
+            getTimeAllocation,
+            getProductivityTrends,
+            
+            // Calendar Functions
+            getTasksByDate,
+            getTasksForWeek,
+            getTasksForMonth,
+            
+            // Data Access
             tasks: () => tasks,
             filteredTasks: () => filteredTasks,
             categories: () => categories
