@@ -300,12 +300,45 @@
         let categories = JSON.parse(localStorage.getItem('task-categories') || '["ทำงาน","ส่วนตัว"]');
 
         // Utility functions
-        function addCategory(newCat) {
+        async function addCategory(newCat) {
             if (!newCat || categories.includes(newCat)) return;
             categories.push(newCat);
             localStorage.setItem('task-categories', JSON.stringify(categories));
             renderCategoryOptions();
             showToast('เพิ่มประเภทงานเรียบร้อย', 'success');
+            // Sync to backend
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    await fetch('https://to-do-list-web.vercel.app/api/v1/tasks/categories', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ category: newCat })
+                    });
+                } catch (e) {
+                    showToast('Sync ประเภทงานกับเซิร์ฟเวอร์ไม่สำเร็จ', 'error');
+                }
+            }
+        }
+        async function loadCategoriesFromBackend() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            try {
+                const response = await fetch('https://to-do-list-web.vercel.app/api/v1/tasks/categories', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                if (Array.isArray(data.categories)) {
+                    categories = data.categories;
+                    localStorage.setItem('task-categories', JSON.stringify(categories));
+                    renderCategoryOptions();
+                }
+            } catch (e) {
+                // fallback to localStorage
+            }
         }
         function renderCategoryOptions() {
             const addSelect = document.getElementById('task-category');
@@ -402,8 +435,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             if (window.apiManager && window.dataManager && window.dateUtils) {
                 loadTasks();
+                loadCategoriesFromBackend();
             } else {
-                setTimeout(() => loadTasks(), 100);
+                setTimeout(() => { loadTasks(); loadCategoriesFromBackend(); }, 100);
             }
             renderCategoryOptions();
         });
