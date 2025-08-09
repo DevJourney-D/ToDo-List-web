@@ -234,7 +234,10 @@
                 
                 const dayElement = document.createElement('div');
                 dayElement.className = `calendar-day ${isToday ? 'today' : ''} ${!isCurrentMonth ? 'other-month' : ''}`;
-                dayElement.onclick = () => selectDate(new Date(current));
+                
+                // Fix date selection issue by creating a proper date copy
+                const dateToSelect = new Date(current.getFullYear(), current.getMonth(), current.getDate());
+                dayElement.onclick = () => selectDate(dateToSelect);
                 
                 dayElement.innerHTML = `
                     <div class="font-medium mb-2">${current.getDate()}</div>
@@ -251,41 +254,99 @@
             }
         }
 
+        // Global state for pagination
+        let selectedDateTasksPage = 1;
+        const selectedDateTasksPageSize = 5;
+
         // Select date and show tasks
         function selectDate(date) {
             selectedDate = date;
-            const dayTasks = getTasksForDate(date);
+            selectedDateTasksPage = 1; // Reset pagination when selecting new date
+            renderSelectedDateTasks();
+        }
+
+        // Render tasks for selected date with pagination
+        function renderSelectedDateTasks() {
+            if (!selectedDate) return;
+            
+            const dayTasks = getTasksForDate(selectedDate);
             const tasksContainer = document.getElementById('selected-tasks');
             const detailsSection = document.getElementById('task-details');
             
             if (dayTasks.length === 0) {
                 detailsSection.style.display = 'none';
-                showToast(`ไม่มีงานในวันที่ ${window.dateUtils.formatThaiDate(date)}`, 'info');
+                showToast(`ไม่มีงานในวันที่ ${window.dateUtils.formatThaiDate(selectedDate)}`, 'info');
                 return;
             }
             
-            tasksContainer.innerHTML = dayTasks.map(task => {
-                const priorityText = task.priority === 3 ? 'สูง' : task.priority === 2 ? 'กลาง' : 'ต่ำ';
-                const priorityColor = task.priority === 3 ? 'red' : task.priority === 2 ? 'yellow' : 'green';
+            // Calculate pagination
+            const totalPages = Math.ceil(dayTasks.length / selectedDateTasksPageSize);
+            const startIndex = (selectedDateTasksPage - 1) * selectedDateTasksPageSize;
+            const endIndex = startIndex + selectedDateTasksPageSize;
+            const paginatedTasks = dayTasks.slice(startIndex, endIndex);
+            
+            tasksContainer.innerHTML = `
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">
+                        งานประจำวันที่ ${window.dateUtils.formatThaiDate(selectedDate)} (${dayTasks.length} งาน)
+                    </h3>
+                </div>
                 
-                return `
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div class="flex-1">
-                            <div class="flex items-center space-x-3">
-                                <input type="checkbox" ${task.is_completed ? 'checked' : ''} 
-                                       onchange="toggleTask('${task.id}', this.checked)"
-                                       class="w-4 h-4 text-blue-600 rounded">
-                                <h4 class="font-medium text-gray-900 ${task.is_completed ? 'line-through' : ''}">${task.task_name || task.title || 'Untitled Task'}</h4>
-                                <span class="text-xs px-2 py-1 bg-${priorityColor}-100 text-${priorityColor}-800 rounded-full">${priorityText}</span>
+                ${paginatedTasks.map(task => {
+                    const priorityText = task.priority === 3 ? 'สูง' : task.priority === 2 ? 'กลาง' : 'ต่ำ';
+                    const priorityColor = task.priority === 3 ? 'red' : task.priority === 2 ? 'yellow' : 'green';
+                    
+                    return `
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-3">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3">
+                                    <input type="checkbox" ${task.is_completed ? 'checked' : ''} 
+                                           onchange="toggleTask('${task.id}', this.checked)"
+                                           class="w-4 h-4 text-blue-600 rounded">
+                                    <h4 class="font-medium text-gray-900 ${task.is_completed ? 'line-through' : ''}">${task.task_name || task.title || 'Untitled Task'}</h4>
+                                    <span class="text-xs px-2 py-1 bg-${priorityColor}-100 text-${priorityColor}-800 rounded-full">${priorityText}</span>
+                                </div>
+                                ${task.description ? `<p class="text-sm text-gray-600 mt-1 ml-7">${task.description}</p>` : ''}
                             </div>
-                            ${task.description ? `<p class="text-sm text-gray-600 mt-1 ml-7">${task.description}</p>` : ''}
+                            <button onclick="deleteTask('${task.id}')" class="text-red-600 hover:text-red-800 transition-colors" title="ลบ">🗑️</button>
                         </div>
-                        <button onclick="deleteTask('${task.id}')" class="text-red-600 hover:text-red-800 transition-colors" title="ลบ">🗑️</button>
+                    `;
+                }).join('')}
+                
+                ${dayTasks.length > selectedDateTasksPageSize ? `
+                    <div class="flex items-center justify-between mt-4 pt-3 border-t border-gray-200">
+                        <div class="text-sm text-gray-500">
+                            แสดง ${startIndex + 1}-${Math.min(endIndex, dayTasks.length)} จาก ${dayTasks.length} รายการ
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="changeSelectedDateTasksPage(${selectedDateTasksPage - 1})" 
+                                    ${selectedDateTasksPage <= 1 ? 'disabled' : ''} 
+                                    class="px-3 py-1 text-sm border border-gray-300 rounded ${selectedDateTasksPage <= 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50'}">
+                                ก่อนหน้า
+                            </button>
+                            <span class="text-sm text-gray-600">หน้า ${selectedDateTasksPage} จาก ${totalPages}</span>
+                            <button onclick="changeSelectedDateTasksPage(${selectedDateTasksPage + 1})" 
+                                    ${selectedDateTasksPage >= totalPages ? 'disabled' : ''} 
+                                    class="px-3 py-1 text-sm border border-gray-300 rounded ${selectedDateTasksPage >= totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50'}">
+                                ถัดไป
+                            </button>
+                        </div>
                     </div>
-                `;
-            }).join('');
+                ` : ''}
+            `;
             
             detailsSection.style.display = 'block';
+        }
+
+        // Change page for selected date tasks
+        function changeSelectedDateTasksPage(newPage) {
+            const dayTasks = getTasksForDate(selectedDate);
+            const totalPages = Math.ceil(dayTasks.length / selectedDateTasksPageSize);
+            
+            if (newPage < 1 || newPage > totalPages) return;
+            
+            selectedDateTasksPage = newPage;
+            renderSelectedDateTasks();
         }
 
         // Toggle task completion
@@ -306,7 +367,7 @@
                 window.dataManager.clearCache();
                 renderCalendar();
                 if (selectedDate) {
-                    selectDate(selectedDate);
+                    renderSelectedDateTasks();
                 }
                 
                 showToast(isCompleted ? 'งานเสร็จสิ้นแล้ว!' : 'ยกเลิกการทำเสร็จแล้ว', 'success');
@@ -328,11 +389,18 @@
                 // Remove from local data
                 tasks = tasks.filter(t => t.id != taskId);
                 
+                // Check if current page has tasks after deletion
+                const dayTasks = getTasksForDate(selectedDate);
+                const totalPages = Math.ceil(dayTasks.length / selectedDateTasksPageSize);
+                if (selectedDateTasksPage > totalPages && totalPages > 0) {
+                    selectedDateTasksPage = totalPages;
+                }
+                
                 // Refresh display
                 window.dataManager.clearCache();
                 renderCalendar();
                 if (selectedDate) {
-                    selectDate(selectedDate);
+                    renderSelectedDateTasks();
                 }
                 
                 showToast('ลบงานเรียบร้อยแล้ว', 'success');

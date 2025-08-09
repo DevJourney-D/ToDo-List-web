@@ -566,58 +566,23 @@ async function loadUserInfo() {
 }
 
 // Logout function (shared across all pages)
-function logout() {
-    // Create custom confirmation modal
-    const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-    modal.style.zIndex = '9999';
-    modal.innerHTML = `
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-            <div class="text-center">
-                <div class="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
-                    <span class="text-2xl">📤</span>
-                </div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">ออกจากระบบ</h3>
-                <p class="text-gray-600 mb-6">คุณต้องการออกจากระบบหรือไม่?</p>
-                <div class="flex space-x-3">
-                    <button id="cancel-logout" class="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
-                        ยกเลิก
-                    </button>
-                    <button id="confirm-logout" class="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
-                        ออกจากระบบ
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
+async function logout() {
+    const confirmed = await window.confirmDialog.confirm(
+        'คุณต้องการออกจากระบบหรือไม่? การออกจากระบบจะทำให้คุณต้องเข้าสู่ระบบใหม่',
+        'ออกจากระบบ?'
+    );
     
-    document.body.appendChild(modal);
+    if (!confirmed) return;
     
-    // Event listeners
-    document.getElementById('cancel-logout').onclick = () => {
-        document.body.removeChild(modal);
-    };
+    // Perform logout
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
     
-    document.getElementById('confirm-logout').onclick = () => {
-        document.body.removeChild(modal);
-        
-        // Perform logout
-        localStorage.removeItem('token');
-        localStorage.removeItem('username');
-        
-        showToast && showToast('ออกจากระบบเรียบร้อย', 'success');
-        
-        setTimeout(() => {
-            window.location.href = 'index.html';
-        }, 1000);
-    };
+    showToast && showToast('ออกจากระบบเรียบร้อย', 'success');
     
-    // Close modal when clicking outside
-    modal.onclick = (e) => {
-        if (e.target === modal) {
-            document.body.removeChild(modal);
-        }
-    };
+    setTimeout(() => {
+        window.location.href = 'index.html';
+    }, 1000);
 }
 
 // Toast notification function (if not already exists)

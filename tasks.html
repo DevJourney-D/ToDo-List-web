@@ -4,19 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>งาน - ToDo List</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍅</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.o            // Add priority badge styles
+            if (!document.getElementById('priority-styles')) {
+                const style = document.createElement('style');
+                style.id = 'priority-styles';
+                style.textContent = `
+                    .priority-badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; font-weight: 500; }
+                    .priority-high { background: #fee2e2; color: #dc2626; }
+                    .priority-medium { background: #fef3c7; color: #d97706; }
+                    .priority-low { background: #d1fae5; color: #059669; }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            updateTaskSummary();
+            updatePagination();
+        }ox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍅</text></svg>">
     <link href="./dist/styles.css" rel="stylesheet">
     <style>
         .excel-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
         .excel-card { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); }
-        .task-item { border-left: 4px solid #e5e7eb; background: white; border-radius: 0 8px 8px 0; margin-bottom: 8px; padding: 12px 16px; }
+        .task-item { border-left: 4px solid #e5e7eb; background: white; border-radius: 0 8px 8px 0; margin-bottom: 8px; padding: 12px 16px; transition: all 0.2s ease; }
         .task-item.high-priority { border-left-color: #ef4444; }
         .task-item.medium-priority { border-left-color: #f59e0b; }
         .task-item.low-priority { border-left-color: #10b981; }
+        .task-item:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
         .fade-in { animation: fadeIn 0.5s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Bulk actions styling */
+        .task-item.cursor-pointer:hover { background: #f8fafc; }
+        .bulk-actions-bar { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); }
+        
+        /* Toast animations */
+        .toast-enter { animation: slideInRight 0.3s ease-out; }
+        .toast-exit { animation: slideOutRight 0.3s ease-in; }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+        
+        /* Dialog animations */
+        .dialog-backdrop { backdrop-filter: blur(4px); }
+        .dialog-enter { animation: dialogEnter 0.3s ease-out; }
+        @keyframes dialogEnter { 
+            from { opacity: 0; transform: scale(0.9) translateY(-20px); } 
+            to { opacity: 1; transform: scale(1) translateY(0); } 
+        }
+        
+        /* Progress indicators */
+        .progress-bar { width: 0%; transition: width 0.3s ease; }
+        .progress-animate { animation: progressPulse 2s infinite; }
+        @keyframes progressPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
     </style>
 </head>
 <body class="excel-bg">
@@ -31,9 +70,36 @@
                         <h1 class="text-3xl font-bold text-gray-800">จัดการงาน</h1>
                         <p class="text-gray-600" id="task-summary">กำลังโหลดข้อมูล...</p>
                     </div>
-                    <button onclick="showAddTaskModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-                        + เพิ่มงานใหม่
-                    </button>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="showBulkActions()" id="bulk-actions-btn" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors" style="display: none;">
+                            ⚙️ จัดการหลายรายการ
+                        </button>
+                        <button onclick="showAddTaskModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                            + เพิ่มงานใหม่
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Bulk Actions Bar -->
+                <div id="bulk-actions-bar" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg" style="display: none;">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <input type="checkbox" id="select-all-tasks" onchange="toggleSelectAll(this.checked)" class="w-4 h-4 text-blue-600 rounded">
+                            <label for="select-all-tasks" class="text-sm font-medium text-blue-800">เลือกทั้งหมด</label>
+                            <span id="selected-count" class="text-sm text-blue-600">เลือกแล้ว 0 รายการ</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="markSelectedComplete()" class="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700">
+                                ✅ ทำเครื่องหมายเสร็จ
+                            </button>
+                            <button onclick="deleteSelectedTasks()" class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">
+                                🗑️ ลบที่เลือก
+                            </button>
+                            <button onclick="hideBulkActions()" class="px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600">
+                                ยกเลิก
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Filters -->
@@ -49,6 +115,9 @@
                         <option value="2">กลาง</option>
                         <option value="1">ต่ำ</option>
                     </select>
+                    <select id="filter-category" onchange="applyFilters()" class="border border-gray-300 rounded-lg px-3 py-2">
+                        <option value="">ประเภททั้งหมด</option>
+                    </select>
                     <input type="text" id="search-tasks" placeholder="ค้นหางาน..." onkeyup="applyFilters()" 
                            class="border border-gray-300 rounded-lg px-3 py-2 flex-1 min-w-0">
                 </div>
@@ -63,6 +132,15 @@
             <!-- Tasks List -->
             <div id="tasks-container" style="display: none;" class="excel-card p-6">
                 <div id="tasks-list"></div>
+                <!-- Pagination Controls -->
+                <div id="pagination-container" class="mt-6 flex items-center justify-between">
+                    <div class="text-sm text-gray-500" id="pagination-info">
+                        <!-- Pagination info will be inserted here -->
+                    </div>
+                    <div class="flex items-center space-x-2" id="pagination-controls">
+                        <!-- Pagination controls will be inserted here -->
+                    </div>
+                </div>
             </div>
 
             <!-- Empty State -->
@@ -92,6 +170,12 @@
                         <textarea id="task-description" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2"></textarea>
                     </div>
                     <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ประเภทงาน</label>
+                        <select id="task-category" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                            <option value="">เลือกประเภทงาน</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">ความสำคัญ</label>
                         <select id="task-priority" class="w-full border border-gray-300 rounded-lg px-3 py-2">
                             <option value="1">ต่ำ</option>
@@ -116,6 +200,52 @@
         </div>
     </div>
 
+    <!-- Edit Task Modal -->
+    <div id="edit-task-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4">
+            <div class="p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">แก้ไขงาน</h3>
+                <form id="edit-task-form">
+                    <input type="hidden" id="edit-task-id">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ชื่องาน</label>
+                        <input type="text" id="edit-task-name" required class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">รายละเอียด</label>
+                        <textarea id="edit-task-description" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2"></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ประเภทงาน</label>
+                        <select id="edit-task-category" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                            <option value="">เลือกประเภทงาน</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ความสำคัญ</label>
+                        <select id="edit-task-priority" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                            <option value="1">ต่ำ</option>
+                            <option value="2">กลาง</option>
+                            <option value="3">สูง</option>
+                        </select>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">วันครบกำหนด</label>
+                        <input type="date" id="edit-task-due-date" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                    </div>
+                    <div class="flex space-x-3">
+                        <button type="button" onclick="hideEditTaskModal()" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg">
+                            ยกเลิก
+                        </button>
+                        <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            บันทึกการแก้ไข
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notifications -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm"></div>
 
@@ -132,7 +262,11 @@
         let lastTasks = null;
         let pageSize = 10;
         let currentPage = 1;
+        let totalPages = 1;
+        let totalTasksCount = 0;
         let categories = JSON.parse(localStorage.getItem('task-categories') || '["ทำงาน","ส่วนตัว"]');
+        let selectedTasks = new Set();
+        let bulkActionMode = false;
 
         // Utility functions
         async function addCategory(newCat) {
@@ -157,6 +291,208 @@
                     showToast('Sync ประเภทงานกับเซิร์ฟเวอร์ไม่สำเร็จ', 'error');
                 }
             }
+        }
+
+        // Render category options for dropdowns
+        function renderCategoryOptions() {
+            const selects = ['task-category', 'edit-task-category', 'filter-category'];
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                if (select) {
+                    const currentValue = select.value;
+                    if (selectId === 'filter-category') {
+                        select.innerHTML = '<option value="">ประเภททั้งหมด</option>';
+                    } else {
+                        select.innerHTML = '<option value="">เลือกประเภทงาน</option>';
+                    }
+                    categories.forEach(cat => {
+                        select.innerHTML += `<option value="${cat}">${cat}</option>`;
+                    });
+                    select.value = currentValue;
+                }
+            });
+        }
+
+        // Load categories from backend
+        async function loadCategoriesFromBackend() {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                
+                const response = await fetch('https://to-do-list-web.vercel.app/api/v1/tasks/categories', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.categories && Array.isArray(data.categories)) {
+                        categories = [...new Set([...categories, ...data.categories])]; // Merge and deduplicate
+                        localStorage.setItem('task-categories', JSON.stringify(categories));
+                        renderCategoryOptions();
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
+
+        // Bulk actions functions
+        function showBulkActions() {
+            bulkActionMode = true;
+            document.getElementById('bulk-actions-bar').style.display = 'block';
+            document.getElementById('bulk-actions-btn').style.display = 'none';
+            selectedTasks.clear();
+            renderTasks(); // Re-render to show checkboxes
+            updateSelectedCount();
+        }
+
+        function hideBulkActions() {
+            bulkActionMode = false;
+            document.getElementById('bulk-actions-bar').style.display = 'none';
+            document.getElementById('bulk-actions-btn').style.display = 'block';
+            selectedTasks.clear();
+            renderTasks(); // Re-render to hide checkboxes
+            updateSelectedCount();
+        }
+
+        function toggleTaskSelection(taskId, isSelected) {
+            if (isSelected) {
+                selectedTasks.add(taskId);
+            } else {
+                selectedTasks.delete(taskId);
+            }
+            updateSelectedCount();
+        }
+
+        function toggleSelectAll(selectAll) {
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const tasksForPage = filteredTasks.slice(startIndex, endIndex);
+            
+            tasksForPage.forEach(task => {
+                const checkbox = document.querySelector(`input[data-task-id="${task.id}"]`);
+                if (checkbox) {
+                    checkbox.checked = selectAll;
+                    toggleTaskSelection(task.id, selectAll);
+                }
+            });
+        }
+
+        function updateSelectedCount() {
+            const count = selectedTasks.size;
+            document.getElementById('selected-count').textContent = `เลือกแล้ว ${count} รายการ`;
+            
+            // Show bulk actions button if there are tasks
+            if (allTasks.length > 0 && !bulkActionMode) {
+                document.getElementById('bulk-actions-btn').style.display = 'block';
+            }
+        }
+
+        async function markSelectedComplete() {
+            if (selectedTasks.size === 0) {
+                showToast('กรุณาเลือกงานที่ต้องการทำเครื่องหมายเสร็จ', 'warning');
+                return;
+            }
+
+            const confirmed = await window.confirmDialog.confirm(
+                `คุณต้องการทำเครื่องหมายว่าเสร็จสิ้นของงาน ${selectedTasks.size} รายการ หรือไม่?`,
+                'ทำเครื่องหมายงานเสร็จ?'
+            );
+
+            if (!confirmed) return;
+
+            let successCount = 0;
+            let errorCount = 0;
+            const totalTasks = selectedTasks.size;
+
+            // Show progress notification
+            const progressToast = showToast(`กำลังดำเนินการ... (0/${totalTasks})`, 'info', 0);
+
+            for (const taskId of selectedTasks) {
+                try {
+                    await window.apiManager.apiCall(`/tasks/${taskId}`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({ is_completed: true })
+                    });
+                    successCount++;
+                } catch (error) {
+                    console.error('Error updating task:', error);
+                    errorCount++;
+                }
+                
+                // Update progress
+                progressToast.querySelector('.text-sm').textContent = 
+                    `กำลังดำเนินการ... (${successCount + errorCount}/${totalTasks})`;
+            }
+
+            // Remove progress toast
+            window.toastNotification.removeToast(progressToast);
+
+            // Show result
+            if (errorCount === 0) {
+                showToast(`ทำเครื่องหมายเสร็จสิ้น ${successCount} รายการแล้ว`, 'success');
+            } else {
+                showToast(`เสร็จสิ้น ${successCount} รายการ, เกิดข้อผิดพลาด ${errorCount} รายการ`, 'warning');
+            }
+
+            // Refresh data
+            window.dataManager.clearCache();
+            await loadTasks(true);
+            hideBulkActions();
+        }
+
+        async function deleteSelectedTasks() {
+            if (selectedTasks.size === 0) {
+                showToast('กรุณาเลือกงานที่ต้องการลบ', 'warning');
+                return;
+            }
+
+            const confirmed = await window.confirmDialog.danger(
+                `คุณกำลังจะลบงาน ${selectedTasks.size} รายการ การดำเนินการนี้ไม่สามารถยกเลิกได้`,
+                'ลบงานหลายรายการ?'
+            );
+
+            if (!confirmed) return;
+
+            let successCount = 0;
+            let errorCount = 0;
+            const totalTasks = selectedTasks.size;
+
+            // Show progress notification
+            const progressToast = showToast(`กำลังลบ... (0/${totalTasks})`, 'info', 0);
+
+            for (const taskId of selectedTasks) {
+                try {
+                    await window.apiManager.apiCall(`/tasks/${taskId}`, {
+                        method: 'DELETE'
+                    });
+                    successCount++;
+                } catch (error) {
+                    console.error('Error deleting task:', error);
+                    errorCount++;
+                }
+                
+                // Update progress
+                progressToast.querySelector('.text-sm').textContent = 
+                    `กำลังลบ... (${successCount + errorCount}/${totalTasks})`;
+            }
+
+            // Remove progress toast
+            window.toastNotification.removeToast(progressToast);
+
+            // Show result
+            if (errorCount === 0) {
+                showToast(`ลบงาน ${successCount} รายการเรียบร้อยแล้ว`, 'success');
+            } else {
+                showToast(`ลบสำเร็จ ${successCount} รายการ, เกิดข้อผิดพลาด ${errorCount} รายการ`, 'warning');
+            }
+
+            // Refresh data
+            window.dataManager.clearCache();
+            await loadTasks(true);
+            hideBulkActions();
         }
 
         // Show/hide states
@@ -188,51 +524,85 @@
             document.getElementById('add-task-form').reset();
         }
 
-        // Render tasks
+        // Edit Modal functions
+        function showEditTaskModal() {
+            document.getElementById('edit-task-modal').style.display = 'flex';
+        }
+
+        function hideEditTaskModal() {
+            document.getElementById('edit-task-modal').style.display = 'none';
+            document.getElementById('edit-task-form').reset();
+        }
+
+        // Render tasks with pagination
         function renderTasks() {
-            const container = document.getElementById('tasks-container');
+            const container = document.getElementById('tasks-list');
+            
             if (!filteredTasks || filteredTasks.length === 0) {
                 container.innerHTML = `
-                    <div class="excel-card p-8 text-center">
+                    <div class="text-center py-8">
                         <div class="text-4xl mb-3">📭</div>
-                        <h3 class="text-lg font-medium text-gray-700 mb-2">ยังไม่มีงาน</h3>
-                        <p class="text-gray-500">เริ่มต้นสร้างงานใหม่ได้เลย!</p>
-                        <button onclick="showAddTaskModal()" class="mt-4 inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">สร้างงานใหม่</button>
+                        <h3 class="text-lg font-medium text-gray-700 mb-2">ไม่พบงานที่ตรงกับเงื่อนไข</h3>
+                        <p class="text-gray-500">ลองเปลี่ยนตัวกรองหรือเพิ่มงานใหม่</p>
                     </div>
                 `;
-                showEmpty();
+                showTasks(); // Show tasks container even when empty to display pagination
+                updatePagination();
+                updateTaskSummary();
                 return;
             }
 
             showTasks();
-            
-            tasksContainer.innerHTML = filteredTasks.map(task => {
+
+            // Get tasks for current page
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const tasksForPage = filteredTasks.slice(startIndex, endIndex);
+
+            container.innerHTML = tasksForPage.map(task => {
                 const priorityText = task.priority === 3 ? 'high' : task.priority === 2 ? 'medium' : 'low';
                 const priorityLabel = task.priority === 3 ? 'สูง' : task.priority === 2 ? 'กลาง' : 'ต่ำ';
+                const isSelected = selectedTasks.has(task.id);
                 
                 return `
-                    <div class="task-item ${priorityText}-priority">
+                    <div class="task-item ${priorityText}-priority ${bulkActionMode ? 'cursor-pointer hover:bg-gray-50' : ''}" 
+                         ${bulkActionMode ? `onclick="toggleTaskSelectionUI('${task.id}')"` : ''}>
                         <div class="flex items-center justify-between">
+                            ${bulkActionMode ? `
+                                <div class="flex-shrink-0 mr-3">
+                                    <input type="checkbox" ${isSelected ? 'checked' : ''} 
+                                           data-task-id="${task.id}"
+                                           onchange="toggleTaskSelection('${task.id}', this.checked)"
+                                           onclick="event.stopPropagation()"
+                                           class="w-4 h-4 text-blue-600 rounded">
+                                </div>
+                            ` : ''}
                             <div class="flex-1">
                                 <div class="flex items-center space-x-3">
-                                    <input type="checkbox" ${task.is_completed ? 'checked' : ''} 
-                                           onchange="toggleTask('${task.id}', this.checked)"
-                                           class="w-4 h-4 text-blue-600 rounded">
+                                    ${!bulkActionMode ? `
+                                        <input type="checkbox" ${task.is_completed ? 'checked' : ''} 
+                                               onchange="toggleTask('${task.id}', this.checked)"
+                                               class="w-4 h-4 text-blue-600 rounded">
+                                    ` : ''}
                                     <h4 class="font-medium text-gray-900 ${task.is_completed ? 'line-through' : ''}">${task.task_name || task.title || 'Untitled Task'}</h4>
                                     <span class="priority-badge priority-${priorityText}">${priorityLabel}</span>
+                                    ${task.category ? `<span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full ml-2">${task.category}</span>` : ''}
                                 </div>
-                                ${task.description ? `<p class="text-sm text-gray-600 mt-1 ml-7">${task.description}</p>` : ''}
-                                ${task.due_date ? `<p class="text-xs text-gray-500 mt-1 ml-7">ครบกำหนด: ${window.dateUtils.formatThaiDate(task.due_date)}</p>` : ''}
+                                ${task.description ? `<p class="text-sm text-gray-600 mt-1 ${bulkActionMode ? 'ml-0' : 'ml-7'}">${task.description}</p>` : ''}
+                                ${task.due_date ? `<p class="text-xs text-gray-500 mt-1 ${bulkActionMode ? 'ml-0' : 'ml-7'}">ครบกำหนด: ${window.dateUtils.formatThaiDate(task.due_date)}</p>` : ''}
                             </div>
-                            <div class="flex items-center space-x-2">
-                                <button onclick="deleteTask('${task.id}')" class="text-red-600 hover:text-red-800 transition-colors" title="ลบ">🗑️</button>
-                            </div>
+                            ${!bulkActionMode ? `
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="editTask('${task.id}')" class="text-blue-600 hover:text-blue-800 transition-colors" title="แก้ไข">✏️</button>
+                                    <button onclick="deleteTask('${task.id}')" class="text-red-600 hover:text-red-800 transition-colors" title="ลบ">🗑️</button>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 `;
             }).join('');
 
-            // Add priority badge styles
+                        // Add priority badge styles
             if (!document.getElementById('priority-styles')) {
                 const style = document.createElement('style');
                 style.id = 'priority-styles';
@@ -244,6 +614,19 @@
                 `;
                 document.head.appendChild(style);
             }
+            
+            updateTaskSummary();
+            updatePagination();
+            updateSelectedCount();
+        }
+
+        // Toggle task selection by clicking on task item
+        function toggleTaskSelectionUI(taskId) {
+            const checkbox = document.querySelector(`input[data-task-id="${taskId}"]`);
+            if (checkbox) {
+                checkbox.checked = !checkbox.checked;
+                toggleTaskSelection(taskId, checkbox.checked);
+            }
         }
 
         // Update task summary
@@ -252,19 +635,24 @@
             const completedTasks = allTasks.filter(t => t.is_completed).length;
             const pendingTasks = totalTasks - completedTasks;
             
-            document.getElementById('task-summary').textContent = 
-                `คุณมีงาน ${totalTasks} รายการ (เสร็จแล้ว ${completedTasks}, ยังไม่เสร็จ ${pendingTasks})`;
+            const summaryElement = document.getElementById('task-summary');
+            if (summaryElement) {
+                summaryElement.textContent = 
+                    `คุณมีงาน ${totalTasks} รายการ (เสร็จแล้ว ${completedTasks}, ยังไม่เสร็จ ${pendingTasks})`;
+            }
         }
 
-        // Apply filters
+        // Apply filters with pagination
         function applyFilters() {
             const statusFilter = document.getElementById('filter-status').value;
             const priorityFilter = document.getElementById('filter-priority').value;
+            const categoryFilter = document.getElementById('filter-category').value;
             const searchTerm = document.getElementById('search-tasks').value.toLowerCase();
 
             filteredTasks = allTasks.filter(task => {
                 let matchesStatus = true;
                 let matchesPriority = true;
+                let matchesCategory = true;
                 let matchesSearch = true;
 
                 if (statusFilter === 'pending') matchesStatus = !task.is_completed;
@@ -272,20 +660,155 @@
                 
                 if (priorityFilter) matchesPriority = task.priority == priorityFilter;
                 
+                if (categoryFilter) matchesCategory = task.category == categoryFilter;
+                
                 if (searchTerm) {
                     const taskName = (task.task_name || task.title || '').toLowerCase();
                     const description = (task.description || '').toLowerCase();
                     matchesSearch = taskName.includes(searchTerm) || description.includes(searchTerm);
                 }
 
-                return matchesStatus && matchesPriority && matchesSearch;
+                return matchesStatus && matchesPriority && matchesCategory && matchesSearch;
             });
 
+            // Reset to first page when filters change
+            currentPage = 1;
+            updatePagination();
             renderTasks();
+        }
+
+        // Update pagination info and controls
+        function updatePagination() {
+            totalTasksCount = filteredTasks.length;
+            totalPages = Math.ceil(totalTasksCount / pageSize);
+            
+            const paginationInfo = document.getElementById('pagination-info');
+            const paginationControls = document.getElementById('pagination-controls');
+            
+            if (totalTasksCount === 0) {
+                paginationInfo.textContent = 'ไม่พบรายการ';
+                paginationControls.innerHTML = '';
+                return;
+            }
+            
+            const startItem = (currentPage - 1) * pageSize + 1;
+            const endItem = Math.min(currentPage * pageSize, totalTasksCount);
+            
+            paginationInfo.textContent = `แสดง ${startItem}-${endItem} จาก ${totalTasksCount} รายการ`;
+            
+            // Generate pagination controls
+            let controlsHTML = '';
+            
+            // Previous button
+            controlsHTML += `
+                <button onclick="changePage(${currentPage - 1})" 
+                        ${currentPage <= 1 ? 'disabled' : ''} 
+                        class="px-3 py-2 text-sm border border-gray-300 rounded-lg ${currentPage <= 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50'}">
+                    ก่อนหน้า
+                </button>
+            `;
+            
+            // Page numbers
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            // Adjust startPage if we're near the end
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            for (let page = startPage; page <= endPage; page++) {
+                const isActive = page === currentPage;
+                controlsHTML += `
+                    <button onclick="changePage(${page})" 
+                            class="px-3 py-2 text-sm border border-gray-300 rounded-lg ${isActive ? 'bg-blue-600 text-white' : 'bg-white hover:bg-gray-50'}">
+                        ${page}
+                    </button>
+                `;
+            }
+            
+            // Next button
+            controlsHTML += `
+                <button onclick="changePage(${currentPage + 1})" 
+                        ${currentPage >= totalPages ? 'disabled' : ''} 
+                        class="px-3 py-2 text-sm border border-gray-300 rounded-lg ${currentPage >= totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50'}">
+                    ถัดไป
+                </button>
+            `;
+            
+            // Page size selector
+            controlsHTML += `
+                <select onchange="changePageSize(this.value)" class="ml-4 px-3 py-2 text-sm border border-gray-300 rounded-lg">
+                    <option value="10" ${pageSize === 10 ? 'selected' : ''}>10 รายการ</option>
+                    <option value="25" ${pageSize === 25 ? 'selected' : ''}>25 รายการ</option>
+                    <option value="50" ${pageSize === 50 ? 'selected' : ''}>50 รายการ</option>
+                    <option value="100" ${pageSize === 100 ? 'selected' : ''}>100 รายการ</option>
+                </select>
+            `;
+            
+            paginationControls.innerHTML = controlsHTML;
+        }
+
+        // Change page
+        function changePage(newPage) {
+            if (newPage < 1 || newPage > totalPages) return;
+            currentPage = newPage;
+            renderTasks();
+            updatePagination();
+        }
+
+        // Change page size
+        function changePageSize(newPageSize) {
+            pageSize = parseInt(newPageSize);
+            currentPage = 1; // Reset to first page
+            updatePagination();
+            renderTasks();
+        }
+
+        // Edit task function
+        function editTask(taskId) {
+            const task = allTasks.find(t => t.id == taskId);
+            if (!task) {
+                showToast('ไม่พบงานที่ต้องการแก้ไข', 'error');
+                return;
+            }
+
+            // Populate form fields
+            document.getElementById('edit-task-id').value = task.id;
+            document.getElementById('edit-task-name').value = task.task_name || task.title || '';
+            document.getElementById('edit-task-description').value = task.description || '';
+            document.getElementById('edit-task-category').value = task.category || '';
+            document.getElementById('edit-task-priority').value = task.priority || 2;
+            
+            // Format date for input field
+            if (task.due_date) {
+                const date = new Date(task.due_date);
+                if (!isNaN(date.getTime())) {
+                    document.getElementById('edit-task-due-date').value = date.toISOString().split('T')[0];
+                }
+            }
+
+            showEditTaskModal();
         }
 
         // Toggle task completion
         async function toggleTask(taskId, isCompleted) {
+            const task = allTasks.find(t => t.id == taskId);
+            const taskName = task ? (task.task_name || task.title || 'งานนี้') : 'งานนี้';
+            
+            const confirmed = await window.confirmDialog.confirm(
+                `คุณต้องการ${isCompleted ? 'ทำเครื่องหมายว่าเสร็จสิ้น' : 'ยกเลิกการทำเสร็จ'}ของ "${taskName}" หรือไม่?`,
+                isCompleted ? 'ทำเครื่องหมายงานเสร็จ?' : 'ยกเลิกการทำเสร็จ?'
+            );
+            
+            if (!confirmed) {
+                // Reset checkbox if user cancels
+                const checkbox = document.querySelector(`input[onchange*="${taskId}"]`);
+                if (checkbox) checkbox.checked = !isCompleted;
+                return;
+            }
+
             try {
                 await window.apiManager.apiCall(`/tasks/${taskId}`, {
                     method: 'PATCH',
@@ -293,39 +816,42 @@
                 });
                 
                 // Update local data
-                const task = allTasks.find(t => t.id == taskId);
                 if (task) {
                     task.is_completed = isCompleted;
                 }
                 
-                // Clear cache and re-apply filters
+                // Clear cache and reload data
                 window.dataManager.clearCache();
-                applyFilters();
-                updateTaskSummary();
+                await loadTasks(true); // Force reload to get fresh data
                 
                 showToast(isCompleted ? 'งานเสร็จสิ้นแล้ว!' : 'ยกเลิกการทำเสร็จแล้ว', 'success');
             } catch (error) {
                 console.error('Error updating task:', error);
                 showToast('เกิดข้อผิดพลาดในการอัปเดตงาน', 'error');
+                
+                // Reset checkbox on error
+                const checkbox = document.querySelector(`input[onchange*="${taskId}"]`);
+                if (checkbox) checkbox.checked = !isCompleted;
             }
         }
 
         // Delete task
         async function deleteTask(taskId) {
-            if (!confirm('คุณแน่ใจหรือไม่ที่จะลบงานนี้?')) return;
+            const confirmed = await window.confirmDialog.danger(
+                'การดำเนินการนี้ไม่สามารถยกเลิกได้ คุณแน่ใจหรือไม่?',
+                'ลบงานนี้?'
+            );
+            
+            if (!confirmed) return;
 
             try {
                 await window.apiManager.apiCall(`/tasks/${taskId}`, {
                     method: 'DELETE'
                 });
                 
-                // Remove from local data
-                allTasks = allTasks.filter(t => t.id != taskId);
-                
-                // Clear cache and re-apply filters
+                // Clear cache and reload data
                 window.dataManager.clearCache();
-                applyFilters();
-                updateTaskSummary();
+                await loadTasks(true); // Force reload to get fresh data
                 
                 showToast('ลบงานเรียบร้อยแล้ว', 'success');
             } catch (error) {
@@ -341,55 +867,123 @@
             const taskData = {
                 task_name: document.getElementById('task-name').value,
                 description: document.getElementById('task-description').value,
+                category: document.getElementById('task-category').value,
                 priority: parseInt(document.getElementById('task-priority').value),
                 due_date: document.getElementById('task-due-date').value || null
             };
 
+            const submittingToast = showToast('กำลังเพิ่มงาน...', 'info', 0);
+            
             try {
                 const result = await window.apiManager.apiCall('/tasks', {
                     method: 'POST',
                     body: JSON.stringify(taskData)
                 });
                 
-                // Add to local data
-                if (result.task) {
-                    allTasks.unshift(result.task);
-                }
+                window.toastNotification.removeToast(submittingToast);
                 
-                // Clear cache and refresh
+                // Clear cache and reload data
                 window.dataManager.clearCache();
-                applyFilters();
-                updateTaskSummary();
+                await loadTasks(true); // Force reload to get fresh data
                 hideAddTaskModal();
                 
-                showToast('เพิ่มงานเรียบร้อยแล้ว', 'success');
+                showToast(`เพิ่มงาน "${taskData.task_name}" เรียบร้อยแล้ว`, 'success');
             } catch (error) {
+                window.toastNotification.removeToast(submittingToast);
                 console.error('Error adding task:', error);
                 showToast('เกิดข้อผิดพลาดในการเพิ่มงาน', 'error');
             }
         });
 
+        // Edit task form submission
+        document.getElementById('edit-task-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const confirmed = await window.confirmDialog.confirm(
+                'คุณต้องการบันทึกการแก้ไขงานนี้หรือไม่?',
+                'บันทึกการแก้ไข?'
+            );
+            
+            if (!confirmed) return;
+            
+            const taskId = document.getElementById('edit-task-id').value;
+            const taskData = {
+                task_name: document.getElementById('edit-task-name').value,
+                description: document.getElementById('edit-task-description').value,
+                category: document.getElementById('edit-task-category').value,
+                priority: parseInt(document.getElementById('edit-task-priority').value),
+                due_date: document.getElementById('edit-task-due-date').value || null
+            };
+
+            const updatingToast = showToast('กำลังบันทึกการแก้ไข...', 'info', 0);
+
+            try {
+                await window.apiManager.apiCall(`/tasks/${taskId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(taskData)
+                });
+                
+                window.toastNotification.removeToast(updatingToast);
+                
+                // Clear cache and reload data
+                window.dataManager.clearCache();
+                await loadTasks(true);
+                hideEditTaskModal();
+                
+                showToast(`แก้ไขงาน "${taskData.task_name}" เรียบร้อยแล้ว`, 'success');
+            } catch (error) {
+                window.toastNotification.removeToast(updatingToast);
+                console.error('Error updating task:', error);
+                showToast('เกิดข้อผิดพลาดในการแก้ไขงาน', 'error');
+            }
+        });
+
         // Load tasks
-        async function loadTasks() {
+        async function loadTasks(force = false) {
             if (isLoading) return;
             isLoading = true;
+            
+            let loadingToast = null;
+            
             try {
                 showLoading();
+                
+                // Show loading notification for longer operations
+                setTimeout(() => {
+                    if (isLoading) {
+                        loadingToast = showToast('กำลังโหลดข้อมูล...', 'info', 0);
+                    }
+                }, 1000);
+                
                 const token = localStorage.getItem('token');
                 if (!token) {
                     window.location.href = 'index.html';
                     return;
                 }
-                if (!force && lastTasks) {
+                
+                if (!force && lastTasks && allTasks.length > 0) {
+                    allTasks = lastTasks;
                     filteredTasks = lastTasks;
-                    renderTasks();
+                    applyFilters();
                     return;
                 }
+                
                 const tasks = await window.dataManager.loadTasks();
                 lastTasks = tasks;
+                allTasks = tasks; // Make sure allTasks is assigned
                 filteredTasks = tasks;
-                renderTasks();
+                applyFilters(); // Apply filters instead of just renderTasks to ensure proper counting
+                
+                // Show success notification if data loaded successfully and was slow
+                if (loadingToast) {
+                    window.toastNotification.removeToast(loadingToast);
+                    showToast(`โหลดข้อมูลเรียบร้อย (${tasks.length} รายการ)`, 'success', 2000);
+                }
+                
             } catch (error) {
+                if (loadingToast) {
+                    window.toastNotification.removeToast(loadingToast);
+                }
                 showEmpty();
                 showToast('เกิดข้อผิดพลาดในการโหลดงาน: ' + error.message, 'error');
             } finally {

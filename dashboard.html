@@ -238,9 +238,9 @@
                             `).join('')}
                         </div>
                         <div class="flex justify-center items-center gap-2 mt-4">
-                            <button class="px-3 py-1 rounded bg-gray-200 text-gray-700 font-medium" ${currentPage === 1 ? 'disabled' : ''} onclick="window.todayTasksPage=${currentPage - 1};document.querySelector('#dashboard-content').scrollIntoView({behavior:'smooth'});setTimeout(()=>{window.lastTasks=tasks;window.currentUser=userInfo;renderDashboard(userInfo, tasks, summary)},100)">&lt; ก่อนหน้า</button>
+                            <button class="px-3 py-1 rounded bg-gray-200 text-gray-700 font-medium" ${currentPage === 1 ? 'disabled' : ''} onclick="changeTodayTasksPage(${currentPage - 1})">&lt; ก่อนหน้า</button>
                             <span class="px-2">หน้า ${currentPage} / ${totalPages}</span>
-                            <button class="px-3 py-1 rounded bg-gray-200 text-gray-700 font-medium" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''} onclick="window.todayTasksPage=${currentPage + 1};document.querySelector('#dashboard-content').scrollIntoView({behavior:'smooth'});setTimeout(()=>{window.lastTasks=tasks;window.currentUser=userInfo;renderDashboard(userInfo, tasks, summary)},100)">ถัดไป &gt;</button>
+                            <button class="px-3 py-1 rounded bg-gray-200 text-gray-700 font-medium" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''} onclick="changeTodayTasksPage(${currentPage + 1})">ถัดไป &gt;</button>
                         </div>`
                     }
                     
@@ -292,8 +292,43 @@
             document.head.appendChild(style);
         }
 
+        // Dashboard pagination function
+        function changeTodayTasksPage(newPage) {
+            // Get the current tasks and calculate today's tasks
+            const currentTasks = window.lastTasks || [];
+            const todayTasks = currentTasks.filter(task => {
+                if (!task.due_date) return false;
+                return window.dateUtils.isToday(task.due_date);
+            });
+            
+            const totalPages = Math.ceil(todayTasks.length / 5);
+            
+            if (newPage < 1 || newPage > totalPages) return;
+            
+            window.todayTasksPage = newPage;
+            
+            // Force reload dashboard data and re-render
+            loadDashboard();
+        }
+
         // Toggle task completion
         async function toggleTask(taskId, isCompleted) {
+            const tasks = window.lastTasks || [];
+            const task = tasks.find(t => t.id == taskId);
+            const taskName = task ? (task.task_name || task.title || 'งานนี้') : 'งานนี้';
+            
+            const confirmed = await window.confirmDialog.confirm(
+                `คุณต้องการ${isCompleted ? 'ทำเครื่องหมายว่าเสร็จสิ้น' : 'ยกเลิกการทำเสร็จ'}ของ "${taskName}" หรือไม่?`,
+                isCompleted ? 'ทำเครื่องหมายงานเสร็จ?' : 'ยกเลิกการทำเสร็จ?'
+            );
+            
+            if (!confirmed) {
+                // Reset checkbox if user cancels
+                const checkbox = document.querySelector(`input[onchange*="${taskId}"]`);
+                if (checkbox) checkbox.checked = !isCompleted;
+                return;
+            }
+
             try {
                 await window.apiManager.apiCall(`/tasks/${taskId}`, {
                     method: 'PATCH',
@@ -308,6 +343,10 @@
             } catch (error) {
                 console.error('Error updating task:', error);
                 showToast('เกิดข้อผิดพลาดในการอัปเดตงาน', 'error');
+                
+                // Reset checkbox on error
+                const checkbox = document.querySelector(`input[onchange*="${taskId}"]`);
+                if (checkbox) checkbox.checked = !isCompleted;
             }
         }
 
