@@ -8,15 +8,120 @@
     <link href="./dist/styles.css" rel="stylesheet">
     <style>
         .excel-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
-        .excel-card { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); }
-        .task-item { border-left: 4px solid #e5e7eb; background: white; border-radius: 0 8px 8px 0; margin-bottom: 8px; padding: 12px 16px; }
+        .excel-card { background: white; border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
+        .task-item { 
+            border-left: 4px solid #e5e7eb; 
+            background: linear-gradient(145deg, #ffffff, #f8fafc); 
+            border-radius: 0 12px 12px 0; 
+            margin-bottom: 12px; 
+            padding: 16px 20px; 
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+        }
+        .task-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: #cbd5e1;
+        }
         .task-item.high-priority { border-left-color: #ef4444; }
         .task-item.medium-priority { border-left-color: #f59e0b; }
         .task-item.low-priority { border-left-color: #10b981; }
-        .fade-in { animation: fadeIn 0.5s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
+        .task-item.completed { opacity: 0.7; background: linear-gradient(145deg, #f1f5f9, #e2e8f0); }
+        .fade-in { animation: fadeIn 0.6s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .loading-spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .priority-badge { 
+            font-size: 0.75rem; 
+            padding: 4px 12px; 
+            border-radius: 20px; 
+            font-weight: 600; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+        }
+        .priority-high { background: linear-gradient(45deg, #fee2e2, #fecaca); color: #dc2626; border: 1px solid #fca5a5; }
+        .priority-medium { background: linear-gradient(45deg, #fef3c7, #fde68a); color: #d97706; border: 1px solid #fbbf24; }
+        .priority-low { background: linear-gradient(45deg, #d1fae5, #a7f3d0); color: #059669; border: 1px solid #6ee7b7; }
+        
+        .action-btn {
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .edit-btn { background: linear-gradient(145deg, #3b82f6, #2563eb); color: white; }
+        .edit-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+        .delete-btn { background: linear-gradient(145deg, #ef4444, #dc2626); color: white; }
+        .delete-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4); }
+        
+        .status-toggle {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .status-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(145deg, #cbd5e1, #94a3b8);
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        input:checked + .slider {
+            background: linear-gradient(145deg, #10b981, #059669);
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .modal-overlay { backdrop-filter: blur(8px); background: rgba(0, 0, 0, 0.6); }
+        .modal-content { 
+            background: white; 
+            border-radius: 20px; 
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3); 
+            transform: scale(0.9); 
+            transition: transform 0.3s ease; 
+        }
+        .modal-content.show { transform: scale(1); }
+        .form-input { 
+            border: 2px solid #e5e7eb; 
+            border-radius: 10px; 
+            padding: 12px 16px; 
+            transition: all 0.3s ease; 
+            background: #f9fafb; 
+        }
+        .form-input:focus { 
+            border-color: #6366f1; 
+            background: white; 
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); 
+            outline: none; 
+        }
     </style>
 </head>
 <body class="excel-bg">
@@ -25,90 +130,93 @@
         
         <div class="container mx-auto p-6">
             <!-- Header -->
-            <div class="excel-card p-6 mb-6">
-                <div class="flex items-center justify-between mb-4">
+            <div class="excel-card p-8 mb-6 fade-in">
+                <div class="flex items-center justify-between mb-6">
                     <div>
-                        <h1 class="text-3xl font-bold text-gray-800">จัดการงาน</h1>
-                        <p class="text-gray-600" id="task-summary">กำลังโหลดข้อมูล...</p>
+                        <h1 class="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                            📋 จัดการงาน
+                        </h1>
+                        <p class="text-gray-600 text-lg" id="task-summary">กำลังโหลดข้อมูล...</p>
                     </div>
-                    <button onclick="showAddTaskModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-                        + เพิ่มงานใหม่
+                    <button onclick="showAddTaskModal()" class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg">
+                        ✨ เพิ่มงานใหม่
                     </button>
                 </div>
                 
                 <!-- Filters -->
-                <div class="flex flex-wrap gap-3">
-                    <select id="filter-status" onchange="applyFilters()" class="border border-gray-300 rounded-lg px-3 py-2">
-                        <option value="">สถานะทั้งหมด</option>
-                        <option value="pending">รอดำเนินการ</option>
-                        <option value="completed">เสร็จสิ้น</option>
+                <div class="flex flex-wrap gap-4">
+                    <select id="filter-status" onchange="applyFilters()" class="form-input">
+                        <option value="">📊 สถานะทั้งหมด</option>
+                        <option value="pending">⏳ รอดำเนินการ</option>
+                        <option value="completed">✅ เสร็จสิ้น</option>
                     </select>
-                    <select id="filter-priority" onchange="applyFilters()" class="border border-gray-300 rounded-lg px-3 py-2">
-                        <option value="">ความสำคัญทั้งหมด</option>
-                        <option value="3">สูง</option>
-                        <option value="2">กลาง</option>
-                        <option value="1">ต่ำ</option>
+                    <select id="filter-priority" onchange="applyFilters()" class="form-input">
+                        <option value="">⚡ ความสำคัญทั้งหมด</option>
+                        <option value="3">🔴 สูง</option>
+                        <option value="2">🟡 กลาง</option>
+                        <option value="1">🟢 ต่ำ</option>
                     </select>
-                    <input type="text" id="search-tasks" placeholder="ค้นหางาน..." onkeyup="applyFilters()" 
-                           class="border border-gray-300 rounded-lg px-3 py-2 flex-1 min-w-0">
+                    <input type="text" id="search-tasks" placeholder="🔍 ค้นหางาน..." onkeyup="applyFilters()" 
+                           class="form-input flex-1 min-w-0">
                 </div>
             </div>
 
             <!-- Loading State -->
-            <div id="loading-state" class="excel-card p-8 text-center">
-                <div class="loading-spinner mb-4"></div>
-                <p class="text-lg text-gray-600">กำลังโหลดรายการงาน...</p>
+            <div id="loading-state" class="excel-card p-12 text-center fade-in">
+                <div class="loading-spinner mb-6"></div>
+                <p class="text-xl text-gray-600 font-medium">🔄 กำลังโหลดรายการงาน...</p>
+                <p class="text-sm text-gray-500 mt-2">กรุณารอสักครู่</p>
             </div>
 
             <!-- Tasks List -->
-            <div id="tasks-container" style="display: none;" class="excel-card p-6">
+            <div id="tasks-container" style="display: none;" class="excel-card p-8 fade-in">
                 <div id="tasks-list"></div>
             </div>
 
             <!-- Empty State -->
-            <div id="empty-state" style="display: none;" class="excel-card p-8 text-center">
-                <div class="text-6xl mb-4">📝</div>
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">ยังไม่มีงานใดๆ</h2>
-                <p class="text-gray-600 mb-6">เริ่มต้นสร้างงานแรกของคุณเลย!</p>
-                <button onclick="showAddTaskModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium">
-                    + เพิ่มงานใหม่
+            <div id="empty-state" style="display: none;" class="excel-card p-12 text-center fade-in">
+                <div class="text-8xl mb-6">📝</div>
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">ยังไม่มีงานใดๆ</h2>
+                <p class="text-gray-600 mb-8 text-lg">เริ่มต้นสร้างงานแรกของคุณเลย!</p>
+                <button onclick="showAddTaskModal()" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-4 rounded-xl font-semibold transition-all transform hover:scale-105">
+                    ✨ เพิ่มงานใหม่
                 </button>
             </div>
         </div>
     </div>
 
     <!-- Add Task Modal -->
-    <div id="add-task-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4">
-            <div class="p-6">
-                <h3 class="text-xl font-bold text-gray-900 mb-4">เพิ่มงานใหม่</h3>
+    <div id="add-task-modal" class="fixed inset-0 modal-overlay flex items-center justify-center z-50" style="display: none;">
+        <div class="modal-content max-w-lg w-full mx-4">
+            <div class="p-8">
+                <h3 class="text-2xl font-bold text-gray-900 mb-6">✨ เพิ่มงานใหม่</h3>
                 <form id="add-task-form">
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">ชื่องาน</label>
-                        <input type="text" id="task-name" required class="w-full border border-gray-300 rounded-lg px-3 py-2">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">รายละเอียด</label>
-                        <textarea id="task-description" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2"></textarea>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">ความสำคัญ</label>
-                        <select id="task-priority" class="w-full border border-gray-300 rounded-lg px-3 py-2">
-                            <option value="1">ต่ำ</option>
-                            <option value="2" selected>กลาง</option>
-                            <option value="3">สูง</option>
-                        </select>
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">📝 ชื่องาน</label>
+                        <input type="text" id="task-name" required class="w-full form-input" placeholder="กรอกชื่องานที่ต้องทำ...">
                     </div>
                     <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">วันครบกำหนด</label>
-                        <input type="date" id="task-due-date" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">📄 รายละเอียด</label>
+                        <textarea id="task-description" rows="3" class="w-full form-input" placeholder="เขียนรายละเอียดเพิ่มเติม (ไม่บังคับ)..."></textarea>
                     </div>
-                    <div class="flex space-x-3">
-                        <button type="button" onclick="hideAddTaskModal()" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg">
-                            ยกเลิก
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">⚡ ความสำคัญ</label>
+                        <select id="task-priority" class="w-full form-input">
+                            <option value="1">🟢 ต่ำ</option>
+                            <option value="2" selected>🟡 กลาง</option>
+                            <option value="3">🔴 สูง</option>
+                        </select>
+                    </div>
+                    <div class="mb-8">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">📅 วันครบกำหนด</label>
+                        <input type="date" id="task-due-date" class="w-full form-input">
+                    </div>
+                    <div class="flex space-x-4">
+                        <button type="button" onclick="hideAddTaskModal()" class="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors">
+                            ❌ ยกเลิก
                         </button>
-                        <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                            เพิ่มงาน
+                        <button type="submit" class="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition-all transform hover:scale-105">
+                            ✅ เพิ่มงาน
                         </button>
                     </div>
                 </form>
@@ -118,6 +226,54 @@
 
     <!-- Toast Notifications -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm"></div>
+
+    <!-- Edit Task Modal -->
+    <div id="edit-task-modal" class="fixed inset-0 modal-overlay flex items-center justify-center z-50" style="display: none;">
+        <div class="modal-content max-w-lg w-full mx-4">
+            <div class="p-8">
+                <h3 class="text-2xl font-bold text-gray-900 mb-6">✏️ แก้ไขงาน</h3>
+                <form id="edit-task-form">
+                    <input type="hidden" id="edit-task-id">
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">📝 ชื่องาน</label>
+                        <input type="text" id="edit-task-name" required class="w-full form-input" placeholder="กรอกชื่องานที่ต้องทำ...">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">📄 รายละเอียด</label>
+                        <textarea id="edit-task-description" rows="3" class="w-full form-input" placeholder="เขียนรายละเอียดเพิ่มเติม..."></textarea>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">⚡ ความสำคัญ</label>
+                        <select id="edit-task-priority" class="w-full form-input">
+                            <option value="1">🟢 ต่ำ</option>
+                            <option value="2">🟡 กลาง</option>
+                            <option value="3">🔴 สูง</option>
+                        </select>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">📅 วันครบกำหนด</label>
+                        <input type="date" id="edit-task-due-date" class="w-full form-input">
+                    </div>
+                    <div class="mb-8">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">✅ สถานะ</label>
+                        <label class="status-toggle">
+                            <input type="checkbox" id="edit-task-completed">
+                            <span class="slider"></span>
+                        </label>
+                        <span id="status-text" class="ml-3 font-medium">รอดำเนินการ</span>
+                    </div>
+                    <div class="flex space-x-4">
+                        <button type="button" onclick="hideEditTaskModal()" class="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors">
+                            ❌ ยกเลิก
+                        </button>
+                        <button type="submit" class="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all transform hover:scale-105">
+                            💾 บันทึก
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- Shared API Manager -->
     <script src="shared-api.js"></script>
@@ -183,11 +339,41 @@
         // Modal functions
         function showAddTaskModal() {
             document.getElementById('add-task-modal').style.display = 'flex';
+            setTimeout(() => document.querySelector('#add-task-modal .modal-content').classList.add('show'), 10);
         }
 
         function hideAddTaskModal() {
-            document.getElementById('add-task-modal').style.display = 'none';
-            document.getElementById('add-task-form').reset();
+            document.querySelector('#add-task-modal .modal-content').classList.remove('show');
+            setTimeout(() => {
+                document.getElementById('add-task-modal').style.display = 'none';
+                document.getElementById('add-task-form').reset();
+            }, 300);
+        }
+
+        function showEditTaskModal(task) {
+            document.getElementById('edit-task-id').value = task.id;
+            document.getElementById('edit-task-name').value = task.task_name || task.title || '';
+            document.getElementById('edit-task-description').value = task.description || '';
+            document.getElementById('edit-task-priority').value = task.priority || 2;
+            document.getElementById('edit-task-due-date').value = task.due_date ? task.due_date.split('T')[0] : '';
+            document.getElementById('edit-task-completed').checked = task.is_completed || false;
+            updateStatusText();
+            document.getElementById('edit-task-modal').style.display = 'flex';
+            setTimeout(() => document.querySelector('#edit-task-modal .modal-content').classList.add('show'), 10);
+        }
+
+        function hideEditTaskModal() {
+            document.querySelector('#edit-task-modal .modal-content').classList.remove('show');
+            setTimeout(() => {
+                document.getElementById('edit-task-modal').style.display = 'none';
+                document.getElementById('edit-task-form').reset();
+            }, 300);
+        }
+
+        function updateStatusText() {
+            const isCompleted = document.getElementById('edit-task-completed').checked;
+            document.getElementById('status-text').textContent = isCompleted ? 'เสร็จสิ้น' : 'รอดำเนินการ';
+            document.getElementById('status-text').className = isCompleted ? 'ml-3 font-medium text-green-600' : 'ml-3 font-medium text-gray-600';
         }
 
         // Render tasks
@@ -204,23 +390,36 @@
             tasksContainer.innerHTML = filteredTasks.map(task => {
                 const priorityText = task.priority === 3 ? 'high' : task.priority === 2 ? 'medium' : 'low';
                 const priorityLabel = task.priority === 3 ? 'สูง' : task.priority === 2 ? 'กลาง' : 'ต่ำ';
+                const priorityEmoji = task.priority === 3 ? '🔴' : task.priority === 2 ? '🟡' : '🟢';
+                const completedClass = task.is_completed ? 'completed' : '';
                 
                 return `
-                    <div class="task-item ${priorityText}-priority">
-                        <div class="flex items-center justify-between">
+                    <div class="task-item ${priorityText}-priority ${completedClass}">
+                        <div class="flex items-start justify-between">
                             <div class="flex-1">
-                                <div class="flex items-center space-x-3">
-                                    <input type="checkbox" ${task.is_completed ? 'checked' : ''} 
-                                           onchange="toggleTask('${task.id}', this.checked)"
-                                           class="w-4 h-4 text-blue-600 rounded">
-                                    <h4 class="font-medium text-gray-900 ${task.is_completed ? 'line-through' : ''}">${task.task_name || task.title || 'Untitled Task'}</h4>
-                                    <span class="priority-badge priority-${priorityText}">${priorityLabel}</span>
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <label class="status-toggle">
+                                        <input type="checkbox" ${task.is_completed ? 'checked' : ''} 
+                                               onchange="toggleTask('${task.id}', this.checked)">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <h4 class="font-semibold text-gray-900 ${task.is_completed ? 'line-through opacity-60' : ''} text-lg">
+                                        ${task.task_name || task.title || 'Untitled Task'}
+                                    </h4>
+                                    <span class="priority-badge priority-${priorityText}">${priorityEmoji} ${priorityLabel}</span>
                                 </div>
-                                ${task.description ? `<p class="text-sm text-gray-600 mt-1 ml-7">${task.description}</p>` : ''}
-                                ${task.due_date ? `<p class="text-xs text-gray-500 mt-1 ml-7">ครบกำหนด: ${window.dateUtils.formatThaiDate(task.due_date)}</p>` : ''}
+                                ${task.description ? `<p class="text-sm text-gray-600 ml-16 mb-2 italic">"${task.description}"</p>` : ''}
+                                ${task.due_date ? `<p class="text-xs text-gray-500 ml-16">📅 ครบกำหนด: ${window.dateUtils.formatThaiDate(task.due_date)}</p>` : ''}
                             </div>
-                            <div class="flex items-center space-x-2">
-                                <button onclick="deleteTask('${task.id}')" class="text-red-600 hover:text-red-800 transition-colors" title="ลบ">🗑️</button>
+                            <div class="flex items-center space-x-2 ml-4">
+                                <button onclick="showEditTaskModal(${JSON.stringify(task).replace(/"/g, '&quot;')})" 
+                                        class="action-btn edit-btn" title="แก้ไขงาน">
+                                    ✏️ แก้ไข
+                                </button>
+                                <button onclick="deleteTask('${task.id}')" 
+                                        class="action-btn delete-btn" title="ลบงาน">
+                                    🗑️ ลบ
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -328,6 +527,55 @@
                 showToast('เกิดข้อผิดพลาดในการลบงาน', 'error');
             }
         }
+
+        // Edit task
+        async function editTask(taskData) {
+            try {
+                const taskId = taskData.id;
+                delete taskData.id; // Remove id from update data
+                
+                await window.apiManager.apiCall(`/tasks/${taskId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify(taskData)
+                });
+                
+                // Update local data
+                const taskIndex = allTasks.findIndex(t => t.id == taskId);
+                if (taskIndex !== -1) {
+                    allTasks[taskIndex] = { ...allTasks[taskIndex], ...taskData };
+                }
+                
+                // Clear cache and re-apply filters
+                window.dataManager.clearCache();
+                applyFilters();
+                updateTaskSummary();
+                
+                showToast('แก้ไขงานเรียบร้อยแล้ว', 'success');
+            } catch (error) {
+                console.error('Error updating task:', error);
+                showToast('เกิดข้อผิดพลาดในการแก้ไขงาน', 'error');
+            }
+        }
+
+        // Add edit task form handler
+        document.getElementById('edit-task-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const taskData = {
+                id: document.getElementById('edit-task-id').value,
+                task_name: document.getElementById('edit-task-name').value,
+                description: document.getElementById('edit-task-description').value,
+                priority: parseInt(document.getElementById('edit-task-priority').value),
+                due_date: document.getElementById('edit-task-due-date').value || null,
+                is_completed: document.getElementById('edit-task-completed').checked
+            };
+
+            await editTask(taskData);
+            hideEditTaskModal();
+        });
+
+        // Add status toggle listener
+        document.getElementById('edit-task-completed').addEventListener('change', updateStatusText);
 
         // Add new task
         document.getElementById('add-task-form').addEventListener('submit', async function(e) {
