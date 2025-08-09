@@ -13,7 +13,26 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .calendar-day { border: 1px solid #e5e7eb; padding: 8px; min-height: 100px; cursor: pointer; transition: all 0.2s; }
+        .calendar-day { 
+            border: 1px solid #e5e7eb; 
+            padding: 4px; 
+            min-height: 60px; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+        }
+        
+        @media (min-width: 640px) {
+            .calendar-day {
+                padding: 8px;
+                min-height: 80px;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .calendar-day {
+                min-height: 100px;
+            }
+        }
         .calendar-day:hover { background: #f3f4f6; }
         .calendar-day.today { background: #eff6ff; border-color: #3b82f6; font-weight: bold; }
         .calendar-day.other-month { opacity: 0.3; }
@@ -27,26 +46,26 @@
     <div id="app" class="min-h-screen">
         <div id="nav-container"></div>
         
-        <div class="container mx-auto p-6">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header -->
-            <div class="excel-card p-6 mb-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h1 class="text-3xl font-bold text-gray-800">Calendar</h1>
-                    <div class="flex items-center space-x-4">
-                        <button onclick="previousMonth()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">◀</button>
-                        <h2 id="current-month" class="text-xl font-bold text-gray-800 min-w-[200px] text-center">Loading...</h2>
-                        <button onclick="nextMonth()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">▶</button>
+            <div class="excel-card p-4 sm:p-6 mb-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-4 sm:space-y-0">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 text-center sm:text-left">Calendar</h1>
+                    <div class="flex items-center justify-center space-x-2 sm:space-x-4">
+                        <button onclick="previousMonth()" class="bg-gray-500 hover:bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base">◀</button>
+                        <h2 id="current-month" class="text-lg sm:text-xl font-bold text-gray-800 min-w-[150px] sm:min-w-[200px] text-center">Loading...</h2>
+                        <button onclick="nextMonth()" class="bg-gray-500 hover:bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base">▶</button>
                     </div>
                 </div>
-                <button onclick="showAddTaskModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium">
+                <button onclick="showAddTaskModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium text-sm sm:text-base w-full sm:w-auto">
                     + เพิ่มงานใหม่
                 </button>
             </div>
 
             <!-- Loading State -->
-            <div id="loading-state" class="excel-card p-8 text-center">
+            <div id="loading-state" class="excel-card p-6 sm:p-8 text-center">
                 <div class="loading-spinner mb-4"></div>
-                <p class="text-lg text-gray-600">กำลังโหลดปฏิทิน...</p>
+                <p class="text-base sm:text-lg text-gray-600">กำลังโหลดปฏิทิน...</p>
             </div>
 
             <!-- Calendar -->
@@ -120,6 +139,8 @@
     <!-- Toast Notifications -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm"></div>
 
+    <!-- Demo Data Generator -->
+    <script src="demo-data.js"></script>
     <!-- Shared API Manager -->
     <script src="shared-api.js"></script>
     <!-- Navigation Component -->

@@ -159,6 +159,8 @@
     <!-- Toast Notifications -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm"></div>
 
+    <!-- Demo Data Generator -->
+    <script src="demo-data.js"></script>
     <!-- Shared API Manager -->
     <script src="shared-api.js"></script>
     <!-- Navigation Component -->
@@ -270,34 +272,47 @@
         }
 
         // Account stats rendering
-        function renderAccountStats(userInfo) {
+        function renderAccountStats(stats) {
             const accountStatsContainer = document.getElementById('account-stats');
             if (!accountStatsContainer) return;
 
-            // Default stats if userInfo is not available
-            const stats = {
-                totalTasks: userInfo?.totalTasks || 0,
-                completedTasks: userInfo?.completedTasks || 0,
-                pendingTasks: userInfo?.pendingTasks || 0,
-                memberSince: userInfo?.created_at || new Date().toISOString()
+            // Use provided stats or defaults
+            const displayStats = {
+                totalTasks: stats?.totalTasks || 0,
+                completedTasks: stats?.completedTasks || 0,
+                pendingTasks: stats?.pendingTasks || 0,
+                memberSince: stats?.memberSince || new Date().toISOString()
             };
 
-            const memberDate = new Date(stats.memberSince).toLocaleDateString('th-TH');
+            // Calculate completion percentage
+            const completionRate = displayStats.totalTasks > 0 
+                ? Math.round((displayStats.completedTasks / displayStats.totalTasks) * 100) 
+                : 0;
+
+            const memberDate = new Date(displayStats.memberSince).toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
 
             accountStatsContainer.innerHTML = `
                 <div class="setting-card p-4 rounded-lg text-center">
-                    <div class="text-2xl font-bold text-blue-600">${stats.totalTasks}</div>
+                    <div class="text-2xl font-bold text-blue-600">${displayStats.totalTasks}</div>
                     <div class="text-sm text-gray-600">งานทั้งหมด</div>
                 </div>
                 <div class="setting-card p-4 rounded-lg text-center">
-                    <div class="text-2xl font-bold text-green-600">${stats.completedTasks}</div>
+                    <div class="text-2xl font-bold text-green-600">${displayStats.completedTasks}</div>
                     <div class="text-sm text-gray-600">งานเสร็จสิ้น</div>
                 </div>
                 <div class="setting-card p-4 rounded-lg text-center">
-                    <div class="text-2xl font-bold text-yellow-600">${stats.pendingTasks}</div>
+                    <div class="text-2xl font-bold text-yellow-600">${displayStats.pendingTasks}</div>
                     <div class="text-sm text-gray-600">งานรอดำเนินการ</div>
                 </div>
                 <div class="setting-card p-4 rounded-lg text-center">
+                    <div class="text-2xl font-bold text-purple-600">${completionRate}%</div>
+                    <div class="text-sm text-gray-600">อัตราสำเร็จ</div>
+                </div>
+                <div class="setting-card p-4 rounded-lg text-center col-span-full">
                     <div class="text-sm font-medium text-gray-800">สมาชิกตั้งแต่</div>
                     <div class="text-sm text-gray-600">${memberDate}</div>
                 </div>
@@ -471,30 +486,73 @@
             isLoading = true;
             try {
                 showLoading();
+                
+                // Check authentication
                 const token = localStorage.getItem('token');
                 if (!token) {
                     window.location.href = 'index.html';
                     return;
                 }
+                
+                // Use cached settings if available and not forcing refresh
                 if (!force && lastSettings) {
                     applySettings();
                     showContent();
                     return;
                 }
-                // Load stored settings
+                
+                // Load stored settings from localStorage
                 loadStoredSettings();
                 
-                // Load user info for stats
-                const userInfo = await window.dataManager.loadUserInfo();
-                renderAccountStats(userInfo);
+                // Show data source indicator
+                const dataSource = window.dataManager.getDataSource();
+                console.log(`Loading settings from: ${dataSource}`);
+                
+                // Load user info and stats for the account section
+                try {
+                    const userInfo = await window.dataManager.loadUserInfo(force);
+                    const tasks = await window.dataManager.loadTasks(force);
+                    
+                    // Calculate real stats from tasks
+                    const stats = {
+                        totalTasks: tasks.length,
+                        completedTasks: tasks.filter(task => task.status === 'completed').length,
+                        pendingTasks: tasks.filter(task => task.status === 'pending').length,
+                        inProgressTasks: tasks.filter(task => task.status === 'in-progress').length,
+                        memberSince: userInfo?.user?.created_at || userInfo?.created_at || localStorage.getItem('userCreatedAt') || new Date().toISOString()
+                    };
+                    
+                    renderAccountStats(stats);
+                    
+                    // Show data source notification
+                    if (dataSource === 'Demo') {
+                        showToast('กำลังใช้ข้อมูลตัวอย่าง (API ไม่สามารถเชื่อมต่อได้)', 'warning');
+                    } else {
+                        showToast('โหลดข้อมูลจาก API เรียบร้อย', 'success');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error loading user data:', error);
+                    
+                    // Use fallback stats
+                    const fallbackStats = {
+                        totalTasks: 0,
+                        completedTasks: 0,
+                        pendingTasks: 0,
+                        inProgressTasks: 0,
+                        memberSince: localStorage.getItem('userCreatedAt') || new Date().toISOString()
+                    };
+                    
+                    renderAccountStats(fallbackStats);
+                    showToast('ใช้ข้อมูลที่บันทึกไว้ในเครื่อง', 'info');
+                }
                 
                 lastSettings = settings;
                 applySettings();
                 showContent();
-                showToast('โหลดการตั้งค่าเสร็จสิ้น', 'success');
-
+                
             } catch (error) {
-                console.error('Settings loading error:', error);
+                console.error('Fatal error loading settings:', error);
                 showError();
                 showToast('เกิดข้อผิดพลาดในการโหลดการตั้งค่า: ' + error.message, 'error');
             } finally {

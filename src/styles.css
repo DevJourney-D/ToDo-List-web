@@ -21,20 +21,20 @@
 @layer components {
   /* Button Styles */
   .btn-primary {
-    @apply bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105;
+    @apply bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium px-3 py-2 sm:px-4 sm:py-2 md:px-6 md:py-3 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 text-sm sm:text-base;
   }
   
   .btn-secondary {
-    @apply bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-4 py-2 rounded-lg transition-all duration-200;
+    @apply bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-3 py-2 sm:px-4 sm:py-2 md:px-6 md:py-3 rounded-lg transition-all duration-200 text-sm sm:text-base;
   }
   
   .btn-danger {
-    @apply bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg;
+    @apply bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium px-3 py-2 sm:px-4 sm:py-2 md:px-6 md:py-3 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg text-sm sm:text-base;
   }
   
   /* Card Styles */
   .task-card {
-    @apply bg-white rounded-xl shadow-card hover:shadow-card-hover transition-all duration-300 border border-gray-100 hover:border-gray-200;
+    @apply bg-white rounded-lg sm:rounded-xl shadow-card hover:shadow-card-hover transition-all duration-300 border border-gray-100 hover:border-gray-200 p-3 sm:p-4 md:p-6;
   }
   
   .task-card.completed {
@@ -47,37 +47,37 @@
   
   /* Priority Styles */
   .priority-low {
-    @apply border-l-4 border-l-green-400;
+    @apply border-l-2 sm:border-l-4 border-l-green-400;
   }
   
   .priority-medium {
-    @apply border-l-4 border-l-yellow-400;
+    @apply border-l-2 sm:border-l-4 border-l-yellow-400;
   }
   
   .priority-high {
-    @apply border-l-4 border-l-red-400;
+    @apply border-l-2 sm:border-l-4 border-l-red-400;
   }
   
   /* Status Styles */
   .status-pending {
-    @apply text-orange-600 bg-orange-100 px-2 py-1 rounded-full text-xs;
+    @apply text-orange-600 bg-orange-100 px-2 py-1 rounded-full text-xs sm:text-sm;
   }
   
   .status-in-progress {
-    @apply text-blue-600 bg-blue-100 px-2 py-1 rounded-full text-xs;
+    @apply text-blue-600 bg-blue-100 px-2 py-1 rounded-full text-xs sm:text-sm;
   }
   
   .status-completed {
-    @apply text-green-600 bg-green-100 px-2 py-1 rounded-full text-xs;
+    @apply text-green-600 bg-green-100 px-2 py-1 rounded-full text-xs sm:text-sm;
   }
   
   .status-cancelled {
-    @apply text-red-600 bg-red-100 px-2 py-1 rounded-full text-xs;
+    @apply text-red-600 bg-red-100 px-2 py-1 rounded-full text-xs sm:text-sm;
   }
   
   /* Filter Tab Styles */
   .filter-tab {
-    @apply px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border;
+    @apply px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 border;
   }
   
   .filter-tab:not(.active) {
@@ -94,16 +94,16 @@
   }
   
   .modal-content {
-    @apply bg-white shadow-2xl;
+    @apply bg-white shadow-2xl rounded-lg sm:rounded-xl mx-4 sm:mx-auto max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-4xl;
   }
   
   /* Badge Styles */
   .category-badge {
-    @apply text-xs px-2 py-1 rounded-full font-medium;
+    @apply text-xs sm:text-sm px-2 py-1 rounded-full font-medium;
   }
   
   .recurring-badge {
-    @apply text-xs px-2 py-1 rounded-full font-medium;
+    @apply text-xs sm:text-sm px-2 py-1 rounded-full font-medium;
   }
   
   /* Loading Animation */
@@ -113,12 +113,29 @@
   
   /* Checkbox Styles */
   .task-checkbox {
-    @apply w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2;
+    @apply w-4 h-4 sm:w-5 sm:h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2;
   }
   
   /* Empty State */
   .empty-state {
-    @apply bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300;
+    @apply bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 p-6 sm:p-8 md:p-12 rounded-lg sm:rounded-xl;
+  }
+  
+  /* Navigation Styles */
+  .nav-responsive {
+    @apply px-3 py-2 sm:px-4 sm:py-2 text-sm sm:text-base font-medium transition-all duration-200;
+  }
+  
+  .nav-brand-responsive {
+    @apply text-lg sm:text-xl md:text-2xl font-bold;
+  }
+  
+  .nav-container-responsive {
+    @apply px-4 py-3 sm:px-6 sm:py-4 border-b;
+  }
+  
+  .mobile-nav-item {
+    @apply block w-full text-left px-4 py-3 text-sm sm:text-base hover:bg-gray-50 transition-colors duration-200;
   }
 }
 
@@ -139,6 +156,54 @@
   /* Text Gradients */
   .text-gradient {
     @apply bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent;
+  }
+  
+  /* Responsive Text Sizes */
+  .text-responsive-xs {
+    @apply text-xs sm:text-sm;
+  }
+  
+  .text-responsive-sm {
+    @apply text-sm sm:text-base;
+  }
+  
+  .text-responsive-base {
+    @apply text-base sm:text-lg;
+  }
+  
+  .text-responsive-lg {
+    @apply text-lg sm:text-xl md:text-2xl;
+  }
+  
+  .text-responsive-xl {
+    @apply text-xl sm:text-2xl md:text-3xl lg:text-4xl;
+  }
+  
+  /* Responsive Spacing */
+  .spacing-responsive-sm {
+    @apply p-3 sm:p-4 md:p-6;
+  }
+  
+  .spacing-responsive-md {
+    @apply p-4 sm:p-6 md:p-8;
+  }
+  
+  .spacing-responsive-lg {
+    @apply p-6 sm:p-8 md:p-12;
+  }
+  
+  /* Container Responsive */
+  .container-responsive {
+    @apply w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-4xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  /* Grid Responsive */
+  .grid-responsive {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6;
+  }
+  
+  .grid-responsive-2 {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6;
   }
   
   /* Scrollbar Styles */
@@ -212,5 +277,19 @@
   top: 1rem;
   right: 1rem;
   z-index: 9999;
-  max-width: 24rem;
+  max-width: 20rem;
+}
+
+@media (min-width: 640px) {
+  #toast-container {
+    max-width: 24rem;
+  }
+}
+
+@media (min-width: 768px) {
+  #toast-container {
+    top: 1.5rem;
+    right: 1.5rem;
+    max-width: 28rem;
+  }
 }

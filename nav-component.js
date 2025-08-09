@@ -265,15 +265,15 @@ const NAV_STYLES = `
     /* Desktop and Tablet responsive */
     @media (max-width: 1024px) {
         .nav-container .container {
-            padding: 1rem;
+            padding: 0.75rem 1rem;
         }
         
         .nav-menu {
-            gap: 0.5rem;
+            gap: 0.375rem;
         }
 
         .nav-link {
-            padding: 8px 14px;
+            padding: 6px 12px;
             font-size: 0.875rem;
         }
     }
@@ -296,15 +296,16 @@ const NAV_STYLES = `
 
         .nav-container .container {
             position: relative;
+            padding: 0.75rem 1rem;
         }
 
         .nav-brand {
             font-size: 1.25rem;
-            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            text-shadow: 0 2px 4px rgba(220, 38, 38, 0.1);
+            text-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
         }
 
         .nav-container {
@@ -316,33 +317,33 @@ const NAV_STYLES = `
     
     @media (max-width: 480px) {
         .nav-container .container {
-            padding: 1rem;
+            padding: 0.75rem;
         }
         
         .nav-brand {
             font-size: 1.125rem;
-            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
 
         .mobile-menu-content {
-            padding: 1rem;
+            padding: 0.75rem;
         }
 
         .mobile-nav-link {
-            padding: 12px 16px;
+            padding: 10px 14px;
             font-size: 0.875rem;
         }
 
         .mobile-menu-button {
-            font-size: 1.125rem;
+            font-size: 1rem;
             padding: 8px;
         }
 
         .mobile-user-section {
-            padding: 0.75rem 1rem;
+            padding: 0.75rem;
             margin-bottom: 0.5rem;
         }
     }
@@ -373,13 +374,13 @@ function generateNavigation(currentPage = '', isLoggedIn = false, username = '')
     
     const menuHtml = menuItems.map(item => {
         const isActive = item.id === pageId ? 'active' : '';
-        return `<a href="${item.href}" class="nav-link ${isActive}">${item.label}</a>`;
+        return `<a href="${item.href}" class="nav-link nav-responsive ${isActive}">${item.label}</a>`;
     }).join('');
 
     // Mobile menu HTML
     const mobileMenuHtml = menuItems.map(item => {
         const isActive = item.id === pageId ? 'active' : '';
-        return `<a href="${item.href}" class="mobile-nav-link ${isActive}" onclick="closeMobileMenu()">${item.label}</a>`;
+        return `<a href="${item.href}" class="mobile-nav-link mobile-nav-item ${isActive}" onclick="closeMobileMenu()">${item.label}</a>`;
     }).join('');
     
     const rightSideHtml = isLoggedIn ? 
@@ -398,23 +399,23 @@ function generateNavigation(currentPage = '', isLoggedIn = false, username = '')
     
     return `
         <nav class="nav-container">
-            <div class="container mx-auto flex justify-between items-center px-4 py-3">
-                <div class="flex items-center space-x-8">
-                    <a href="${isLoggedIn ? 'dashboard.html' : 'index.html'}" class="nav-brand">
+            <div class="container mx-auto flex justify-between items-center nav-container-responsive">
+                <div class="flex items-center space-x-4 sm:space-x-8">
+                    <a href="${isLoggedIn ? 'dashboard.html' : 'index.html'}" class="nav-brand nav-brand-responsive">
                         ToDo List
                     </a>
                     <div class="nav-menu">
                         ${menuHtml}
                     </div>
                 </div>
-                <div class="flex items-center space-x-4">
+                <div class="hidden md:flex items-center space-x-2 sm:space-x-4">
                     ${rightSideHtml}
                 </div>
-                <button class="mobile-menu-button" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+                <button class="mobile-menu-button md:hidden" onclick="toggleMobileMenu()" aria-label="Toggle menu">
                     <span id="mobile-menu-icon" style="transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);">☰</span>
                 </button>
             </div>
-            <div id="mobile-menu" class="mobile-menu">
+            <div id="mobile-menu" class="mobile-menu md:hidden">
                 <div class="mobile-menu-content">
                     ${mobileRightSideHtml}
                 </div>

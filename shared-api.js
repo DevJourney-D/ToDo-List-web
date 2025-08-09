@@ -302,6 +302,57 @@ class DataManager {
         this.lastUserLoad = 0;
         this.lastTasksLoad = 0;
         this.loadPromises = new Map();
+        this.useRealAPI = true; // Flag to control API vs demo data
+        this.connectionTested = false;
+    }
+
+    // Test connection and set API mode
+    async testConnection() {
+        if (this.connectionTested) {
+            return this.useRealAPI;
+        }
+
+        try {
+            // Test if we have a valid token first
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.log('No authentication token found, using demo data');
+                this.useRealAPI = false;
+                this.connectionTested = true;
+                return false;
+            }
+
+            // Test API connection
+            const isConnected = await this.api.testConnection();
+            if (isConnected) {
+                // Try to make an authenticated request to verify the token works
+                try {
+                    await this.api.apiCall('/user/info');
+                    this.useRealAPI = true;
+                    console.log('API connection successful, using real data');
+                } catch (error) {
+                    console.log('API authentication failed, using demo data:', error.message);
+                    this.useRealAPI = false;
+                }
+            } else {
+                console.log('API server is not reachable, using demo data');
+                this.useRealAPI = false;
+            }
+        } catch (error) {
+            console.log('Error testing API connection, using demo data:', error.message);
+            this.useRealAPI = false;
+        }
+
+        this.connectionTested = true;
+        return this.useRealAPI;
+    }
+
+    // Get demo data if available
+    getDemoData() {
+        if (typeof window !== 'undefined' && window.demoDataGenerator) {
+            return window.demoDataGenerator;
+        }
+        return null;
     }
 
     // Load user info with caching
@@ -310,25 +361,51 @@ class DataManager {
             return this.userData;
         }
 
-        // Prevent duplicate calls
-        if (this.loadPromises.has('userInfo')) {
-            return this.loadPromises.get('userInfo');
-        }
+        // Test connection first
+        const useAPI = await this.testConnection();
 
-        const promise = this.api.apiCall('/user/info')
-            .then(data => {
-                this.userData = data;
+        if (useAPI) {
+            // Use real API
+            if (this.loadPromises.has('userInfo')) {
+                return this.loadPromises.get('userInfo');
+            }
+
+            const promise = this.api.apiCall('/user/info')
+                .then(data => {
+                    this.userData = data;
+                    this.lastUserLoad = Date.now();
+                    this.loadPromises.delete('userInfo');
+                    return data;
+                })
+                .catch(error => {
+                    this.loadPromises.delete('userInfo');
+                    console.error('Failed to load user info from API:', error);
+                    // Fallback to demo data
+                    const demoData = this.getDemoData();
+                    if (demoData) {
+                        const userData = demoData.generateUserData();
+                        this.userData = userData;
+                        this.lastUserLoad = Date.now();
+                        return userData;
+                    }
+                    throw error;
+                });
+
+            this.loadPromises.set('userInfo', promise);
+            return promise;
+        } else {
+            // Use demo data
+            const demoData = this.getDemoData();
+            if (demoData) {
+                const userData = demoData.generateUserData();
+                this.userData = userData;
                 this.lastUserLoad = Date.now();
-                this.loadPromises.delete('userInfo');
-                return data;
-            })
-            .catch(error => {
-                this.loadPromises.delete('userInfo');
-                throw error;
-            });
-
-        this.loadPromises.set('userInfo', promise);
-        return promise;
+                return userData;
+            } else {
+                console.error('No demo data available and API is not accessible');
+                throw new Error('ไม่สามารถโหลดข้อมูลผู้ใช้ได้');
+            }
+        }
     }
 
     // Load tasks with caching and pagination support
@@ -339,29 +416,59 @@ class DataManager {
             return this.tasksData;
         }
 
-        // Prevent duplicate calls
-        if (this.loadPromises.has(cacheKey)) {
-            return this.loadPromises.get(cacheKey);
-        }
+        // Test connection first
+        const useAPI = await this.testConnection();
 
-        const promise = this.api.apiCall(`/tasks?page=${page}&pageSize=${pageSize}`)
-            .then(data => {
-                const result = data.tasks || data || [];
-                // Only cache the first page with default page size for backward compatibility
+        if (useAPI) {
+            // Use real API
+            if (this.loadPromises.has(cacheKey)) {
+                return this.loadPromises.get(cacheKey);
+            }
+
+            const promise = this.api.apiCall(`/tasks?page=${page}&pageSize=${pageSize}`)
+                .then(data => {
+                    const result = data.tasks || data || [];
+                    // Only cache the first page with default page size for backward compatibility
+                    if (page === 1 && pageSize === 100) {
+                        this.tasksData = result;
+                        this.lastTasksLoad = Date.now();
+                    }
+                    this.loadPromises.delete(cacheKey);
+                    return result;
+                })
+                .catch(error => {
+                    this.loadPromises.delete(cacheKey);
+                    console.error('Failed to load tasks from API:', error);
+                    // Fallback to demo data
+                    const demoData = this.getDemoData();
+                    if (demoData) {
+                        const tasksData = demoData.generateSampleTasks();
+                        if (page === 1 && pageSize === 100) {
+                            this.tasksData = tasksData;
+                            this.lastTasksLoad = Date.now();
+                        }
+                        return tasksData;
+                    }
+                    throw error;
+                });
+
+            this.loadPromises.set(cacheKey, promise);
+            return promise;
+        } else {
+            // Use demo data
+            const demoData = this.getDemoData();
+            if (demoData) {
+                const tasksData = demoData.generateSampleTasks();
                 if (page === 1 && pageSize === 100) {
-                    this.tasksData = result;
+                    this.tasksData = tasksData;
                     this.lastTasksLoad = Date.now();
                 }
-                this.loadPromises.delete(cacheKey);
-                return result;
-            })
-            .catch(error => {
-                this.loadPromises.delete(cacheKey);
-                throw error;
-            });
-
-        this.loadPromises.set(cacheKey, promise);
-        return promise;
+                return tasksData;
+            } else {
+                console.error('No demo data available and API is not accessible');
+                throw new Error('ไม่สามารถโหลดข้อมูลงานได้');
+            }
+        }
     }
 
     // Load analytics data
@@ -370,25 +477,208 @@ class DataManager {
             return this.loadPromises.get('analytics');
         }
 
-        const promise = this.api.batchCall([
-            { endpoint: '/analytics/overview' },
-            { endpoint: '/analytics/tasks' },
-            { endpoint: '/analytics/habits' }
-        ]).then(results => {
-            this.analyticsData = {
-                overview: results[0].error ? null : results[0],
-                tasks: results[1].error ? null : results[1],
-                habits: results[2].error ? null : results[2]
-            };
-            this.loadPromises.delete('analytics');
-            return this.analyticsData;
-        }).catch(error => {
-            this.loadPromises.delete('analytics');
-            throw error;
-        });
+        // Test connection first
+        const useAPI = await this.testConnection();
 
-        this.loadPromises.set('analytics', promise);
-        return promise;
+        if (useAPI) {
+            // Use real API
+            const promise = this.api.batchCall([
+                { endpoint: '/analytics/overview' },
+                { endpoint: '/analytics/tasks' },
+                { endpoint: '/analytics/habits' }
+            ]).then(results => {
+                this.analyticsData = {
+                    overview: results[0].error ? null : results[0],
+                    tasks: results[1].error ? null : results[1],
+                    habits: results[2].error ? null : results[2]
+                };
+                this.loadPromises.delete('analytics');
+                return this.analyticsData;
+            }).catch(error => {
+                this.loadPromises.delete('analytics');
+                console.error('Failed to load analytics from API:', error);
+                // Fallback to demo data
+                return this.generateDemoAnalytics();
+            });
+
+            this.loadPromises.set('analytics', promise);
+            return promise;
+        } else {
+            // Use demo data
+            return this.generateDemoAnalytics();
+        }
+    }
+
+    // Load user activity logs
+    async loadUserLogs(forceRefresh = false) {
+        const cacheKey = 'userLogs';
+        
+        if (!forceRefresh && this.loadPromises.has(cacheKey)) {
+            return this.loadPromises.get(cacheKey);
+        }
+
+        // Test connection first
+        const useAPI = await this.testConnection();
+
+        if (useAPI) {
+            // Use real API
+            const promise = this.api.apiCall('/user/logs')
+                .then(data => {
+                    this.loadPromises.delete(cacheKey);
+                    return data.logs || data || [];
+                })
+                .catch(error => {
+                    this.loadPromises.delete(cacheKey);
+                    console.error('Failed to load user logs from API:', error);
+                    // Fallback to demo data
+                    return this.generateDemoLogs();
+                });
+
+            this.loadPromises.set(cacheKey, promise);
+            return promise;
+        } else {
+            // Use demo data
+            return this.generateDemoLogs();
+        }
+    }
+
+    // Load recent activity
+    async loadRecentActivity(forceRefresh = false) {
+        const cacheKey = 'recentActivity';
+        
+        if (!forceRefresh && this.loadPromises.has(cacheKey)) {
+            return this.loadPromises.get(cacheKey);
+        }
+
+        // Test connection first
+        const useAPI = await this.testConnection();
+
+        if (useAPI) {
+            // Use real API
+            const promise = this.api.apiCall('/dashboard/recent')
+                .then(data => {
+                    this.loadPromises.delete(cacheKey);
+                    return data.activities || data || [];
+                })
+                .catch(error => {
+                    this.loadPromises.delete(cacheKey);
+                    console.error('Failed to load recent activity from API:', error);
+                    // Fallback to demo data
+                    return this.generateDemoLogs();
+                });
+
+            this.loadPromises.set(cacheKey, promise);
+            return promise;
+        } else {
+            // Use demo data
+            return this.generateDemoLogs();
+        }
+    }
+
+    // Generate demo activity logs
+    generateDemoLogs() {
+        const demoData = this.getDemoData();
+        if (demoData && demoData.generateActivityLogs) {
+            return demoData.generateActivityLogs();
+        }
+
+        // Fallback demo data if demo-data.js is not available
+        const activities = [
+            {
+                id: 1,
+                description: 'เสร็จสิ้นงาน "ทำรายงานประจำเดือน"',
+                action: 'task_completed',
+                created_at: '2024-08-10T16:30:00.000Z'
+            },
+            {
+                id: 2,
+                description: 'เสร็จสิ้นงาน "ประชุมทีมพัฒนา"',
+                action: 'task_completed',
+                created_at: '2024-08-12T14:00:00.000Z'
+            },
+            {
+                id: 3,
+                description: 'เสร็จสิ้นงาน "ตรวจสอบอีเมล"',
+                action: 'task_completed',
+                created_at: '2024-08-10T09:15:00.000Z'
+            },
+            {
+                id: 4,
+                description: 'สร้างงานใหม่ "วางแผนโปรเจกต์ใหม่"',
+                action: 'task_created',
+                created_at: '2024-08-13T10:30:00.000Z'
+            },
+            {
+                id: 5,
+                description: 'เริ่มงาน "ออกแบบ UI/UX"',
+                action: 'task_started',
+                created_at: '2024-08-14T08:45:00.000Z'
+            },
+            {
+                id: 6,
+                description: 'อัปเดตงาน "เขียน API Documentation"',
+                action: 'task_updated',
+                created_at: '2024-08-15T13:20:00.000Z'
+            },
+            {
+                id: 7,
+                description: 'เสร็จสิ้นงาน "ทดสอบระบบ"',
+                action: 'task_completed',
+                created_at: '2024-08-09T17:45:00.000Z'
+            },
+            {
+                id: 8,
+                description: 'สร้างงานใหม่ "ปรับปรุงฐานข้อมูล"',
+                action: 'task_created',
+                created_at: '2024-08-11T11:15:00.000Z'
+            }
+        ];
+
+        // Sort by created_at descending (newest first)
+        return activities.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+
+    // Generate demo analytics data
+    async generateDemoAnalytics() {
+        const demoData = this.getDemoData();
+        if (!demoData) {
+            throw new Error('ไม่สามารถโหลดข้อมูลการวิเคราะห์ได้');
+        }
+
+        const tasks = demoData.generateSampleTasks();
+        const totalTasks = tasks.length;
+        const completedTasks = tasks.filter(task => task.status === 'completed').length;
+        const pendingTasks = tasks.filter(task => task.status === 'pending').length;
+        const inProgressTasks = tasks.filter(task => task.status === 'in-progress').length;
+
+        this.analyticsData = {
+            overview: {
+                total_tasks: totalTasks,
+                completed_tasks: completedTasks,
+                completion_rate: totalTasks > 0 ? (completedTasks / totalTasks * 100).toFixed(1) : 0,
+                active_tasks: pendingTasks + inProgressTasks
+            },
+            tasks: {
+                by_status: {
+                    completed: completedTasks,
+                    pending: pendingTasks,
+                    'in-progress': inProgressTasks
+                },
+                by_priority: {
+                    high: tasks.filter(task => task.priority === 3).length,
+                    medium: tasks.filter(task => task.priority === 2).length,
+                    low: tasks.filter(task => task.priority === 1).length
+                }
+            },
+            habits: {
+                total_habits: 0,
+                active_habits: 0,
+                completion_rate: 0
+            }
+        };
+
+        this.loadPromises.delete('analytics');
+        return this.analyticsData;
     }
 
     // Clear all cached data
@@ -400,6 +690,20 @@ class DataManager {
         this.lastTasksLoad = 0;
         this.loadPromises.clear();
         this.api.clearCache();
+        this.connectionTested = false; // Reset connection test
+        this.useRealAPI = true; // Reset to try real API first
+    }
+
+    // Force refresh connection status
+    async refreshConnection() {
+        this.connectionTested = false;
+        this.useRealAPI = true;
+        return await this.testConnection();
+    }
+
+    // Get current data source
+    getDataSource() {
+        return this.useRealAPI ? 'API' : 'Demo';
     }
 }
 
