@@ -94,6 +94,7 @@
         let analyticsData = null;
         let charts = {};
         let isLoading = false;
+        let lastTasks = null;
 
         // Utility functions
         function showToast(message, type = 'info') {
@@ -132,13 +133,11 @@
             document.getElementById('analytics-content').style.display = 'none';
             document.getElementById('error-state').style.display = 'none';
         }
-
         function showContent() {
             document.getElementById('loading-state').style.display = 'none';
             document.getElementById('analytics-content').style.display = 'block';
             document.getElementById('error-state').style.display = 'none';
         }
-
         function showError() {
             document.getElementById('loading-state').style.display = 'none';
             document.getElementById('analytics-content').style.display = 'none';
@@ -366,40 +365,51 @@
         }
 
         // Main analytics loading function
-        async function loadAnalytics() {
+        async function loadAnalytics(force = false) {
             if (isLoading) return;
             isLoading = true;
-
             try {
                 showLoading();
-
-                // Check authentication
                 const token = localStorage.getItem('token');
                 if (!token) {
                     window.location.href = 'index.html';
                     return;
                 }
-
-                // Load tasks data (we'll calculate analytics from this)
+                // ใช้ cache ถ้ามีและไม่ force
+                if (!force && lastTasks) {
+                    if (lastTasks.length === 0) {
+                        showContent();
+                        document.getElementById('analytics-content').innerHTML = `
+                            <div class="excel-card p-8 text-center">
+                                <div class="text-4xl mb-3">📭</div>
+                                <h3 class="text-lg font-medium text-gray-700 mb-2">ยังไม่มีข้อมูลวิเคราะห์</h3>
+                                <p class="text-gray-500">เริ่มต้นสร้างงานใหม่เพื่อดูสถิติ!</p>
+                                <a href="tasks.html" class="mt-4 inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">สร้างงานใหม่</a>
+                            </div>
+                        `;
+                        return;
+                    }
+                    renderAll(lastTasks);
+                    showContent();
+                    return;
+                }
                 const tasks = await window.dataManager.loadTasks();
-                
-                // Calculate analytics
-                analyticsData = calculateAnalytics(tasks);
-                
-                // Render components
-                renderKPICards(analyticsData);
-                createCompletionChart(analyticsData);
-                createPriorityChart(analyticsData);
-                
-                // Generate and render insights
-                const insights = generateInsights(analyticsData);
-                renderInsights(insights);
-                
+                lastTasks = tasks;
+                if (!tasks || tasks.length === 0) {
+                    showContent();
+                    document.getElementById('analytics-content').innerHTML = `
+                        <div class="excel-card p-8 text-center">
+                            <div class="text-4xl mb-3">📭</div>
+                            <h3 class="text-lg font-medium text-gray-700 mb-2">ยังไม่มีข้อมูลวิเคราะห์</h3>
+                            <p class="text-gray-500">เริ่มต้นสร้างงานใหม่เพื่อดูสถิติ!</p>
+                            <a href="tasks.html" class="mt-4 inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">สร้างงานใหม่</a>
+                        </div>
+                    `;
+                    return;
+                }
+                renderAll(tasks);
                 showContent();
-                showToast('โหลดข้อมูลวิเคราะห์เสร็จสิ้น', 'success');
-
             } catch (error) {
-                console.error('Analytics loading error:', error);
                 showError();
                 showToast('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + error.message, 'error');
             } finally {
@@ -407,17 +417,21 @@
             }
         }
 
-        // Initialize
+        function renderAll(tasks) {
+            const analytics = calculateAnalytics(tasks);
+            renderKPICards(analytics);
+            createCompletionChart(analytics);
+            createPriorityChart(analytics);
+            renderInsights(generateInsights(analytics));
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            // Wait for shared API and DateUtils to be ready
             if (window.apiManager && window.dataManager && window.dateUtils) {
                 loadAnalytics();
             } else {
-                setTimeout(loadAnalytics, 100);
+                setTimeout(() => loadAnalytics(), 100);
             }
         });
-
-        // Cleanup charts on page unload
         window.addEventListener('beforeunload', function() {
             Object.values(charts).forEach(chart => {
                 if (chart) chart.destroy();

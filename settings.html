@@ -177,6 +177,7 @@
             }
         };
         let isLoading = false;
+        let lastSettings = null;
 
         // Utility functions
         function showToast(message, type = 'info') {
@@ -228,105 +229,6 @@
             document.getElementById('error-state').style.display = 'block';
         }
 
-        // Load settings from localStorage
-        function loadStoredSettings() {
-            const stored = localStorage.getItem('app-settings');
-            if (stored) {
-                settings = { ...settings, ...JSON.parse(stored) };
-            }
-        }
-
-        // Save settings to localStorage
-        function saveStoredSettings() {
-            localStorage.setItem('app-settings', JSON.stringify(settings));
-        }
-
-        // Render account stats
-        function renderAccountStats(userInfo) {
-            const stats = userInfo.stats || {};
-            const container = document.getElementById('account-stats');
-            
-            container.innerHTML = `
-                <div class="setting-card p-4 rounded-lg text-center">
-                    <div class="text-2xl font-bold text-blue-600">${stats.total_tasks || 0}</div>
-                    <div class="text-sm text-gray-600">งานทั้งหมด</div>
-                </div>
-                <div class="setting-card p-4 rounded-lg text-center">
-                    <div class="text-2xl font-bold text-green-600">${stats.completed_tasks || 0}</div>
-                    <div class="text-sm text-gray-600">งานเสร็จแล้ว</div>
-                </div>
-                <div class="setting-card p-4 rounded-lg text-center">
-                    <div class="text-2xl font-bold text-yellow-600">${stats.pending_tasks || 0}</div>
-                    <div class="text-sm text-gray-600">งานค้างอยู่</div>
-                </div>
-                <div class="setting-card p-4 rounded-lg text-center">
-                    <div class="text-2xl font-bold text-purple-600">${userInfo.user?.created_at ? Math.floor((Date.now() - new Date(userInfo.user.created_at)) / (1000 * 60 * 60 * 24)) : 0}</div>
-                    <div class="text-sm text-gray-600">วันที่ใช้งาน</div>
-                </div>
-            `;
-        }
-
-        // Export data
-        async function exportData(type) {
-            try {
-                let data = {};
-                
-                if (type === 'tasks' || type === 'all') {
-                    const tasks = await window.dataManager.loadTasks();
-                    data.tasks = tasks;
-                }
-                
-                if (type === 'all') {
-                    const userInfo = await window.dataManager.loadUserInfo();
-                    data.user = userInfo;
-                    data.settings = settings;
-                }
-                
-                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `todolist-${type}-${new Date().toISOString().split('T')[0]}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-                
-                showToast('Export ข้อมูลสำเร็จ', 'success');
-            } catch (error) {
-                console.error('Export error:', error);
-                showToast('เกิดข้อผิดพลาดในการ Export', 'error');
-            }
-        }
-
-        // Import data
-        function importData() {
-            const fileInput = document.getElementById('import-file');
-            const file = fileInput.files[0];
-            
-            if (!file) {
-                showToast('กรุณาเลือกไฟล์', 'warning');
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    
-                    if (data.settings) {
-                        settings = { ...settings, ...data.settings };
-                        saveStoredSettings();
-                        applySettings();
-                    }
-                    
-                    showToast('Import ข้อมูลสำเร็จ', 'success');
-                } catch (error) {
-                    showToast('ไฟล์ไม่ถูกต้อง', 'error');
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        // Apply settings to UI
         function applySettings() {
             document.getElementById('task-notifications').checked = settings.notifications.taskReminders;
             document.getElementById('daily-summary').checked = settings.notifications.dailySummary;
@@ -334,7 +236,6 @@
             document.getElementById('language').value = settings.appearance.language;
         }
 
-        // Save settings
         function saveSettings() {
             settings.notifications.taskReminders = document.getElementById('task-notifications').checked;
             settings.notifications.dailySummary = document.getElementById('daily-summary').checked;
@@ -345,38 +246,21 @@
             showToast('บันทึกการตั้งค่าเรียบร้อย', 'success');
         }
 
-        // Clear all data
-        function clearAllData() {
-            if (confirm('คุณแน่ใจหรือไม่ที่จะลบข้อมูลทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้')) {
-                localStorage.clear();
-                window.dataManager.clearCache();
-                showToast('ลบข้อมูลทั้งหมดเรียบร้อย', 'success');
-                setTimeout(() => window.location.href = 'index.html', 1000);
-            }
-        }
-
-        // Delete account
-        function deleteAccount() {
-            if (confirm('คุณแน่ใจหรือไม่ที่จะลบบัญชี? การกระทำนี้ไม่สามารถย้อนกลับได้')) {
-                showToast('การลบบัญชีต้องติดต่อผู้ดูแลระบบ', 'warning');
-            }
-        }
-
-        // Load settings
-        async function loadSettings() {
+        async function loadSettings(force = false) {
             if (isLoading) return;
             isLoading = true;
-            
             try {
                 showLoading();
-                
-                // Check authentication
                 const token = localStorage.getItem('token');
                 if (!token) {
                     window.location.href = 'index.html';
                     return;
                 }
-
+                if (!force && lastSettings) {
+                    applySettings();
+                    showContent();
+                    return;
+                }
                 // Load stored settings
                 loadStoredSettings();
                 
@@ -384,9 +268,8 @@
                 const userInfo = await window.dataManager.loadUserInfo();
                 renderAccountStats(userInfo);
                 
-                // Apply settings to UI
+                lastSettings = settings;
                 applySettings();
-                
                 showContent();
                 showToast('โหลดการตั้งค่าเสร็จสิ้น', 'success');
 
@@ -405,13 +288,7 @@
             if (window.apiManager && window.dataManager && window.dateUtils) {
                 loadSettings();
             } else {
-                setTimeout(function() {
-                    if (window.apiManager && window.dataManager && window.dateUtils) {
-                        loadSettings();
-                    } else {
-                        setTimeout(arguments.callee, 100);
-                    }
-                }, 100);
+                setTimeout(() => loadSettings(), 100);
             }
         });
     </script>

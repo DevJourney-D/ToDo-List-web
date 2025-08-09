@@ -112,7 +112,7 @@
         }
 
         // Render dashboard with optimized data loading
-        function renderDashboard(userInfo, tasks, summary) {
+        function renderDashboard(userInfo, tasks, summary, isEmpty = false) {
             const content = document.getElementById('dashboard-content');
             
             // Calculate stats
@@ -133,6 +133,24 @@
                 return window.dateUtils.isOverdue(task.due_date);
             });
 
+            // Pagination config for today's tasks
+            const pageSize = 5;
+            let currentPage = window.todayTasksPage || 1;
+            const totalPages = Math.ceil(todayTasks.length / pageSize);
+            const paginatedTodayTasks = todayTasks.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+            
+            if (isEmpty) {
+                content.innerHTML = `
+                    <div class="excel-card p-8 text-center">
+                        <div class="text-4xl mb-3">📭</div>
+                        <h3 class="text-lg font-medium text-gray-700 mb-2">ยังไม่มีข้อมูลงาน</h3>
+                        <p class="text-gray-500">เริ่มต้นสร้างงานใหม่ได้เลย!</p>
+                        <a href="tasks.html" class="mt-4 inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">สร้างงานใหม่</a>
+                    </div>
+                `;
+                return;
+            }
+            
             content.innerHTML = `
                 <!-- Header -->
                 <div class="excel-card p-6 mb-6">
@@ -190,12 +208,12 @@
                     ${todayTasks.length === 0 ? 
                         '<div class="text-center text-gray-500 py-12 border-2 border-dashed border-gray-200 rounded-lg"><div class="text-4xl mb-3">🎉</div><h3 class="text-lg font-medium text-gray-700 mb-2">ยอดเยี่ยม!</h3><p class="text-gray-500">ไม่มีงานที่ต้องทำวันนี้</p></div>' :
                         `<div class="space-y-3">
-                            ${todayTasks.map((task, index) => `
+                            ${paginatedTodayTasks.map((task, index) => `
                                 <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center space-x-4">
                                             <div class="flex items-center space-x-3">
-                                                <span class="text-gray-400 font-mono text-sm">${String(index + 1).padStart(2, '0')}</span>
+                                                <span class="text-gray-400 font-mono text-sm">${String((currentPage - 1) * pageSize + index + 1).padStart(2, '0')}</span>
                                                 <input type="checkbox" ${task.is_completed ? 'checked' : ''} 
                                                        onchange="toggleTask('${task.id}', this.checked)"
                                                        class="w-5 h-5 text-blue-600 rounded">
@@ -218,6 +236,11 @@
                                     </div>
                                 </div>
                             `).join('')}
+                        </div>
+                        <div class="flex justify-center items-center gap-2 mt-4">
+                            <button class="px-3 py-1 rounded bg-gray-200 text-gray-700 font-medium" ${currentPage === 1 ? 'disabled' : ''} onclick="window.todayTasksPage=${currentPage - 1};document.querySelector('#dashboard-content').scrollIntoView({behavior:'smooth'});setTimeout(()=>{window.lastTasks=tasks;window.currentUser=userInfo;renderDashboard(userInfo, tasks, summary)},100)">&lt; ก่อนหน้า</button>
+                            <span class="px-2">หน้า ${currentPage} / ${totalPages}</span>
+                            <button class="px-3 py-1 rounded bg-gray-200 text-gray-700 font-medium" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''} onclick="window.todayTasksPage=${currentPage + 1};document.querySelector('#dashboard-content').scrollIntoView({behavior:'smooth'});setTimeout(()=>{window.lastTasks=tasks;window.currentUser=userInfo;renderDashboard(userInfo, tasks, summary)},100)">ถัดไป &gt;</button>
                         </div>`
                     }
                     
@@ -292,34 +315,33 @@
         async function loadDashboard() {
             if (isLoading) return;
             isLoading = true;
-            
             try {
                 showLoading();
-                
-                // Check authentication
                 const token = localStorage.getItem('token');
                 if (!token) {
                     window.location.href = 'index.html';
                     return;
                 }
-
-                // Test connection first
                 const isConnected = await window.apiManager.testConnection();
                 if (!isConnected) {
                     throw new Error('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
                 }
-
                 // Load data using shared data manager
                 const [userInfo, tasks] = await Promise.all([
                     window.dataManager.loadUserInfo(),
                     window.dataManager.loadTasks()
                 ]);
-
+                // ถ้า tasks ไม่มีหรือเป็น array ว่าง ให้แสดง empty state
+                if (!tasks || tasks.length === 0) {
+                    renderDashboard(userInfo, [], null, true);
+                    showContent();
+                    showToast('ยังไม่มีข้อมูลงาน', 'info');
+                    return;
+                }
                 // Render dashboard
                 renderDashboard(userInfo, tasks, null);
                 showContent();
                 showToast('โหลด Dashboard เสร็จสิ้น', 'success');
-
             } catch (error) {
                 console.error('Dashboard loading error:', error);
                 showError();
