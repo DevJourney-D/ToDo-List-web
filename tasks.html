@@ -248,8 +248,6 @@
     <!-- Toast Notifications -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm"></div>
 
-    <!-- Demo Data Generator -->
-    <script src="demo-data.js"></script>
     <!-- Shared API Manager -->
     <script src="shared-api.js"></script>
     <!-- Navigation Component -->
@@ -971,11 +969,8 @@
                     return;
                 }
                 
-                // Show data source indicator
-                const dataSource = window.dataManager.getDataSource();
-                console.log(`Loading tasks from: ${dataSource}`);
-                
-                // Load tasks from API or demo data
+                // Load tasks from API
+                console.log('Loading tasks from API');
                 const tasks = await window.dataManager.loadTasks(force);
                 lastTasks = tasks;
                 allTasks = tasks;
@@ -984,21 +979,12 @@
                 // Apply filters and render
                 applyFilters();
                 
-                // Show success notification with data source info
+                // Show success notification
                 if (loadingToast) {
                     window.toastNotification.removeToast(loadingToast);
                 }
                 
-                const dataSourceText = dataSource === 'Demo' ? 'ข้อมูลตัวอย่าง' : 'API';
-                showToast(`โหลด${dataSourceText}เรียบร้อย (${tasks.length} รายการ)`, 
-                          dataSource === 'Demo' ? 'warning' : 'success', 3000);
-                
-                // Show additional warning for demo data
-                if (dataSource === 'Demo') {
-                    setTimeout(() => {
-                        showToast('กำลังใช้ข้อมูลตัวอย่าง - API ไม่สามารถเชื่อมต่อได้', 'info', 5000);
-                    }, 1000);
-                }
+                showToast(`โหลดข้อมูลเรียบร้อย (${tasks.length} รายการ)`, 'success', 3000);
                 
             } catch (error) {
                 console.error('Fatal error loading tasks:', error);

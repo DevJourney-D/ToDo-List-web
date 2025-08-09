@@ -568,16 +568,29 @@ async function loadUserInfo() {
 
 // Logout function (shared across all pages)
 async function logout() {
-    const confirmed = await window.confirmDialog.confirm(
-        'คุณต้องการออกจากระบบหรือไม่? การออกจากระบบจะทำให้คุณต้องเข้าสู่ระบบใหม่',
-        'ออกจากระบบ?'
-    );
+    // Use native confirm if custom confirmDialog is not available
+    let confirmed = false;
+    
+    if (window.confirmDialog && window.confirmDialog.confirm) {
+        confirmed = await window.confirmDialog.confirm(
+            'คุณต้องการออกจากระบบหรือไม่? การออกจากระบบจะทำให้คุณต้องเข้าสู่ระบบใหม่',
+            'ออกจากระบบ?'
+        );
+    } else {
+        confirmed = confirm('คุณต้องการออกจากระบบหรือไม่?');
+    }
     
     if (!confirmed) return;
     
     // Perform logout
     localStorage.removeItem('token');
     localStorage.removeItem('username');
+    localStorage.removeItem('userCreatedAt');
+    
+    // Clear any cached data
+    if (window.dataManager && window.dataManager.clearCache) {
+        window.dataManager.clearCache();
+    }
     
     showToast && showToast('ออกจากระบบเรียบร้อย', 'success');
     
