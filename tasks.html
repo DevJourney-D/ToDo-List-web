@@ -4,22 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>งาน - ToDo List</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.o            // Add priority badge styles
-            if (!document.getElementById('priority-styles')) {
-                const style = document.createElement('style');
-                style.id = 'priority-styles';
-                style.textContent = `
-                    .priority-badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; font-weight: 500; }
-                    .priority-high { background: #fee2e2; color: #dc2626; }
-                    .priority-medium { background: #fef3c7; color: #d97706; }
-                    .priority-low { background: #d1fae5; color: #059669; }
-                `;
-                document.head.appendChild(style);
-            }
-            
-            updateTaskSummary();
-            updatePagination();
-        }ox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍅</text></svg>">
+     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍅</text></svg>">
     <link href="./dist/styles.css" rel="stylesheet">
     <style>
         .excel-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
