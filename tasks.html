@@ -187,7 +187,8 @@
             document.getElementById('add-task-modal').style.display = 'none';
             document.getElementById('add-task-form').reset();
         }
-        // ...existing code...
+
+        // Render tasks
         function renderTasks() {
             const container = document.getElementById('tasks-container');
             if (!filteredTasks || filteredTasks.length === 0) {
