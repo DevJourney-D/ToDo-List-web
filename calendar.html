@@ -1,890 +1,421 @@
 <!DOCTYPE html>
 <html lang="th">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calendar - ToDo List</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍅</text></svg>">
     <link href="./dist/styles.css" rel="stylesheet">
     <style>
-      .excel-bg {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-      }
-      .excel-card {
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-      }
-      .fade-in {
-        animation: fadeIn 0.6s ease-out;
-      }
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(30px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      .loading-spinner {
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #3498db;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        animation: spin 1s linear infinite;
-        margin: 0 auto;
-      }
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      .calendar-day {
-        border: 1px solid #e5e7eb;
-        padding: 12px;
-        min-height: 120px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        position: relative;
-        background: linear-gradient(145deg, #ffffff, #f8fafc);
-      }
-      .calendar-day:hover {
-        background: linear-gradient(145deg, #f1f5f9, #e2e8f0);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      }
-      .calendar-day.today {
-        background: linear-gradient(145deg, #dbeafe, #bfdbfe);
-        border-color: #3b82f6;
-        font-weight: bold;
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
-      }
-      .calendar-day.other-month {
-        opacity: 0.4;
-        background: #f8fafc;
-      }
-      .calendar-day.selected {
-        background: linear-gradient(145deg, #fef3c7, #fbbf24);
-        border-color: #f59e0b;
-        box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.4);
-      }
-      .task-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        margin: 2px;
-        display: inline-block;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        animation: pulse 2s infinite;
-      }
-      .task-dot.high {
-        background: linear-gradient(45deg, #ef4444, #dc2626);
-      }
-      .task-dot.medium {
-        background: linear-gradient(45deg, #f59e0b, #d97706);
-      }
-      .task-dot.low {
-        background: linear-gradient(45deg, #10b981, #059669);
-      }
-      @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.7; }
-      }
-      .calendar-header {
-        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-        border-bottom: 1px solid #cbd5e1;
-      }
-      .nav-button {
-        background: linear-gradient(145deg, #6366f1, #4f46e5);
-        border: none;
-        color: white;
-        padding: 12px 20px;
-        border-radius: 12px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
-      }
-      .nav-button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
-        background: linear-gradient(145deg, #4f46e5, #4338ca);
-      }
-      .add-task-btn {
-        background: linear-gradient(145deg, #059669, #047857);
-        border: none;
-        color: white;
-        padding: 14px 28px;
-        border-radius: 12px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(5, 150, 105, 0.4);
-      }
-      .add-task-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(5, 150, 105, 0.6);
-        background: linear-gradient(145deg, #047857, #065f46);
-      }
-      .task-card {
-        background: linear-gradient(145deg, #f8fafc, #f1f5f9);
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 16px;
-        transition: all 0.3s ease;
-        margin-bottom: 8px;
-      }
-      .task-card:hover {
-        transform: translateX(4px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        border-color: #cbd5e1;
-      }
-      .priority-badge {
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
-      .priority-high {
-        background: linear-gradient(45deg, #fee2e2, #fecaca);
-        color: #dc2626;
-        border: 1px solid #fca5a5;
-      }
-      .priority-medium {
-        background: linear-gradient(45deg, #fef3c7, #fde68a);
-        color: #d97706;
-        border: 1px solid #fbbf24;
-      }
-      .priority-low {
-        background: linear-gradient(45deg, #d1fae5, #a7f3d0);
-        color: #059669;
-        border: 1px solid #6ee7b7;
-      }
-      .empty-state {
-        background: linear-gradient(145deg, #f8fafc, #f1f5f9);
-        border: 2px dashed #cbd5e1;
-        border-radius: 16px;
-        padding: 48px 24px;
-        text-align: center;
-        transition: all 0.3s ease;
-      }
-      .empty-state:hover {
-        border-color: #94a3b8;
-        background: linear-gradient(145deg, #f1f5f9, #e2e8f0);
-      }
-      .section-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #1f2937;
-        margin-bottom: 20px;
-        position: relative;
-        padding-left: 16px;
-      }
-      .section-title::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 4px;
-        height: 24px;
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        border-radius: 2px;
-      }
-      .modal-overlay {
-        backdrop-filter: blur(8px);
-        background: rgba(0, 0, 0, 0.6);
-      }
-      .modal-content {
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        transform: scale(0.9);
-        transition: transform 0.3s ease;
-      }
-      .modal-content.show {
-        transform: scale(1);
-      }
-      .form-input {
-        border: 2px solid #e5e7eb;
-        border-radius: 10px;
-        padding: 12px 16px;
-        transition: all 0.3s ease;
-        background: #f9fafb;
-      }
-      .form-input:focus {
-        border-color: #6366f1;
-        background: white;
-        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        outline: none;
-      }
+        .excel-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .excel-card { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .calendar-day { border: 1px solid #e5e7eb; padding: 8px; min-height: 100px; cursor: pointer; transition: all 0.2s; }
+        .calendar-day:hover { background: #f3f4f6; }
+        .calendar-day.today { background: #eff6ff; border-color: #3b82f6; font-weight: bold; }
+        .calendar-day.other-month { opacity: 0.3; }
+        .task-dot { width: 6px; height: 6px; border-radius: 50%; margin: 1px; display: inline-block; }
+        .task-dot.high { background: #ef4444; }
+        .task-dot.medium { background: #f59e0b; }
+        .task-dot.low { background: #10b981; }
     </style>
-  </head>
-  <body class="excel-bg">
+</head>
+<body class="excel-bg">
     <div id="app" class="min-h-screen">
-      <div id="nav-container"></div>
-
-      <div class="container mx-auto p-6">
-        <!-- Header -->
-        <div class="excel-card p-8 mb-6 fade-in">
-          <div class="flex items-center justify-between mb-6">
-            <h1 class="section-title text-4xl">📅 ปฏิทิน</h1>
-            <div class="flex items-center space-x-6">
-              <button
-                onclick="previousMonth()"
-                class="nav-button"
-              >
-                ◀ เดือนก่อน
-              </button>
-              <h2
-                id="current-month"
-                class="text-2xl font-bold text-gray-800 min-w-[250px] text-center bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent"
-              >
-                Loading...
-              </h2>
-              <button
-                onclick="nextMonth()"
-                class="nav-button"
-              >
-                เดือนถัดไป ▶
-              </button>
+        <div id="nav-container"></div>
+        
+        <div class="container mx-auto p-6">
+            <!-- Header -->
+            <div class="excel-card p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h1 class="text-3xl font-bold text-gray-800">ปฏิทิน</h1>
+                    <div class="flex items-center space-x-4">
+                        <button onclick="previousMonth()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">◀</button>
+                        <h2 id="current-month" class="text-xl font-bold text-gray-800 min-w-[200px] text-center">Loading...</h2>
+                        <button onclick="nextMonth()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">▶</button>
+                    </div>
+                </div>
+                <button onclick="showAddTaskModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium">
+                    + เพิ่มงานใหม่
+                </button>
             </div>
-          </div>
-          <button
-            onclick="showAddTaskModal()"
-            class="add-task-btn"
-          >
-            ✨ เพิ่มงานใหม่
-          </button>
-        </div>
 
-        <!-- Loading State -->
-        <div id="loading-state" class="excel-card p-12 text-center fade-in">
-          <div class="loading-spinner mb-6"></div>
-          <p class="text-xl text-gray-600 font-medium">🔄 กำลังโหลดปฏิทิน...</p>
-          <p class="text-sm text-gray-500 mt-2">กรุณารอสักครู่</p>
-        </div>
+            <!-- Loading State -->
+            <div id="loading-state" class="excel-card p-8 text-center">
+                <div class="loading-spinner mb-4"></div>
+                <p class="text-lg text-gray-600">กำลังโหลดปฏิทิน...</p>
+            </div>
 
-        <!-- Calendar -->
-        <div
-          id="calendar-container"
-          style="display: none"
-          class="excel-card overflow-hidden fade-in"
-        >
-          <!-- Calendar Header -->
-          <div class="grid grid-cols-7 calendar-header">
-            <div class="p-5 text-center font-bold text-gray-700">🔴 อาทิตย์</div>
-            <div class="p-5 text-center font-bold text-gray-700">🟡 จันทร์</div>
-            <div class="p-5 text-center font-bold text-gray-700">🟠 อังคาร</div>
-            <div class="p-5 text-center font-bold text-gray-700">🟢 พุธ</div>
-            <div class="p-5 text-center font-bold text-gray-700">🔵 พฤหัสบดี</div>
-            <div class="p-5 text-center font-bold text-gray-700">🟣 ศุกร์</div>
-            <div class="p-5 text-center font-bold text-gray-700">🟤 เสาร์</div>
-          </div>
+            <!-- Calendar -->
+            <div id="calendar-container" style="display: none;" class="excel-card overflow-hidden">
+                <!-- Calendar Header -->
+                <div class="grid grid-cols-7 bg-gray-100">
+                    <div class="p-4 text-center font-medium text-gray-700">อาทิตย์</div>
+                    <div class="p-4 text-center font-medium text-gray-700">จันทร์</div>
+                    <div class="p-4 text-center font-medium text-gray-700">อังคาร</div>
+                    <div class="p-4 text-center font-medium text-gray-700">พุธ</div>
+                    <div class="p-4 text-center font-medium text-gray-700">พฤหัสบดี</div>
+                    <div class="p-4 text-center font-medium text-gray-700">ศุกร์</div>
+                    <div class="p-4 text-center font-medium text-gray-700">เสาร์</div>
+                </div>
+                
+                <!-- Calendar Grid -->
+                <div id="calendar-grid" class="grid grid-cols-7">
+                    <!-- Calendar days will be generated here -->
+                </div>
+            </div>
 
-          <!-- Calendar Grid -->
-          <div id="calendar-grid" class="grid grid-cols-7 gap-1 p-2 bg-gray-50">
-            <!-- Calendar days will be generated here -->
-          </div>
+            <!-- Task Details -->
+            <div id="task-details" style="display: none;" class="excel-card p-6 mt-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">งานในวันที่เลือก</h3>
+                <div id="selected-tasks" class="space-y-3">
+                    <!-- Selected day tasks will be shown here -->
+                </div>
+            </div>
         </div>
-
-        <!-- Task Details -->
-        <div
-          id="task-details"
-          style="display: none"
-          class="excel-card p-8 mt-6 fade-in"
-        >
-          <h3
-            id="task-details-title"
-            class="section-title text-2xl mb-6"
-          >
-            📋 งานในวันที่เลือก
-          </h3>
-          <div id="selected-tasks" class="space-y-4">
-            <!-- Selected day tasks will be shown here -->
-          </div>
-        </div>
-
-        <!-- All Tasks List -->
-        <div id="all-tasks-list" class="excel-card p-8 mt-6 fade-in">
-          <h3 class="section-title text-2xl mb-6">📚 งานทั้งหมดในระบบ</h3>
-          <div id="all-tasks-container" class="space-y-4"></div>
-        </div>
-      </div>
     </div>
 
     <!-- Add Task Modal -->
-    <div
-      id="add-task-modal"
-      class="fixed inset-0 modal-overlay flex items-center justify-center z-50"
-      style="display: none"
-    >
-      <div class="modal-content max-w-lg w-full mx-4">
-        <div class="p-8">
-          <h3 class="section-title text-2xl mb-6">✨ เพิ่มงานใหม่</h3>
-          <form id="add-task-form">
-            <div class="mb-6">
-              <label class="block text-sm font-semibold text-gray-700 mb-3"
-                >📝 ชื่องาน</label
-              >
-              <input
-                type="text"
-                id="task-name"
-                required
-                class="w-full form-input"
-                placeholder="กรอกชื่องานที่ต้องทำ..."
-              />
+    <div id="add-task-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4">
+            <div class="p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">เพิ่มงานใหม่</h3>
+                <form id="add-task-form">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ชื่องาน</label>
+                        <input type="text" id="task-name" required class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">รายละเอียด</label>
+                        <textarea id="task-description" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2"></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ความสำคัญ</label>
+                        <select id="task-priority" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                            <option value="1">ต่ำ</option>
+                            <option value="2" selected>กลาง</option>
+                            <option value="3">สูง</option>
+                        </select>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">วันครบกำหนด</label>
+                        <input type="date" id="task-due-date" required class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                    </div>
+                    <div class="flex space-x-3">
+                        <button type="button" onclick="hideAddTaskModal()" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg">
+                            ยกเลิก
+                        </button>
+                        <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            เพิ่มงาน
+                        </button>
+                    </div>
+                </form>
             </div>
-            <div class="mb-6">
-              <label class="block text-sm font-semibold text-gray-700 mb-3"
-                >📄 รายละเอียด</label
-              >
-              <textarea
-                id="task-description"
-                rows="3"
-                class="w-full form-input"
-                placeholder="เขียนรายละเอียดเพิ่มเติม (ไม่บังคับ)..."
-              ></textarea>
-            </div>
-            <div class="mb-6">
-              <label class="block text-sm font-semibold text-gray-700 mb-3"
-                >⚡ ความสำคัญ</label
-              >
-              <select
-                id="task-priority"
-                class="w-full form-input"
-              >
-                <option value="1">🟢 ต่ำ</option>
-                <option value="2" selected>🟡 กลาง</option>
-                <option value="3">🔴 สูง</option>
-              </select>
-            </div>
-            <div class="mb-8">
-              <label class="block text-sm font-semibold text-gray-700 mb-3"
-                >📅 วันครบกำหนด</label
-              >
-              <input
-                type="date"
-                id="task-due-date"
-                required
-                class="w-full form-input"
-              />
-            </div>
-            <div class="flex space-x-4">
-              <button
-                type="button"
-                onclick="hideAddTaskModal()"
-                class="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
-              >
-                ❌ ยกเลิก
-              </button>
-              <button
-                type="submit"
-                class="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition-all transform hover:scale-105"
-              >
-                ✅ เพิ่มงาน
-              </button>
-            </div>
-          </form>
         </div>
-      </div>
     </div>
 
     <!-- Toast Notifications -->
-    <div
-      id="toast-container"
-      class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm"
-    ></div>
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm"></div>
 
     <!-- Shared API Manager -->
-    <script src="shared-api.js?v=2.0"></script>
+    <script src="shared-api.js"></script>
     <!-- Navigation Component -->
-    <script src="nav-component.js?v=2.0"></script>
+    <script src="nav-component.js"></script>
 
     <script>
-      // Global state
-      let currentDate = new Date();
-      let tasks = [];
-      let selectedDate = null;
-      let isLoading = false;
+        // Global state
+        let currentDate = new Date();
+        let tasks = [];
+        let selectedDate = null;
+        let isLoading = false;
 
-      // Date utility functions (simplified version)
-      const monthNames = [
-        "มกราคม",
-        "กุมภาพันธ์",
-        "มีนาคม",
-        "เมษายน",
-        "พฤษภาคม",
-        "มิถุนายน",
-        "กรกฎาคม",
-        "สิงหาคม",
-        "กันยายน",
-        "ตุลาคม",
-        "พฤศจิกายน",
-        "ธันวาคม",
-      ];
-
-      function formatThaiDate(date) {
-        const day = date.getDate();
-        const month = monthNames[date.getMonth()];
-        const year = date.getFullYear();
-        return `${day} ${month} ${year}`;
-      }
-
-      function toLocalDateString(date) {
-        return (
-          date.getFullYear() +
-          "-" +
-          String(date.getMonth() + 1).padStart(2, "0") +
-          "-" +
-          String(date.getDate()).padStart(2, "0")
-        );
-      }
-
-      function isSameDate(date1, date2) {
-        if (!date1 || !date2) return false;
-        const d1 =
-          typeof date1 === "string" ? new Date(date1 + "T00:00:00") : date1;
-        const d2 =
-          typeof date2 === "string" ? new Date(date2 + "T00:00:00") : date2;
-        return toLocalDateString(d1) === toLocalDateString(d2);
-      }
-
-      // Utility functions
-      function showToast(message, type = "info") {
-        const toast = document.createElement("div");
-        const iconMap = {
-          success: "✅",
-          error: "❌",
-          warning: "⚠️",
-          info: "ℹ️",
-        };
-
-        toast.className = `p-4 rounded-xl shadow-lg text-white mb-3 w-full max-w-sm transform transition-all duration-500 translate-x-full opacity-0 ${
-          type === "error"
-            ? "bg-gradient-to-r from-red-500 to-red-600"
-            : type === "success"
-            ? "bg-gradient-to-r from-green-500 to-green-600"
-            : type === "warning"
-            ? "bg-gradient-to-r from-yellow-500 to-yellow-600"
-            : "bg-gradient-to-r from-blue-500 to-blue-600"
-        }`;
-
-        toast.innerHTML = `
+        // Utility functions
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            const iconMap = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+            
+            toast.className = `p-4 rounded-xl shadow-lg text-white mb-3 w-full max-w-sm transform transition-all duration-500 translate-x-full opacity-0 ${
+                type === 'error' ? 'bg-gradient-to-r from-red-500 to-red-600' : 
+                type === 'success' ? 'bg-gradient-to-r from-green-500 to-green-600' : 
+                type === 'warning' ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
+                'bg-gradient-to-r from-blue-500 to-blue-600'
+            }`;
+            
+            toast.innerHTML = `
                 <div class="flex items-center space-x-3">
                     <span class="text-lg">${iconMap[type]}</span>
                     <span class="font-medium">${message}</span>
                 </div>
             `;
-
-        const container = document.getElementById("toast-container");
-        container.appendChild(toast);
-
-        setTimeout(
-          () => toast.classList.remove("translate-x-full", "opacity-0"),
-          100
-        );
-        setTimeout(() => {
-          if (container.contains(toast)) {
-            toast.classList.add("translate-x-full", "opacity-0");
-            setTimeout(
-              () => container.contains(toast) && container.removeChild(toast),
-              500
-            );
-          }
-        }, 5000);
-      }
-
-      // Show/hide states
-      function showLoading() {
-        document.getElementById("loading-state").style.display = "block";
-        document.getElementById("calendar-container").style.display = "none";
-      }
-
-      function showCalendar() {
-        document.getElementById("loading-state").style.display = "none";
-        document.getElementById("calendar-container").style.display = "block";
-      }
-
-      // Modal functions
-      function showAddTaskModal() {
-        document.getElementById("add-task-modal").style.display = "flex";
-        document.getElementById("task-due-date").value = toLocalDateString(
-          new Date()
-        );
-      }
-
-      function hideAddTaskModal() {
-        document.getElementById("add-task-modal").style.display = "none";
-        document.getElementById("add-task-form").reset();
-      }
-
-
-      // Calendar navigation
-      async function previousMonth() {
-        currentDate.setMonth(currentDate.getMonth() - 1);
-        await refreshTasksAndRender();
-      }
-
-      async function nextMonth() {
-        currentDate.setMonth(currentDate.getMonth() + 1);
-        await refreshTasksAndRender();
-      }
-
-
-      // Get tasks for specific date (always use latest tasks)
-      function getTasksForDate(date) {
-        if (!tasks || tasks.length === 0) return [];
-        
-        const targetDateStr = toLocalDateString(date);
-        console.log(`Looking for tasks on ${targetDateStr}`);
-        
-        return tasks.filter((task) => {
-          if (!task.due_date) return false;
-          
-          // Convert task due_date to local date string
-          let taskDateStr;
-          if (typeof task.due_date === 'string') {
-            if (task.due_date.includes('T')) {
-              // ISO format with time
-              taskDateStr = task.due_date.split('T')[0];
-            } else {
-              // Date only format
-              taskDateStr = task.due_date;
-            }
-          } else {
-            taskDateStr = toLocalDateString(task.due_date);
-          }
-          
-          const matches = taskDateStr === targetDateStr;
-          if (matches) {
-            console.log(`Found matching task: ${task.task_name} on ${taskDateStr}`);
-          }
-          return matches;
-        });
-      }
-
-      // Select date and show tasks for that day
-      function selectDate(date) {
-        selectedDate = date;
-        const formattedDate = formatThaiDate(date);
-        
-        // Show task details section
-        const taskDetailsSection = document.getElementById("task-details");
-        taskDetailsSection.style.display = "block";
-        
-        // Update title
-        document.getElementById("task-details-title").textContent = `งานในวันที่ ${formattedDate}`;
-
-        // Get tasks for this date
-        const dayTasks = getTasksForDate(date);
-        const tasksContainer = document.getElementById("selected-tasks");
-
-        if (dayTasks.length === 0) {
-          // Show empty state
-          tasksContainer.innerHTML = `
-            <div class="empty-state">
-              <div class="text-6xl mb-4">🗓️</div>
-              <h4 class="text-xl font-semibold text-gray-700 mb-2">ไม่มีงานในวันที่ ${formattedDate}</h4>
-              <p class="text-gray-500 mb-6">วันนี้ยังไม่มีงานที่กำหนด คุณช่วงนี้ว่างเลย! 🎉</p>
-              <button onclick="showAddTaskModal(); document.getElementById('task-due-date').value = '${toLocalDateString(date)}'" 
-                      class="add-task-btn">
-                ✨ เพิ่มงานใหม่
-              </button>
-            </div>
-          `;
-        } else {
-          // Show tasks
-          tasksContainer.innerHTML = dayTasks.map((task) => {
-            const priorityText = task.priority === 3 ? "สูง" : task.priority === 2 ? "กลาง" : "ต่ำ";
-            const priorityClass = task.priority === 3 ? "priority-high" : task.priority === 2 ? "priority-medium" : "priority-low";
-
-            return `
-              <div class="task-card">
-                <div class="flex items-center justify-between">
-                  <div class="flex-1">
-                    <div class="flex items-center space-x-3 mb-2">
-                      <input type="checkbox" ${task.is_completed ? "checked" : ""} 
-                             onchange="toggleTask('${task.id}', this.checked)"
-                             class="w-5 h-5 text-indigo-600 rounded-lg">
-                      <h4 class="font-semibold text-gray-900 ${task.is_completed ? "line-through opacity-60" : ""}">${task.task_name || task.title || "Untitled Task"}</h4>
-                      <span class="priority-badge ${priorityClass}">${priorityText}</span>
-                    </div>
-                    ${task.description ? `<p class="text-sm text-gray-600 ml-8 italic">"${task.description}"</p>` : ""}
-                  </div>
-                  <button onclick="deleteTask('${task.id}')" class="text-red-500 hover:text-red-700 transition-colors ml-4 text-xl" title="ลบงาน">🗑️</button>
-                </div>
-              </div>
-            `;
-          }).join("");
-        }
-        
-        // Scroll to task details section
-        taskDetailsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-
-
-      // Render calendar (use latest tasks)
-      function renderCalendar() {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-        const today = new Date();
-
-        // Update month header
-        document.getElementById("current-month").textContent = `${monthNames[month]} ${year}`;
-
-        // Calculate calendar grid
-        const firstDay = new Date(year, month, 1);
-        const startDate = new Date(firstDay);
-        startDate.setDate(startDate.getDate() - firstDay.getDay());
-
-        const calendarGrid = document.getElementById("calendar-grid");
-        calendarGrid.innerHTML = "";
-
-        // Generate 42 days (6 weeks)
-        const current = new Date(startDate);
-        for (let i = 0; i < 42; i++) {
-          const isToday = current.toDateString() === today.toDateString();
-          const isCurrentMonth = current.getMonth() === month;
-          const dayTasks = getTasksForDate(current);
-
-          const dayElement = document.createElement("div");
-          dayElement.className = `calendar-day ${isToday ? "today" : ""} ${!isCurrentMonth ? "other-month" : ""}`;
-
-          // Create a copy of current date for the click handler
-          const dateForClick = new Date(current);
-          dayElement.onclick = () => selectDate(dateForClick);
-
-          dayElement.innerHTML = `
-            <div class="font-medium mb-2">${current.getDate()}</div>
-            <div class="flex flex-wrap">
-              ${dayTasks.map((task) => {
-                const priorityClass =
-                  task.priority === 3 ? "high" : task.priority === 2 ? "medium" : "low";
-                const taskName = task.task_name || task.title || "งาน";
-                return `<span class="task-dot ${priorityClass}" title="${taskName}"></span>`;
-              }).join("")}
-              ${dayTasks.length > 3 ? `<span class="text-xs text-blue-600 font-medium">+${dayTasks.length - 3}</span>` : ""}
-            </div>
-          `;
-
-          calendarGrid.appendChild(dayElement);
-          current.setDate(current.getDate() + 1);
-        }
-      }
-
-      // Toggle task completion
-      async function toggleTask(taskId, isCompleted) {
-        try {
-          await window.apiManager.apiCall(`/tasks/${taskId}`, {
-            method: "PATCH",
-            body: JSON.stringify({ is_completed: isCompleted }),
-          });
-
-          // Update local data
-          const task = tasks.find((t) => t.id == taskId);
-          if (task) {
-            task.is_completed = isCompleted;
-          }
-
-          // Refresh display
-          window.dataManager.clearCache();
-          renderCalendar();
-          renderAllTasksList();
-          if (selectedDate) {
-            selectDate(selectedDate);
-          }
-
-          showToast(
-            isCompleted ? "งานเสร็จสิ้นแล้ว!" : "ยกเลิกการทำเสร็จแล้ว",
-            "success"
-          );
-        } catch (error) {
-          console.error("Error updating task:", error);
-          showToast("เกิดข้อผิดพลาดในการอัปเดตงาน", "error");
-        }
-      }
-
-      // Delete task
-      async function deleteTask(taskId) {
-        if (!confirm("คุณแน่ใจหรือไม่ที่จะลบงานนี้?")) return;
-
-        try {
-          await window.apiManager.apiCall(`/tasks/${taskId}`, {
-            method: "DELETE",
-          });
-
-          // Remove from local data
-          tasks = tasks.filter((t) => t.id != taskId);
-
-          // Refresh display
-          window.dataManager.clearCache();
-          renderCalendar();
-          renderAllTasksList();
-          if (selectedDate) {
-            selectDate(selectedDate);
-          }
-
-          showToast("ลบงานเรียบร้อยแล้ว", "success");
-        } catch (error) {
-          console.error("Error deleting task:", error);
-          showToast("เกิดข้อผิดพลาดในการลบงาน", "error");
-        }
-      }
-
-      // Add new task
-      document
-        .getElementById("add-task-form")
-        .addEventListener("submit", async function (e) {
-          e.preventDefault();
-
-          const taskData = {
-            task_name: document.getElementById("task-name").value,
-            description: document.getElementById("task-description").value,
-            priority: parseInt(document.getElementById("task-priority").value),
-            due_date: document.getElementById("task-due-date").value,
-          };
-
-          try {
-            const result = await window.apiManager.apiCall("/tasks", {
-              method: "POST",
-              body: JSON.stringify(taskData),
-            });
-
-            // Add to local data
-            if (result.task) {
-              tasks.push(result.task);
-            }
-
-            // Refresh display
-            window.dataManager.clearCache();
-            renderCalendar();
-            renderAllTasksList();
-            hideAddTaskModal();
-
-            showToast("เพิ่มงานเรียบร้อยแล้ว", "success");
-          } catch (error) {
-            console.error("Error adding task:", error);
-            showToast("เกิดข้อผิดพลาดในการเพิ่มงาน", "error");
-          }
-        });
-
-
-
-
-      // Render all tasks list below calendar
-      function renderAllTasksList() {
-        const container = document.getElementById("all-tasks-container");
-        if (!tasks || tasks.length === 0) {
-          container.innerHTML = `<div class="empty-state">
-            <div class="text-8xl mb-6">�</div>
-            <h4 class="text-2xl font-bold text-gray-700 mb-3">ยังไม่มีงานในระบบ</h4>
-            <p class="text-gray-500 mb-6">เริ่มต้นด้วยการเพิ่มงานแรกของคุณ</p>
-            <button onclick="showAddTaskModal()" class="add-task-btn">✨ เพิ่มงานแรก</button>
-          </div>`;
-          return;
-        }
-        
-        console.log("Rendering all tasks:", tasks.length);
-        
-        container.innerHTML = tasks.map(task => {
-          const priorityText = task.priority === 3 ? "สูง" : task.priority === 2 ? "กลาง" : "ต่ำ";
-          const priorityClass = task.priority === 3 ? "priority-high" : task.priority === 2 ? "priority-medium" : "priority-low";
-          
-          // Safe date formatting
-          let thaiDate = "ไม่ระบุ";
-          if (task.due_date) {
-            try {
-              let dateToFormat;
-              if (typeof task.due_date === 'string') {
-                if (task.due_date.includes('T')) {
-                  dateToFormat = new Date(task.due_date);
-                } else {
-                  dateToFormat = new Date(task.due_date + 'T00:00:00');
+            
+            const container = document.getElementById('toast-container');
+            container.appendChild(toast);
+            
+            setTimeout(() => toast.classList.remove('translate-x-full', 'opacity-0'), 100);
+            setTimeout(() => {
+                if (container.contains(toast)) {
+                    toast.classList.add('translate-x-full', 'opacity-0');
+                    setTimeout(() => container.contains(toast) && container.removeChild(toast), 500);
                 }
-              } else {
-                dateToFormat = new Date(task.due_date);
-              }
-              thaiDate = formatThaiDate(dateToFormat);
-            } catch (e) {
-              console.warn("Date formatting error:", e);
-              thaiDate = task.due_date;
+            }, 5000);
+        }
+
+        // Show/hide states
+        function showLoading() {
+            document.getElementById('loading-state').style.display = 'block';
+            document.getElementById('calendar-container').style.display = 'none';
+        }
+
+        function showCalendar() {
+            document.getElementById('loading-state').style.display = 'none';
+            document.getElementById('calendar-container').style.display = 'block';
+        }
+
+        // Modal functions
+        function showAddTaskModal() {
+            document.getElementById('add-task-modal').style.display = 'flex';
+            // Set default date to today using DateUtils
+            document.getElementById('task-due-date').value = window.dateUtils.getTodayString();
+        }
+
+        function hideAddTaskModal() {
+            document.getElementById('add-task-modal').style.display = 'none';
+            document.getElementById('add-task-form').reset();
+        }
+
+        // Calendar navigation
+        function previousMonth() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        }
+
+        // Get tasks for specific date
+        function getTasksForDate(date) {
+            return tasks.filter(task => {
+                if (!task.due_date) return false;
+                return window.dateUtils.isSameDate(task.due_date, date);
+            });
+        }
+
+        // Render calendar
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const today = new Date();
+            
+            // Update month header
+            const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                               'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+            document.getElementById('current-month').textContent = `${monthNames[month]} ${year}`;
+            
+            // Calculate calendar grid
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - firstDay.getDay());
+            
+            const calendarGrid = document.getElementById('calendar-grid');
+            calendarGrid.innerHTML = '';
+            
+            // Generate 42 days (6 weeks)
+            const current = new Date(startDate);
+            for (let i = 0; i < 42; i++) {
+                const isToday = current.toDateString() === today.toDateString();
+                const isCurrentMonth = current.getMonth() === month;
+                const dayTasks = getTasksForDate(current);
+                
+                const dayElement = document.createElement('div');
+                dayElement.className = `calendar-day ${isToday ? 'today' : ''} ${!isCurrentMonth ? 'other-month' : ''}`;
+                dayElement.onclick = () => selectDate(new Date(current));
+                
+                dayElement.innerHTML = `
+                    <div class="font-medium mb-2">${current.getDate()}</div>
+                    <div class="flex flex-wrap">
+                        ${dayTasks.map(task => {
+                            const priorityClass = task.priority === 3 ? 'high' : task.priority === 2 ? 'medium' : 'low';
+                            return `<span class="task-dot ${priorityClass}" title="${task.task_name || task.title || ''}"></span>`;
+                        }).join('')}
+                    </div>
+                `;
+                
+                calendarGrid.appendChild(dayElement);
+                current.setDate(current.getDate() + 1);
             }
-          }
-          
-          return `<div class="task-card">
-            <div class="flex items-center justify-between">
-              <div class="flex-1">
-                <div class="flex items-center space-x-3 mb-2">
-                  <input type="checkbox" ${task.is_completed ? "checked" : ""}
-                    onchange="toggleTask('${task.id}', this.checked)"
-                    class="w-5 h-5 text-indigo-600 rounded-lg">
-                  <h4 class="font-semibold text-gray-900 ${task.is_completed ? "line-through opacity-60" : ""}">${task.task_name || task.title || "Untitled Task"}</h4>
-                  <span class="priority-badge ${priorityClass}">${priorityText}</span>
-                </div>
-                <div class="ml-8 space-y-1">
-                  ${task.description ? `<p class="text-sm text-gray-600 italic">"${task.description}"</p>` : ""}
-                  <p class="text-xs text-gray-500">📅 ครบกำหนด: ${thaiDate}</p>
-                </div>
-              </div>
-              <button onclick="deleteTask('${task.id}')" class="text-red-500 hover:text-red-700 transition-colors ml-4 text-xl" title="ลบงาน">🗑️</button>
-            </div>
-          </div>`;
-        }).join("");
-      }
-
-      // Refresh tasks from API and render calendar (robust)
-      async function refreshTasksAndRender() {
-        if (isLoading) return;
-        isLoading = true;
-        try {
-          showLoading();
-          // Check authentication
-          const token = localStorage.getItem("token");
-          if (!token) {
-            window.location.href = "index.html";
-            return;
-          }
-          // Load tasks fresh from API (force refresh)
-          let apiTasks = await window.dataManager.loadTasks(true);
-          // รองรับทั้ง array และ property tasks
-          if (Array.isArray(apiTasks)) {
-            tasks = apiTasks;
-          } else if (apiTasks && Array.isArray(apiTasks.tasks)) {
-            tasks = apiTasks.tasks;
-          } else {
-            tasks = [];
-          }
-          renderCalendar();
-          showCalendar();
-          renderAllTasksList();
-          if (tasks.length === 0) {
-            showToast("ไม่มีงานในเดือนนี้หรือ API ไม่พบข้อมูล", "warning");
-          } else {
-            showToast(`โหลดปฏิทินเรียบร้อย (${tasks.length} งาน)`, "success");
-          }
-        } catch (error) {
-          console.error("Calendar loading error:", error);
-          showToast("เกิดข้อผิดพลาดในการโหลดปฏิทิน: " + (error?.message || error), "error");
-        } finally {
-          isLoading = false;
         }
-      }
 
-      // Initialize
-      document.addEventListener("DOMContentLoaded", function () {
-        // Wait for shared API and DateUtils to be ready
-        if (window.apiManager && window.dataManager) {
-          refreshTasksAndRender();
-        } else {
-          setTimeout(refreshTasksAndRender, 100);
+        // Select date and show tasks
+        function selectDate(date) {
+            selectedDate = date;
+            const dayTasks = getTasksForDate(date);
+            const tasksContainer = document.getElementById('selected-tasks');
+            const detailsSection = document.getElementById('task-details');
+            
+            if (dayTasks.length === 0) {
+                detailsSection.style.display = 'none';
+                showToast(`ไม่มีงานในวันที่ ${window.dateUtils.formatThaiDate(date)}`, 'info');
+                return;
+            }
+            
+            tasksContainer.innerHTML = dayTasks.map(task => {
+                const priorityText = task.priority === 3 ? 'สูง' : task.priority === 2 ? 'กลาง' : 'ต่ำ';
+                const priorityColor = task.priority === 3 ? 'red' : task.priority === 2 ? 'yellow' : 'green';
+                
+                return `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3">
+                                <input type="checkbox" ${task.is_completed ? 'checked' : ''} 
+                                       onchange="toggleTask('${task.id}', this.checked)"
+                                       class="w-4 h-4 text-blue-600 rounded">
+                                <h4 class="font-medium text-gray-900 ${task.is_completed ? 'line-through' : ''}">${task.task_name || task.title || 'Untitled Task'}</h4>
+                                <span class="text-xs px-2 py-1 bg-${priorityColor}-100 text-${priorityColor}-800 rounded-full">${priorityText}</span>
+                            </div>
+                            ${task.description ? `<p class="text-sm text-gray-600 mt-1 ml-7">${task.description}</p>` : ''}
+                        </div>
+                        <button onclick="deleteTask('${task.id}')" class="text-red-600 hover:text-red-800 transition-colors" title="ลบ">🗑️</button>
+                    </div>
+                `;
+            }).join('');
+            
+            detailsSection.style.display = 'block';
         }
-      });
+
+        // Toggle task completion
+        async function toggleTask(taskId, isCompleted) {
+            try {
+                await window.apiManager.apiCall(`/tasks/${taskId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ is_completed: isCompleted })
+                });
+                
+                // Update local data
+                const task = tasks.find(t => t.id == taskId);
+                if (task) {
+                    task.is_completed = isCompleted;
+                }
+                
+                // Refresh display
+                window.dataManager.clearCache();
+                renderCalendar();
+                if (selectedDate) {
+                    selectDate(selectedDate);
+                }
+                
+                showToast(isCompleted ? 'งานเสร็จสิ้นแล้ว!' : 'ยกเลิกการทำเสร็จแล้ว', 'success');
+            } catch (error) {
+                console.error('Error updating task:', error);
+                showToast('เกิดข้อผิดพลาดในการอัปเดตงาน', 'error');
+            }
+        }
+
+        // Delete task
+        async function deleteTask(taskId) {
+            if (!confirm('คุณแน่ใจหรือไม่ที่จะลบงานนี้?')) return;
+
+            try {
+                await window.apiManager.apiCall(`/tasks/${taskId}`, {
+                    method: 'DELETE'
+                });
+                
+                // Remove from local data
+                tasks = tasks.filter(t => t.id != taskId);
+                
+                // Refresh display
+                window.dataManager.clearCache();
+                renderCalendar();
+                if (selectedDate) {
+                    selectDate(selectedDate);
+                }
+                
+                showToast('ลบงานเรียบร้อยแล้ว', 'success');
+            } catch (error) {
+                console.error('Error deleting task:', error);
+                showToast('เกิดข้อผิดพลาดในการลบงาน', 'error');
+            }
+        }
+
+        // Add new task
+        document.getElementById('add-task-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const taskData = {
+                task_name: document.getElementById('task-name').value,
+                description: document.getElementById('task-description').value,
+                priority: parseInt(document.getElementById('task-priority').value),
+                due_date: document.getElementById('task-due-date').value
+            };
+
+            try {
+                const result = await window.apiManager.apiCall('/tasks', {
+                    method: 'POST',
+                    body: JSON.stringify(taskData)
+                });
+                
+                // Add to local data
+                if (result.task) {
+                    tasks.push(result.task);
+                }
+                
+                // Refresh display
+                window.dataManager.clearCache();
+                renderCalendar();
+                hideAddTaskModal();
+                
+                showToast('เพิ่มงานเรียบร้อยแล้ว', 'success');
+            } catch (error) {
+                console.error('Error adding task:', error);
+                showToast('เกิดข้อผิดพลาดในการเพิ่มงาน', 'error');
+            }
+        });
+
+        // Load calendar data
+        async function loadCalendar() {
+            if (isLoading) return;
+            isLoading = true;
+            
+            try {
+                showLoading();
+                
+                // Check authentication
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // Load tasks using shared data manager
+                tasks = await window.dataManager.loadTasks();
+                
+                renderCalendar();
+                showCalendar();
+                
+                showToast(`โหลดปฏิทินเรียบร้อย (${tasks.length} งาน)`, 'success');
+
+            } catch (error) {
+                console.error('Calendar loading error:', error);
+                showToast('เกิดข้อผิดพลาดในการโหลดปฏิทิน: ' + error.message, 'error');
+            } finally {
+                isLoading = false;
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait for shared API and DateUtils to be ready
+            if (window.apiManager && window.dataManager && window.dateUtils) {
+                loadCalendar();
+            } else {
+                setTimeout(loadCalendar, 100);
+            }
+        });
     </script>
-  </body>
+</body>
 </html>
